@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KZReversiGUI", "KZreversiGUI\KZReversiGUI.csproj", "{337119D3-B174-4A9E-9ECD-D4229467B049}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KzAI_DLL", "KzAI_DLL\KzAI_DLL.vcxproj", "{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ai_core", "ai_core\ai_core.vcxproj", "{159DD7E1-D7F9-4273-AAFD-9B6047A96735}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,18 +29,18 @@ Global
 		{337119D3-B174-4A9E-9ECD-D4229467B049}.Release|Win32.Build.0 = Release|x86
 		{337119D3-B174-4A9E-9ECD-D4229467B049}.Release|x86.ActiveCfg = Release|x86
 		{337119D3-B174-4A9E-9ECD-D4229467B049}.Release|x86.Build.0 = Release|x86
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Debug|Win32.ActiveCfg = Debug|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Debug|Win32.Build.0 = Debug|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Debug|x86.ActiveCfg = Debug|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Debug|x86.Build.0 = Debug|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Release|Win32.ActiveCfg = Release|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Release|Win32.Build.0 = Release|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Release|x86.ActiveCfg = Release|Win32
-		{FA6B4C25-DD80-4AA7-AC41-10D4B7790A66}.Release|x86.Build.0 = Release|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Debug|Win32.ActiveCfg = Debug|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Debug|Win32.Build.0 = Debug|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Debug|x86.ActiveCfg = Debug|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Debug|x86.Build.0 = Debug|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Release|Win32.ActiveCfg = Release|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Release|Win32.Build.0 = Release|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Release|x86.ActiveCfg = Release|Win32
+		{159DD7E1-D7F9-4273-AAFD-9B6047A96735}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

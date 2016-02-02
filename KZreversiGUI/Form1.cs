@@ -54,6 +54,8 @@ namespace KZreversiGUI
             bkImg = imageList1.Images[0];
             whImg = imageList1.Images[1];
 
+            // DLLのロード
+            
 
         }
 
