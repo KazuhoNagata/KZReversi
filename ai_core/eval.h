@@ -6,6 +6,7 @@
 
 #include "stdafx.h"
 
+#pragma once
 
 #define NEGAMIN -1280000
 #define NEGAMAX 1280000
@@ -16,6 +17,7 @@
 #define PARITY_NUM 4
 
 extern UINT8 posEval[64];
+extern INT32 g_evaluation;
 
 extern UINT64 a1;			/* a1 */
 extern UINT64 a2;			/* a2 */
@@ -90,3 +92,4 @@ extern UINT64 h7;			/* h7 */
 extern UINT64 h8;			/* h8 */
 
 INT32 Evaluation(UINT8 *board, UINT64 b_board, UINT64 w_board, UINT32 color, UINT32 stage);
+BOOL LoadData(void);

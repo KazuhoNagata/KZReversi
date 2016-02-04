@@ -5,10 +5,13 @@
 ****************************************************************************/
 
 #include "stdafx.h"
+#include <stdlib.h>
 #include "bit64.h"
+#include "book.h"
 #include "move.h"
 #include "eval.h"
 #include "board.h"
+#include "fio.h"
 
 /* 各座標 */
 #define A1 0			/* A1 */
@@ -216,6 +219,8 @@ UINT8 posEval[64] =
 	1, 0, 2, 3, 3, 2, 0, 1,
 	8, 1, 5, 6, 6, 5, 1, 8
 };
+
+INT32 g_evaluation;
 
 double check_h_ver1(UINT8 *board)
 {
@@ -957,4 +962,198 @@ INT32 Evaluation(UINT8 *board, UINT64 b_board, UINT64 w_board, UINT32 color, UIN
 
 	return (INT32)eval;
 
+}
+
+int opponent_feature(int l, int d)
+{
+	const int o[] = { 0, 2, 1 };
+	int f = o[l % 3];
+
+	if (d > 1) f += opponent_feature(l / 3, d - 1) * 3;
+
+	return f;
+}
+
+BOOL OpenEvalData(char *filename)
+{
+	int stage = 0;
+	int i, evalSize;
+	UCHAR *buf;
+	char *line, *ctr;
+	float *p_table, *p_table_op;
+
+	buf = DecodeEvalData(&evalSize, filename);
+
+	if (buf == NULL)
+	{
+		return FALSE;
+	}
+
+	line = strtok_s((char *)buf, "\n", &ctr);
+
+	while (stage < 60)
+	{
+		/* horizon_ver1 */
+		p_table = hori_ver1_data[0][stage];
+		p_table_op = hori_ver1_data[1][stage];
+		for (i = 0; i < 6561; i++)
+		{
+			p_table[i] = (float)atof(line);
+			/* opponent */
+			p_table_op[opponent_feature(i, 8)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* horizon_ver2 */
+		p_table = hori_ver2_data[0][stage];
+		p_table_op = hori_ver2_data[1][stage];
+		for (i = 0; i < 6561; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 8)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* horizon_ver3 */
+		p_table = hori_ver3_data[0][stage];
+		p_table_op = hori_ver3_data[1][stage];
+		for (i = 0; i < 6561; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 8)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* diagram_ver1 */
+		p_table = dia_ver1_data[0][stage];
+		p_table_op = dia_ver1_data[1][stage];
+		for (i = 0; i < 6561; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 8)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* diagram_ver2 */
+		p_table = dia_ver2_data[0][stage];
+		p_table_op = dia_ver2_data[1][stage];
+		for (i = 0; i < 2187; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 7)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* diagram_ver3 */
+		p_table = dia_ver3_data[0][stage];
+		p_table_op = dia_ver3_data[1][stage];
+		for (i = 0; i < 729; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 6)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* diagram_ver4 */
+		p_table = dia_ver4_data[0][stage];
+		p_table_op = dia_ver4_data[1][stage];
+		for (i = 0; i < 243; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 5)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* edge */
+		p_table = edge_data[0][stage];
+		p_table_op = edge_data[1][stage];
+		for (i = 0; i < 59049; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 10)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* corner5 + 2X */
+		p_table = corner5_2_data[0][stage];
+		p_table_op = corner5_2_data[1][stage];
+		for (i = 0; i < 59049; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 10)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* corner3_3 */
+		p_table = corner3_3_data[0][stage];
+		p_table_op = corner3_3_data[1][stage];
+		for (i = 0; i < 19683; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 9)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* triangle */
+		p_table = triangle_data[0][stage];
+		p_table_op = triangle_data[1][stage];
+		for (i = 0; i < 59049; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[opponent_feature(i, 10)] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* mobility */
+		p_table = mobility_data[0][stage];
+		p_table_op = mobility_data[1][stage];
+		for (i = 0; i < MOBILITY_NUM; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[i] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* parity */
+		p_table = parity_data[0][stage];
+		p_table_op = parity_data[1][stage];
+		for (i = 0; i < PARITY_NUM; i++)
+		{
+			p_table[i] = (float)atof(line);
+			p_table_op[i] = -p_table[i];
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+		
+		/* constant */
+		constant_data[0][stage] = (float)atof(line);
+		line = strtok_s(NULL, "\n", &ctr);
+
+		stage++;
+	}
+
+	free(buf);
+
+	return TRUE;
+}
+
+BOOL LoadData()
+{
+	/* 定石データの読み込み */
+	BOOL result = OpenBook("src\\books.bin");
+	if (result == FALSE)
+	{
+		return result;
+	}
+
+	/* 評価テーブルの読み込み */
+	result = OpenEvalData("src\\eval.bin");
+	if (result == FALSE)
+	{
+		return result;
+	}
+
+	///* MPCテーブルの読み込み */
+	result = OpenMpcInfoData("src\\mpc.dat");
+
+	return result;
 }

@@ -6,6 +6,8 @@
 
 #include "stdafx.h"
 
+#pragma once
+
 /* ’uŠ·•\’è‹` */
 struct HashInfo
 {

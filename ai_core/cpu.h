@@ -6,6 +6,8 @@
 
 #include "stdafx.h"
 
+#pragma once
+
 #define KEY_HASH_MACRO(b, w) (UINT32)((b ^ ((w) >> 1)) % g_casheSize)
 
 #define ILLIGAL_ARGUMENT 0x80000001
@@ -24,8 +26,17 @@ typedef struct
 
 }CPUCONFIG;
 
+/* MPC */
+typedef struct
+{
+	int depth;
+	int offset;
+	int deviation;
+}MPCINFO;
+
 extern INT32 g_limitDepth;
 extern UINT64 g_casheSize;
+extern MPCINFO mpcInfo[22];
 
 /***************************************************************************
 * Name  : GetMoveFromAI

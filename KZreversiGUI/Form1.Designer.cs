@@ -1,4 +1,4 @@
-﻿namespace KZreversiGUI
+﻿namespace KZreversi
 {
     partial class Form1
     {
@@ -188,7 +188,7 @@
             // 終了ToolStripMenuItem
             // 
             this.終了ToolStripMenuItem.Name = "終了ToolStripMenuItem";
-            this.終了ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.終了ToolStripMenuItem.Size = new System.Drawing.Size(94, 22);
             this.終了ToolStripMenuItem.Text = "終了";
             this.終了ToolStripMenuItem.Click += new System.EventHandler(this.終了ToolStripMenuItem_Click);
             // 
@@ -211,7 +211,7 @@
             this.黒から始めるToolStripMenuItem,
             this.白から始めるToolStripMenuItem});
             this.ゲーム開始ToolStripMenuItem.Name = "ゲーム開始ToolStripMenuItem";
-            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.ゲーム開始ToolStripMenuItem.Text = "ゲーム開始";
             // 
             // 新規ゲームToolStripMenuItem
@@ -235,25 +235,25 @@
             // 中断ToolStripMenuItem
             // 
             this.中断ToolStripMenuItem.Name = "中断ToolStripMenuItem";
-            this.中断ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.中断ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.中断ToolStripMenuItem.Text = "中断";
             // 
             // 手戻すToolStripMenuItem
             // 
             this.手戻すToolStripMenuItem.Name = "手戻すToolStripMenuItem";
-            this.手戻すToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.手戻すToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.手戻すToolStripMenuItem.Text = "１手戻す";
             // 
             // 手進むToolStripMenuItem
             // 
             this.手進むToolStripMenuItem.Name = "手進むToolStripMenuItem";
-            this.手進むToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.手進むToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.手進むToolStripMenuItem.Text = "１手進む";
             // 
             // 手番変更ToolStripMenuItem
             // 
             this.手番変更ToolStripMenuItem.Name = "手番変更ToolStripMenuItem";
-            this.手番変更ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.手番変更ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.手番変更ToolStripMenuItem.Text = "手番変更";
             // 
             // 盤面操作ToolStripMenuItem
@@ -775,6 +775,7 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(480, 480);
             this.panel1.TabIndex = 10;
+            this.panel1.Click += new System.EventHandler(this.panel1_Click);
             this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
             // 
             // Form1

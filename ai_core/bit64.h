@@ -6,6 +6,8 @@
 
 #include "stdafx.h"
 
+#pragma once
+
 /* ’…è‰Â”\”ŒvZ—p */
 typedef struct {
 	unsigned long high;

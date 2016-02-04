@@ -4,13 +4,17 @@
 * Date  : 2016/02/01
 ****************************************************************************/
 #include "stdafx.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include "bit64.h"
+#include "board.h"
+#include "rev.h"
 #include "move.h"
 #include "eval.h"
 #include "board.h"
 #include "book.h"
+#include "fio.h"
 
 INT32 max_change_num[2];
 
@@ -22,14 +26,12 @@ INT32 max_change_num[2];
 /* 指し手の回転・対称変換フラグ */
 int TRANCE_MOVE;
 
-typedef UINT64 BitBoard;
-
 typedef struct node
 {
 	struct node *child;
 	struct node *next;
-	BitBoard bk;
-	BitBoard wh;
+	UINT64 bk;
+	UINT64 wh;
 	int eval;
 	short move;
 	short depth;
@@ -43,21 +45,21 @@ BooksNode bookTree;
 * ProtoType(private)
 * 
 ****************************************************************************/
-ULONG SearchBooks(BooksNode *book_root, BitBoard bk, BitBoard wh,
-	ULONG color, ULONG change, ULONG turn);
+ULONG SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
+	UINT32 color, UINT32 change, INT32 turn);
 BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
-	UINT64 bk, UINT64 wh, ULONG turn);
-INT32 book_alphabeta(BooksNode *book_header, ULONG depth, LONG alpha, LONG beta,
-	ULONG color, ULONG change, ULONG turn);
+	UINT64 bk, UINT64 wh, INT32 turn);
+INT32 book_alphabeta(BooksNode *book_header, UINT32 depth, INT32 alpha, INT32 beta,
+	UINT32 color, UINT32 change, INT32 turn);
 VOID SortBookNode(BooksNode *best_node[], INT32 e_list[], INT32 cnt);
-INT32 SelectNode(INT32 e_list[], INT32 cnt, ULONG change, ULONG turn);
+INT32 SelectNode(INT32 e_list[], INT32 cnt, UINT32 change, INT32 turn);
 
 /***************************************************************************
 * Name  : GetMoveFromBooks
 * Brief : 定石からCPUの着手を決定する
 * Return: 着手可能位置のビット列
 ****************************************************************************/
-UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, UINT32 turn)
+UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32 turn)
 {
 	UINT64 move;
 	if (turn == 0)
@@ -88,8 +90,8 @@ UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, UINT3
 * Brief : 定石やからCPUの着手を決定する
 * Return: 着手可能位置のビット列
 ****************************************************************************/
-ULONG SearchBooks(BooksNode *book_root, BitBoard bk, BitBoard wh, 
-	ULONG color, ULONG change, ULONG turn)
+ULONG SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh, 
+	UINT32 color, UINT32 change, INT32 turn)
 {
 	INT32 move = -1;
 	ULONG eval = 0;
@@ -104,6 +106,7 @@ ULONG SearchBooks(BooksNode *book_root, BitBoard bk, BitBoard wh,
 	{
 		/* 評価値により次の手を定石から選ぶ */
 		eval = book_alphabeta(book_header, 0, NEGAMIN, NEGAMAX, color, change, turn);
+		g_evaluation = eval;
 
 		/* 指し手の対称回転変換の場合分け */
 		switch (TRANCE_MOVE)
@@ -113,43 +116,43 @@ ULONG SearchBooks(BooksNode *book_root, BitBoard bk, BitBoard wh,
 			break;
 		case 1:
 		{
-			BitBoard t_move = rotate_90(1ULL << book_header->move);
+			UINT64 t_move = rotate_90(1ULL << book_header->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 2:
 		{
-			BitBoard t_move = rotate_180(1ULL << book_header->move);
+			UINT64 t_move = rotate_180(1ULL << book_header->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 3:
 		{
-			BitBoard t_move = rotate_270(1ULL << book_header->move);
+			UINT64 t_move = rotate_270(1ULL << book_header->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 4:
 		{
-			BitBoard t_move = symmetry_x(1ULL << book_header->move);
+			UINT64 t_move = symmetry_x(1ULL << book_header->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 5:
 		{
-			BitBoard t_move = symmetry_y(1ULL << book_header->move);
+			UINT64 t_move = symmetry_y(1ULL << book_header->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 6:
 		{
-			BitBoard t_move = symmetry_b(1ULL << book_header->move);
+			UINT64 t_move = symmetry_b(1ULL << book_header->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 7:
 		{
-			BitBoard t_move = symmetry_w(1ULL << book_header->move);
+			UINT64 t_move = symmetry_w(1ULL << book_header->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
@@ -168,7 +171,7 @@ ULONG SearchBooks(BooksNode *book_root, BitBoard bk, BitBoard wh,
 * Return: 着手可能位置のビット列
 ****************************************************************************/
 BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header, 
-	UINT64 bk, UINT64 wh, ULONG turn)
+	UINT64 bk, UINT64 wh, INT32 turn)
 {
 	/* 葉ノードまで検索して見つからない場合 */
 	if (book_header == NULL)
@@ -254,8 +257,8 @@ BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
 * Brief : 定石の候補手のうち、後々に評価値が最も高くなるものを算出する
 * Return: 定石の評価値
 ****************************************************************************/
-INT32 book_alphabeta(BooksNode *book_header, ULONG depth, LONG alpha, LONG beta, 
-	ULONG color, ULONG change, ULONG turn)
+INT32 book_alphabeta(BooksNode *book_header, UINT32 depth, INT32 alpha, INT32 beta,
+	UINT32 color, UINT32 change, INT32 turn)
 {
 	if (book_header->child == NULL)
 	{
@@ -392,7 +395,7 @@ void SortBookNode(BooksNode *best_node[], int e_list[], int cnt)
 * Brief : 定石の変化度によって候補手を決定する
 * Return: 定石番号
 ****************************************************************************/
-INT32 SelectNode(int e_list[], int cnt, ULONG change, ULONG turn)
+INT32 SelectNode(int e_list[], int cnt, UINT32 change, INT32 turn)
 {
 	int ret;
 
@@ -476,4 +479,167 @@ INT32 SelectNode(int e_list[], int cnt, ULONG change, ULONG turn)
 	}
 
 	return ret;
+}
+
+/* ノードを接続 */
+void Append(BooksNode *parent, BooksNode *node)
+{
+	//node->book_name = name;
+	//node->move = move;
+	node->child = NULL;
+	node->next = NULL;
+	if (parent == NULL)
+	{
+		return;
+	}
+	if (parent->child == NULL)
+	{
+		parent->child = node;
+	}
+	else
+	{
+		BooksNode *last = parent->child;
+		while (last->next != NULL)
+		{
+			last = last->next;
+		}
+		last->next = node;
+	}
+}
+
+BooksNode *SearchChild(BooksNode *head, int move)
+{
+	if (head->child == NULL)
+	{
+		return NULL;
+	}
+	head = head->child;
+	while (head != NULL)
+	{
+		if (head->move == move)
+		{
+			return head;
+		}
+		head = head->next;
+	}
+
+	return NULL;
+}
+
+void StTreeFromLine(BooksNode *head, char *line, int eval)
+{
+	short depth = 0;
+	char move_str[3];
+	UINT64 bk = BK_FIRST;
+	UINT64 wh = WH_FIRST;
+	UINT64 rev;
+	int line_len = strlen(line);
+	BooksNode *head_child;
+
+	while (depth < line_len)
+	{
+		//move_str[0] = 'a' + line[depth] - 'A';
+		move_str[0] = line[depth];
+		move_str[1] = line[depth + 1];
+		move_str[2] = '\0';
+		/* a1⇒0 など 数値に変換 */
+		int move = (move_str[0] - 'a') * 8 + move_str[1] - '1';
+
+		/* すでに登録されているノードがあるか探す */
+		head_child = SearchChild(head, move);
+
+		/* 新規の場合 */
+		if (head_child == NULL)
+		{
+			BooksNode *node = (BooksNode *)malloc(sizeof(BooksNode));
+			node->move = (short)move;
+			if (depth % 4)
+			{
+				rev = GetRev[move](wh, bk);
+				node->bk = bk;
+				node->wh = wh;
+				wh ^= (1ULL << move) | rev;
+				bk ^= rev;
+			}
+			else
+			{
+				rev = GetRev[move](bk, wh);
+				node->bk = bk;
+				node->wh = wh;
+				bk ^= (1ULL << move) | rev;
+				wh ^= rev;
+			}
+			node->eval = eval;
+			node->depth = depth / 2;
+			Append(head, node);
+			head = node;
+		}
+		/* 既出の場合 */
+		else
+		{
+			if (depth % 4)
+			{
+				rev = GetRev[move](wh, bk);
+				wh ^= (1ULL << move) | rev;
+				bk ^= rev;
+			}
+			else
+			{
+				rev = GetRev[move](bk, wh);
+				bk ^= (1ULL << move) | rev;
+				wh ^= rev;
+			}
+			head = head_child;
+		}
+		depth += 2;
+	}
+}
+
+void StructionBookTree(BooksNode *head, char *filename)
+{
+	char *decode_sep, *line_data, *eval_str;
+	char *next_str, *next_line;
+	UCHAR* decodeData;
+	INT32 decodeDataLen;
+
+	decodeData = DecodeBookData(&decodeDataLen, filename);
+	if (decodeDataLen == -1)
+	{
+		return;
+	}
+
+	decode_sep = strtok_s((char *)decodeData, "\n", &next_line);
+	do
+	{
+		/* ファイルから1行づつ読み込んで木構造を作成 */
+		line_data = strtok_s(decode_sep, ";", &next_str);
+		eval_str = strtok_s(next_str, ";", &next_str);
+		StTreeFromLine(head, line_data, (int)(atof(eval_str) * EVAL_ONE_STONE));
+
+	} while ((decode_sep = strtok_s(next_line, "\n", &next_line)) != NULL);
+
+	free(decodeData);
+}
+
+/***************************************************************************
+* Name  : OpenBook
+* Brief : 定石データを開く
+* Return: TRUE/FALSE
+****************************************************************************/
+BOOL OpenBook(char *filename)
+{
+	BooksNode *root = &bookTree;
+	root->bk = BK_FIRST;
+	root->wh = WH_FIRST;
+	root->move = 64;
+	root->eval = 0;
+	root->depth = 0;
+	StructionBookTree(root, filename);
+
+	if (bookTree.child == NULL)
+	{
+		return FALSE;
+	}
+
+	return TRUE;
 }

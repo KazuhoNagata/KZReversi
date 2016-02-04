@@ -6,4 +6,6 @@
 
 #include "stdafx.h"
 
+#pragma once
+
 extern UINT64(*GetRev[64])(UINT64, UINT64);

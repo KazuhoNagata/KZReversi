@@ -35,14 +35,6 @@ UINT64 g_countNode;
 
 HashTable *g_hash = NULL;
 
-/* MPC */
-typedef struct
-{
-	int depth;
-	int offset;
-	int deviation;
-}MPCINFO;
-
 MPCINFO mpcInfo[22];
 double MPC_CUT_VAL;
 
@@ -52,9 +44,9 @@ double MPC_CUT_VAL;
 * ProtoType(private)
 *
 ****************************************************************************/
-UINT64 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color);
-UINT64 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color);
-UINT64 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color);
+INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color);
+INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color);
+INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color);
 
 INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 	INT32 alpha, INT32 beta, UINT32 color, HashTable *hash, UINT32 pass_cnt);
@@ -99,16 +91,18 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	// 中盤かどうかをチェック
 	if (emptyNum > cpuConfig->winLossDepth)
 	{
-		move = SearchMiddle(bk, wh, emptyNum, cpuConfig->color);
+		g_evaluation = SearchMiddle(bk, wh, emptyNum, cpuConfig->color);
 	}
 	else if (emptyNum > cpuConfig->winLossDepth)
 	{
-		move = SearchWinLoss(bk, wh, emptyNum, cpuConfig->color);
+		g_evaluation = SearchWinLoss(bk, wh, emptyNum, cpuConfig->color);
 	}
 	else
 	{
-		move = SearchExact(bk, wh, emptyNum, cpuConfig->color);
+		g_evaluation = SearchExact(bk, wh, emptyNum, cpuConfig->color);
 	}
+
+	move = 1ULL << g_hash->data[0].bestmove;
 
 	return move;
 }
@@ -120,9 +114,9 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 *         wh        : 白のビット列
 *         empty     : 空白マスの数
 *         cpuConfig : CPUの設定
-* Return: 着手可能位置のビット列
+* Return: 着手評価値
 ****************************************************************************/
-UINT64 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
+INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 {
 	INT32 eval;
 
@@ -140,9 +134,9 @@ UINT64 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 *         wh        : 白のビット列
 *         empty     : 空白マスの数
 *         cpuConfig : CPUの設定
-* Return: 着手可能位置のビット列
+* Return: 着手評価値
 ****************************************************************************/
-UINT64 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
+INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 {
 	INT32 eval;
 
@@ -160,9 +154,9 @@ UINT64 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 *         wh        : 白のビット列
 *         empty     : 空白マスの数
 *         cpuConfig : CPUの設定
-* Return: 着手可能位置のビット列
+* Return: 着手評価値
 ****************************************************************************/
-UINT64 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
+INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 {
 	INT32 eval;
 
