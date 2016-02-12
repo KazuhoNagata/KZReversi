@@ -14,7 +14,7 @@
 * Args  : bit １が立っているビットを数える対象のビット列
 * Return: １が立っているビット数
 ****************************************************************************/
-UINT32 CountBit(UINT64 bit)
+INT32 CountBit(UINT64 bit)
 {
 	int l_moves = bit & 0x00000000FFFFFFFF;
 	int h_moves = (bit & 0xFFFFFFFF00000000) >> 32;

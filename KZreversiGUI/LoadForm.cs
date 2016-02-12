@@ -13,6 +13,8 @@ namespace KZreversi
     public partial class LoadForm : Form
     {
 
+        private delegate void FormCloseDedigate(); 
+
         public LoadForm()
         {
             InitializeComponent();
@@ -29,7 +31,12 @@ namespace KZreversi
             // ラッパークラスの初期化とDLLのロード
             ((Form1)this.Owner).cppWrapper = new CppWrapper();
             ((Form1)this.Owner).loadResult = ((Form1)this.Owner).cppWrapper.LibInit();
+            // フォームを閉じる
+            Invoke(new FormCloseDedigate(Close));
+        }
 
+        private void CloseLoadForm() 
+        {
             this.Close();
         }
 

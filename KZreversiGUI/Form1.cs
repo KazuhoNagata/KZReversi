@@ -40,6 +40,8 @@ namespace KZreversi
         private Image bkImg;
         private Image whImg;
 
+        private BoardClass boardclass;
+        private CpuClass cpuClass;
 
         private const int ON_NOTHING = 0;
         private const int ON_GAME = 1;
@@ -52,12 +54,16 @@ namespace KZreversi
         private int m_mode = ON_NOTHING;
 
         private uint nowColor = COLOR_BLACK;
-        private BoardClass boardclass;
+
 
         private ulong playerPos;
         private uint playerColor;
 
+        private bool m_cpuFlag = false;
 
+        private int m_passCount;
+
+        private const ulong MOVE_PASS = 0;
 
         public Form1()
         {
@@ -66,11 +72,11 @@ namespace KZreversi
             comboBox2.SelectedIndex = 3;
 
             boardclass = new BoardClass();
+            cpuClass = new CpuClass();
 
             boardclass.SetColor(COLOR_BLACK);
             boardclass.SetBlack(0x810000000);
             boardclass.SetWhite(0x1008000000);
-
         }
 
         private void 終了ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -102,6 +108,7 @@ namespace KZreversi
             else if (sender == this.button6)
             {
                 m_mode = ON_NOTHING;
+
                 this.panel1.Refresh();
             }
 
@@ -126,11 +133,21 @@ namespace KZreversi
                 this.Close();
             }
 
+            // CPU設定の初期化
+            cpuClass.SetColor(BoardClass.WHITE);
+            cpuClass.SetCasheSize(1<<21);
+            cpuClass.SetSearchDepth(6);
+            cpuClass.SetWinLossDepth(14);
+            cpuClass.SetExactDepth(12);
+            cpuClass.SetBookFlag(true);
+            cpuClass.SetBookVariability(1);
+            cpuClass.SetMpcFlag(true);
+            cpuClass.SetTableFlag(true);
         }
 
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
-            uint pos;
+            int pos;
             ulong temp;
 
             temp = boardclass.GetBlack();
@@ -155,20 +172,59 @@ namespace KZreversi
                 temp ^= (1UL << (int)pos);
             }
 
+            if (m_mode == ON_GAME && CheckGameEnd() == true) 
+            {
+                // ゲーム終了状態へ遷移
+                m_mode = ON_NOTHING;
+                PrintResult();
+                return;
+            }
+
             // ゲーム中の場合かつプレイヤーの手番の場合、着手可能場所を表示
-            if (m_mode == ON_GAME && playerColor == boardclass.GetColor())
+            if (m_mode == ON_GAME && m_cpuFlag == false)
             {
                 Font ft = new Font("MS UI Gothic", 14);
+                Font ft2 = new Font("MS UI Gothic", 8);
+
+                // CPUが最後に打った手を強調する
+                pos = cppWrapper.ConvertMoveBit(m_cpuMoveProperty);
+                if (pos >= 0) 
+                {
+                    e.Graphics.DrawString("●", ft2, Brushes.Red,
+                    (pos / BOARD_SIZE) * 60 + 25,
+                    (pos % BOARD_SIZE) * 60 + 26);
+                }
+
                 temp = cppWrapper.GetEnumMove(boardclass);
                 playerPos = temp;
-
-                while (temp > 0)
+                if (playerPos != 0)
                 {
-                    pos = cppWrapper.ConvertMoveBit(temp);
-                    e.Graphics.DrawString("◆", ft, Brushes.Red,
-                        (pos / BOARD_SIZE) * 60 + 20,
-                        (pos % BOARD_SIZE) * 60 + 20);
-                    temp ^= (1UL << (int)pos);
+                    m_passCount = 0;
+                    while (temp > 0)
+                    {
+                        pos = cppWrapper.ConvertMoveBit(temp);
+                        e.Graphics.DrawString("◆", ft, Brushes.Red,
+                            (pos / BOARD_SIZE) * 60 + 20,
+                            (pos % BOARD_SIZE) * 60 + 20);
+                        temp ^= (1UL << pos);
+                    }
+                }
+                else if (m_passCount == 2) 
+                {
+                    // ゲーム終了状態へ遷移
+                    m_mode = ON_NOTHING;
+                    // CPUがパスでプレイヤーもパス->ゲーム終了
+                    PrintResult();
+                }
+                else
+                {
+                    m_passCount++;
+                    m_cpuFlag = true;
+                    boardclass.SetColor(playerColor ^ 1);
+                    // プレイヤーが打てないのでCPUが再度打つ
+                    MessageBox.Show("あなたはパスです", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // CPU処理開始
+                    m_cpuMoveProperty = cpuClass.StartCpuThread(boardclass);
                 }
 
             }
@@ -186,44 +242,39 @@ namespace KZreversi
 
                     int num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
 
+                    // 着手出来るかチェック
                     if ((playerPos & (1UL << num)) != 0) 
                     {
-                        // 着手したので盤面情報を変更
-                        ulong rev;
-                        ulong bk = boardclass.GetBlack();
-                        ulong wh = boardclass.GetWhite();
+                        // 着手に合わせて盤面情報を更新
+                        boardclass.move(num);
 
-                        if (boardclass.GetColor() == BoardClass.BLACK)
-                        {
-                            rev = cppWrapper.GetBoardChangeInfo(bk, wh, num);
-
-                            boardclass.SetBlack(bk ^ ((1UL << num) | rev));
-                            boardclass.SetWhite(wh ^ rev);
-                        }
-                        else 
-                        {
-                            rev = cppWrapper.GetBoardChangeInfo(wh, bk, num);
-
-                            boardclass.SetBlack(bk ^ rev);
-                            boardclass.SetWhite(wh ^ ((1UL << num) | rev));
-                        }
+                        // 画面再描画
                         panel1.Refresh();
 
-                        // CPUの起動
-                        if (playerColor == BoardClass.BLACK && comboBox2.SelectedIndex != 0)
+                        // 相手番の処理開始
+                        if (playerColor == BoardClass.BLACK)
                         {
-                            // To be implements...
-                            //StartCpuThread(BoardClass.WHITE);
-                        }
-                        else if (playerColor == BoardClass.WHITE && comboBox1.SelectedIndex != 0)
-                        {
-                            // To be implements...
-                            //StartCpuThread(BoardClass.BLACK);
+                            // ボードの状態を相手側の色にする
+                            boardclass.SetColor(BoardClass.WHITE);
+                            // 相手がCPUかをチェック
+                            if (comboBox2.SelectedIndex != 0)
+                            {
+                                // CPU処理開始
+                                m_cpuFlag = true;
+                                m_cpuMoveProperty = cpuClass.StartCpuThread(boardclass);
+                            }
                         }
                         else
                         {
-                            // 両方とも人間だった場合はplayerColorを反転するだけ
-                            boardclass.SetColor(BoardClass.WHITE);
+                            // ボードの状態を相手側の色にする
+                            boardclass.SetColor(BoardClass.BLACK);
+                            // 相手がCPUかをチェック
+                            if (comboBox1.SelectedIndex != 0)
+                            {
+                                // CPU処理開始
+                                m_cpuFlag = true;
+                                m_cpuMoveProperty = cpuClass.StartCpuThread(boardclass);
+                            }
                         }
                     }
 
@@ -235,6 +286,106 @@ namespace KZreversi
                     // 何もしない
                     break;
             }
+        }
+
+        private ulong _m_cpuMove;
+        public ulong m_cpuMoveProperty 
+        {
+            get 
+            { 
+                return _m_cpuMove; 
+            }
+            set 
+            { 
+                _m_cpuMove = value;
+                OnPropertyChanged("CpuMove");
+            } 
+        }
+
+        protected void OnPropertyChanged(string name)
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            if (handler != null)
+            {
+                handler(this, new PropertyChangedEventArgs(name));
+            }
+        }
+
+        public void PropertyChanged(object sender, PropertyChangedEventArgs e) 
+        {
+            if (m_cpuMoveProperty == MOVE_PASS)
+            {
+                // CPUはパス
+                m_passCount++;
+                MessageBox.Show("CPUはパスです", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                // CPUが打てたのでパスカウントをリセット
+                m_passCount = 0;
+                // 盤面情報更新
+                boardclass.move(cppWrapper.ConvertMoveBit(m_cpuMoveProperty));
+            }
+
+            // CPU処理終了
+            m_cpuFlag = false;
+            // ボードの状態をプレイヤー側の色にする
+            boardclass.SetColor(playerColor);
+            // 画面再描画
+            panel1.Refresh();
+        }
+
+        private bool CheckGameEnd()
+        {
+            ulong bk = boardclass.GetBlack();
+            ulong wh = boardclass.GetWhite();
+
+            if (cppWrapper.CountBit(bk | wh) == 64) 
+            {
+                return true;
+            }
+
+            if (cppWrapper.GetEnumMove(boardclass) == 0) 
+            {
+                // 色反転
+                boardclass.SetColor(boardclass.GetColor() ^ 1);
+                if (cppWrapper.GetEnumMove(boardclass) == 0)
+                {
+                    // 色反転は元に戻す
+                    boardclass.SetColor(boardclass.GetColor() ^ 1);
+                    return true;
+                }
+                // 色反転は元に戻す
+                boardclass.SetColor(boardclass.GetColor() ^ 1);
+            }
+
+            return false;
+        } 
+
+        private void PrintResult() 
+        {
+            String msg;
+            String winStr;
+            ulong bk = boardclass.GetBlack();
+            ulong wh = boardclass.GetWhite();
+            int bkCnt = cppWrapper.CountBit(bk);
+            int whCnt = cppWrapper.CountBit(wh);
+
+            if (bkCnt - whCnt > 0)
+            {
+                winStr = "黒の勝ち";
+            }
+            else if (bkCnt - whCnt < 0)
+            {
+                winStr = "白の勝ち";
+            }
+            else
+            {
+                winStr = "引き分け";
+            }
+
+            msg = String.Format("黒{0:D}-白{1:D}で{2}です。", bkCnt, whCnt, winStr);
+            MessageBox.Show(msg, "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
     }

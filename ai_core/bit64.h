@@ -22,4 +22,4 @@ BOOL AlocMobilityFunc(void);
 * Brief : ビット列から１が立っているビットの数を数える
 * Return: １が立っているビット数
 ****************************************************************************/
-UINT32 CountBit(UINT64 bit);
+INT32 CountBit(UINT64 bit);

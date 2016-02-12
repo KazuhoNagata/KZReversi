@@ -11,6 +11,7 @@
 #define KEY_HASH_MACRO(b, w) (UINT32)((b ^ ((w) >> 1)) % g_casheSize)
 
 #define ILLIGAL_ARGUMENT 0x80000001
+#define MOVE_PASS 0x0
 
 typedef struct
 {
@@ -20,7 +21,7 @@ typedef struct
 	UINT32 winLossDepth;		// 勝敗探索を開始する深さ
 	UINT32 exactDepth;			// 石差探索を開始する深さ
 	BOOL   bookFlag;			// 定石を使用するかどうか
-	BOOL   bookVariability;		// 定石の変化度
+	UINT32 bookVariability;	    // 定石の変化度
 	BOOL   mpcFlag;				// MPCを使用するかどうか
 	BOOL   tableFlag;			// 置換表を使用するかどうか
 

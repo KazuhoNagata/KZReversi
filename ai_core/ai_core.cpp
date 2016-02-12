@@ -15,8 +15,6 @@
 
 #define KZ_EXPORT extern "C" __declspec(dllexport)
 
-#define MOVE_NONE 0xFF
-
 BOOL m_BookFlag;
 
 /***************************************************************************
@@ -72,23 +70,33 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 {
 	UINT64 move;
 	UINT32 emptyNum;
+	UINT32 turn;
 
 	emptyNum = CountBit(~(bk | wh));
+	turn = 60 - emptyNum;
 
 	if (cpuConfig->bookFlag)
 	{
 		// 定石データから着手
 		m_BookFlag = TRUE;
 		move = GetMoveFromBooks(bk, wh, cpuConfig->color, 
-			cpuConfig->bookVariability, emptyNum);
+			cpuConfig->bookVariability, turn);
 
 	}
 
 	// 定石に該当しない局面の場合
 	if (move == MOVE_NONE)
 	{
-		// others
-		move = GetMoveFromAI(bk, wh, emptyNum, cpuConfig);
+		if (cpuConfig->color == BLACK)
+		{
+			// 探索開始
+			move = GetMoveFromAI(bk, wh, emptyNum, cpuConfig);
+		}
+		else
+		{
+			// 探索開始
+			move = GetMoveFromAI(wh, bk, emptyNum, cpuConfig);
+		}
 	}
 
 	return move;

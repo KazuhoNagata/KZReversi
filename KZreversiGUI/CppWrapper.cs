@@ -1,4 +1,25 @@
-﻿using System;
+﻿//! @file
+//! C++ DLL アクセス用メソッド群
+//****************************************************************************
+//       (c) COPYRIGHT Kazuho Nagata 2016-  All Rights Reserved.
+//****************************************************************************
+// FILE NAME     : CppWrapper.cs
+// PROGRAM NAME  : KZReversi
+// FUNCTION      : C++ DLL アクセス用
+//
+//****************************************************************************
+//****************************************************************************
+//
+//****************************************************************************
+//┌──┬─────┬──────────────────┬───────┐
+//│履歴│   DATE   │              NOTES                 │     SIGN     │
+//├──┼─────┼──────────────────┼───────┤
+//│    │          │                                    │              │
+//├──┼─────┼──────────────────┼───────┤
+//│ A  │2016/02/01│新規作成                            │Kazuho Nagata │
+//└──┴─────┴──────────────────┴───────┘
+//****************************************************************************
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -20,7 +41,7 @@ namespace KZreversi
         /// <returns></returns>
         public bool LibInit()
         {
-            return CoreAccesor.KZ_LibInit();
+            return NativeMethods.KZ_LibInit();
         }
 
         /// <summary>
@@ -40,13 +61,13 @@ namespace KZreversi
             }
             else 
             {
-                wh = bclass.GetBlack();
                 bk = bclass.GetWhite();
+                wh = bclass.GetBlack();
             }
 
             unsafe
             {
-                moveBit = CoreAccesor.KZ_GetEnumMove(bk, wh, &count);
+                moveBit = NativeMethods.KZ_GetEnumMove(bk, wh, &count);
             }
 
             return moveBit;
@@ -60,7 +81,7 @@ namespace KZreversi
         {
             ulong moveBit;
 
-            moveBit = CoreAccesor.KZ_GetCpuMove(bk, wh, cpuConfig);
+            moveBit = NativeMethods.KZ_GetCpuMove(bk, wh, cpuConfig);
 
             return moveBit;
         }
@@ -69,9 +90,13 @@ namespace KZreversi
         /// 着手を列挙したビット列から小さい番号順に着手番号に変換します
         /// </summary>
         /// <returns></returns>
-        public uint ConvertMoveBit(ulong bit)
+        public int ConvertMoveBit(ulong bit)
         {
-            return CoreAccesor.KZ_CountBit((~bit) & (bit - 1));
+            if (bit == 0) 
+            {
+                return -1;
+            }
+            return NativeMethods.KZ_CountBit((~bit) & (bit - 1));
         }
 
         /// <summary>
@@ -80,19 +105,26 @@ namespace KZreversi
         /// <returns></returns>
         public ulong GetBoardChangeInfo(ulong bk, ulong wh, int move)
         {
-            return CoreAccesor.KZ_GetBoardChangeInfo(bk, wh, move);
+            return NativeMethods.KZ_GetBoardChangeInfo(bk, wh, move);
         }
 
         /// <summary>
         /// 最後にCPUが着手した時の局面評価値を取得します
         /// </summary>
         /// <returns></returns>
-        public int GetLastEvaluation(ulong bk, ulong wh, int move)
+        public int GetLastEvaluation()
         {
-            return CoreAccesor.KZ_GetLastEvaluation();
+            return NativeMethods.KZ_GetLastEvaluation();
         }
 
-
+        /// <summary>
+        /// １が立っているビット数をカウントします
+        /// </summary>
+        /// <returns></returns>
+        public int CountBit(ulong bit)
+        {
+            return NativeMethods.KZ_CountBit(bit);
+        }
     }
 
 
@@ -100,7 +132,7 @@ namespace KZreversi
         /// C++ DLLImportを使ったメソッドを格納しているクラス
         /// 特に理由が無い限りは，本クラスのメンバメソッドを直接呼ばないで下さい．
         /// </summary>
-    static class CoreAccesor
+    static class NativeMethods
     {
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
@@ -116,15 +148,14 @@ namespace KZreversi
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
-        public extern static ulong KZ_GetCpuMove(ulong bk, ulong wh, [Out] CpuConfig cpuConfig);
+        public extern static ulong KZ_GetCpuMove(ulong bk, ulong wh, [In] CpuConfig cpuConfig);
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
-        public extern static uint KZ_CountBit(ulong bit);
+        public extern static int KZ_CountBit(ulong bit);
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
         public extern static int KZ_GetLastEvaluation();
-        
     }
 }

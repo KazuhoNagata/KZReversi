@@ -9,15 +9,16 @@ namespace KZreversi
     [StructLayout(LayoutKind.Sequential)]
     public class CpuConfig
     {
-        uint color;				// CPUの色
-        uint casheSize;			// 置換表のサイズ
-        uint searchDepth;		// 中盤読みの深さ
-        uint winLossDepth;		// 勝敗探索を開始する深さ
-        uint exactDepth;		// 石差探索を開始する深さ
-        bool bookFlag;			// 定石を使用するかどうか
-        bool bookVariability;	// 定石の変化度
-        bool mpcFlag;			// MPCを使用するかどうか
-        bool tableFlag;			// 置換表を使用するかどうか
+        public uint color;				// CPUの色
+        public uint casheSize;			// 置換表のサイズ
+        public uint searchDepth;		// 中盤読みの深さ
+        public uint winLossDepth;		// 勝敗探索を開始する深さ
+        public uint exactDepth;		    // 石差探索を開始する深さ
+        public bool bookFlag;			// 定石を使用するかどうか
+        public uint bookVariability;	// 定石の変化度
+        public bool mpcFlag;			// MPCを使用するかどうか
+        public bool tableFlag;			// 置換表を使用するかどうか
 
+        // マーシャリングここまで
     }
 }

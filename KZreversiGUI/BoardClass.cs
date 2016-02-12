@@ -50,5 +50,44 @@ namespace KZreversi
         {
             return white;
         }
+
+
+        /**
+         * 盤面の着手処理を行います
+         */
+        public bool move(int pos) 
+        {
+            UInt64 rev;
+            CppWrapper cppWrapper = new CppWrapper();
+
+            if (this.color == BoardClass.BLACK)
+            {
+                rev = cppWrapper.GetBoardChangeInfo(black, white, pos);
+
+                if (rev == 0) 
+                {
+                    return false;
+                }
+
+                black ^= ((1UL << pos) | rev);
+                white ^= rev;
+            }
+            else
+            {
+                rev = cppWrapper.GetBoardChangeInfo(white, black, pos);
+
+                if (rev == 0)
+                {
+                    return false;
+                }
+
+                white ^= ((1UL << pos) | rev);
+                black ^= rev;
+            }
+
+            return true;
+
+        }
+
     }
 }

@@ -37,7 +37,8 @@ typedef struct node
 	short depth;
 }BooksNode;
 
-BooksNode bookTree;
+BooksNode g_bookTree;
+BooksNode *g_bestNode;
 
 
 /***************************************************************************
@@ -45,7 +46,7 @@ BooksNode bookTree;
 * ProtoType(private)
 * 
 ****************************************************************************/
-ULONG SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
+INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
 	UINT32 color, UINT32 change, INT32 turn);
 BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
 	UINT64 bk, UINT64 wh, INT32 turn);
@@ -61,12 +62,12 @@ INT32 SelectNode(INT32 e_list[], INT32 cnt, UINT32 change, INT32 turn);
 ****************************************************************************/
 UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32 turn)
 {
-	UINT64 move;
+	INT64 move;
 	if (turn == 0)
 	{
 		// 一手目の着手はどこに着手しても同じなのでランダムとする
 		UINT32 cnt;
-		UINT64 enumMove = CreateMoves(bk, wh, &cnt);
+		INT64 enumMove = CreateMoves(bk, wh, &cnt);
 		int rnd = rand() % cnt;
 
 		while (rnd)
@@ -74,13 +75,18 @@ UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32
 			enumMove &= enumMove - 1;
 			rnd--;
 		}
-		move = CountBit((enumMove & (-(INT64)enumMove)) - 1);
+		move = CountBit((enumMove & (-enumMove)) - 1);
 	}
 	else
 	{
-		move = SearchBooks(bookTree.child, bk, wh, color, change, turn);
+		move = SearchBooks(g_bookTree.child, bk, wh, color, change, turn);
 	}
 	
+	if (move == MOVE_NONE)
+	{
+		return move;
+	}
+
 	return 1ULL << move;
 
 }
@@ -90,10 +96,10 @@ UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32
 * Brief : 定石やからCPUの着手を決定する
 * Return: 着手可能位置のビット列
 ****************************************************************************/
-ULONG SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh, 
+INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh, 
 	UINT32 color, UINT32 change, INT32 turn)
 {
-	INT32 move = -1;
+	INT32 move = MOVE_NONE;
 	ULONG eval = 0;
 	BooksNode *book_header;
 
@@ -106,6 +112,7 @@ ULONG SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
 	{
 		/* 評価値により次の手を定石から選ぶ */
 		eval = book_alphabeta(book_header, 0, NEGAMIN, NEGAMAX, color, change, turn);
+		book_header = g_bestNode;
 		g_evaluation = eval;
 
 		/* 指し手の対称回転変換の場合分け */
@@ -186,7 +193,7 @@ BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
 	{
 		if (turn == 0)
 		{
-			before_book_header = &bookTree;
+			before_book_header = &g_bookTree;
 		}
 		/* 該当の定石を発見(回転・対称も考える) */
 		if (book_header->bk == bk && book_header->wh == wh)
@@ -309,6 +316,7 @@ INT32 book_alphabeta(BooksNode *book_header, UINT32 depth, INT32 alpha, INT32 be
 		SortBookNode(best_node, e_list, i);
 		/* ノード番号を算出 */
 		INT32 node_num = SelectNode(e_list, i, change, turn);
+		g_bestNode = best_node[node_num];
 
 		return e_list[node_num];
 	}
@@ -628,7 +636,7 @@ void StructionBookTree(BooksNode *head, char *filename)
 ****************************************************************************/
 BOOL OpenBook(char *filename)
 {
-	BooksNode *root = &bookTree;
+	BooksNode *root = &g_bookTree;
 	root->bk = BK_FIRST;
 	root->wh = WH_FIRST;
 	root->move = 64;
@@ -636,7 +644,7 @@ BOOL OpenBook(char *filename)
 	root->depth = 0;
 	StructionBookTree(root, filename);
 
-	if (bookTree.child == NULL)
+	if (root->child == NULL)
 	{
 		return FALSE;
 	}

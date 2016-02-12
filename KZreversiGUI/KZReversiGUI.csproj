@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="BoardClass.cs" />
     <Compile Include="CppWrapper.cs" />
+    <Compile Include="CpuClass.cs" />
     <Compile Include="CpuConfig.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
