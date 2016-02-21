@@ -41,7 +41,7 @@ namespace KZreversi
         private Image whImg;
 
         private BoardClass boardclass;
-        private CpuClass cpuClass;
+        private CpuClass[] cpuClass;
 
         private const int ON_NOTHING = 0;
         private const int ON_GAME = 1;
@@ -65,18 +65,29 @@ namespace KZreversi
 
         private const ulong MOVE_PASS = 0;
 
+        private uint[] dcTable = {4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26};
+
+        public delegate void SetMoveProperty(ulong moves);
+
+        public SetMoveProperty delegateObj;
+
         public Form1()
         {
-            InitializeComponent();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 3;
-
             boardclass = new BoardClass();
-            cpuClass = new CpuClass();
+
+            cpuClass = new CpuClass[2];
+            cpuClass[0] = new CpuClass(); // BLACK
+            cpuClass[1] = new CpuClass(); // WHITE
+            
+            delegateObj = new SetMoveProperty(setMove);
 
             boardclass.SetColor(COLOR_BLACK);
             boardclass.SetBlack(0x810000000);
             boardclass.SetWhite(0x1008000000);
+
+            InitializeComponent();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 3;
         }
 
         private void 終了ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -133,16 +144,27 @@ namespace KZreversi
                 this.Close();
             }
 
-            // CPU設定の初期化
-            cpuClass.SetColor(BoardClass.WHITE);
-            cpuClass.SetCasheSize(1<<21);
-            cpuClass.SetSearchDepth(6);
-            cpuClass.SetWinLossDepth(14);
-            cpuClass.SetExactDepth(12);
-            cpuClass.SetBookFlag(true);
-            cpuClass.SetBookVariability(1);
-            cpuClass.SetMpcFlag(true);
-            cpuClass.SetTableFlag(true);
+            // デフォルトのCPU設定
+            for (int i = 0; i < cpuClass.Length; i++)
+            {
+                if (i == 0) 
+                {
+                    cpuClass[i].SetColor(BoardClass.BLACK);
+                }
+                else
+                {
+                    cpuClass[i].SetColor(BoardClass.WHITE);
+                }
+
+                cpuClass[i].SetCasheSize(1 << 21);
+                cpuClass[i].SetSearchDepth(6);
+                cpuClass[i].SetWinLossDepth(14);
+                cpuClass[i].SetExactDepth(12);
+                cpuClass[i].SetBookFlag(true);
+                cpuClass[i].SetBookVariability(1);
+                cpuClass[i].SetMpcFlag(true);
+                cpuClass[i].SetTableFlag(true);
+            }
         }
 
         private void panel1_Paint(object sender, PaintEventArgs e)
@@ -224,7 +246,7 @@ namespace KZreversi
                     // プレイヤーが打てないのでCPUが再度打つ
                     MessageBox.Show("あなたはパスです", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     // CPU処理開始
-                    m_cpuMoveProperty = cpuClass.StartCpuThread(boardclass);
+                    cpuClass[boardclass.GetColor()].StartCpuThread(boardclass, this);
                 }
 
             }
@@ -236,48 +258,51 @@ namespace KZreversi
             switch (m_mode) 
             {
                 case ON_GAME:
-                    Point pos = Cursor.Position;
-                    // ゲーム中の場合は着手処理
-                    pos = panel1.PointToClient(pos);
 
-                    int num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
-
-                    // 着手出来るかチェック
-                    if ((playerPos & (1UL << num)) != 0) 
+                    if (m_cpuFlag == false)
                     {
-                        // 着手に合わせて盤面情報を更新
-                        boardclass.move(num);
+                        Point pos = Cursor.Position;
+                        // ゲーム中の場合は着手処理
+                        pos = panel1.PointToClient(pos);
 
-                        // 画面再描画
-                        panel1.Refresh();
+                        int num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
 
-                        // 相手番の処理開始
-                        if (playerColor == BoardClass.BLACK)
+                        // 着手出来るかチェック
+                        if ((playerPos & (1UL << num)) != 0)
                         {
-                            // ボードの状態を相手側の色にする
-                            boardclass.SetColor(BoardClass.WHITE);
-                            // 相手がCPUかをチェック
-                            if (comboBox2.SelectedIndex != 0)
+                            // 着手に合わせて盤面情報を更新
+                            boardclass.move(num);
+
+                            // 画面再描画
+                            panel1.Refresh();
+
+                            // 相手番の処理開始
+                            if (playerColor == BoardClass.BLACK)
                             {
-                                // CPU処理開始
-                                m_cpuFlag = true;
-                                m_cpuMoveProperty = cpuClass.StartCpuThread(boardclass);
+                                // ボードの状態を相手側の色にする
+                                boardclass.SetColor(BoardClass.WHITE);
+                                // 相手がCPUかをチェック
+                                if (comboBox2.SelectedIndex != 0)
+                                {
+                                    // CPU処理開始
+                                    m_cpuFlag = true;
+                                    cpuClass[BoardClass.WHITE].StartCpuThread(boardclass, this);
+                                }
                             }
-                        }
-                        else
-                        {
-                            // ボードの状態を相手側の色にする
-                            boardclass.SetColor(BoardClass.BLACK);
-                            // 相手がCPUかをチェック
-                            if (comboBox1.SelectedIndex != 0)
+                            else
                             {
-                                // CPU処理開始
-                                m_cpuFlag = true;
-                                m_cpuMoveProperty = cpuClass.StartCpuThread(boardclass);
+                                // ボードの状態を相手側の色にする
+                                boardclass.SetColor(BoardClass.BLACK);
+                                // 相手がCPUかをチェック
+                                if (comboBox1.SelectedIndex != 0)
+                                {
+                                    // CPU処理開始
+                                    m_cpuFlag = true;
+                                    cpuClass[BoardClass.BLACK].StartCpuThread(boardclass, this);
+                                }
                             }
                         }
                     }
-
                     break;
                 case ON_EDIT:
                     // エディットモードの処理
@@ -286,6 +311,11 @@ namespace KZreversi
                     // 何もしない
                     break;
             }
+        }
+
+        private void setMove(ulong move)
+        {
+            m_cpuMoveProperty = move;
         }
 
         private ulong _m_cpuMove;
@@ -386,6 +416,31 @@ namespace KZreversi
 
             msg = String.Format("黒{0:D}-白{1:D}で{2}です。", bkCnt, whCnt, winStr);
             MessageBox.Show(msg, "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void comboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ComboBox cbox = (ComboBox)sender;
+            int index = cbox.SelectedIndex;
+            uint color;
+
+            if (index != 0 && index < 13) 
+            {
+                if (cbox == this.comboBox1)
+                {
+                    cpuClass[BoardClass.BLACK].SetColor(BoardClass.BLACK);
+                    color = BoardClass.BLACK;
+                }
+                else
+                {
+                    cpuClass[BoardClass.WHITE].SetColor(BoardClass.WHITE);
+                    color = BoardClass.WHITE;
+                }
+
+                cpuClass[color].SetSearchDepth((uint)index * 2);
+                cpuClass[color].SetWinLossDepth(dcTable[index - 1]);
+                cpuClass[color].SetExactDepth(dcTable[index - 1] - 2);
+            }
         }
 
     }

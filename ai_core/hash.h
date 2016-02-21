@@ -38,7 +38,7 @@ void HashDelete(HashTable *hash);
 void HashClear(HashTable *hash);
 
 void HashSet(HashTable *hash, INT32 hashValue, const HashInfo *in_info);
-INT32 HashGet(HashTable *hash, INT32 hashValue, UINT64 b_board, UINT64 w_board, HashInfo *out_info);
+INT32 HashGet(HashTable *hash, int hashValue, UINT64 b_board, UINT64 w_board, HashInfo *out_info);
 
 void HashUpdate(
 	HashInfo *hash_info,

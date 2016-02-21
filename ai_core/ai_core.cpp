@@ -75,6 +75,11 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 	emptyNum = CountBit(~(bk | wh));
 	turn = 60 - emptyNum;
 
+	if (emptyNum == 0)
+	{
+		return MOVE_PASS;
+	}
+
 	if (cpuConfig->bookFlag)
 	{
 		// ’èÎƒf[ƒ^‚©‚ç’…Žè

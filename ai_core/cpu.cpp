@@ -88,6 +88,7 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	g_mpcFlag = cpuConfig->mpcFlag;
 	g_tableFlag = cpuConfig->tableFlag;
 
+	HashClear(g_hash);
 	// ¡‚Ì‹Ç–Ê‚Ì’uŠ·•\‚ð‰Šú‰»‚µ‚Ä‚¨‚­
 	int key = KEY_HASH_MACRO(bk, wh);
 	g_hash->data[key].bestmove = 64;
@@ -137,12 +138,10 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	INT32 eval;
 
 	/* Ž–‘OAIÝ’èŠg’£—p(¡‚Í‰½‚à‚È‚¢) */
-	if (g_limitDepth > emptyNum)
+	if (g_limitDepth > (INT32)emptyNum)
 	{
 		g_limitDepth = emptyNum;
 	}
-
-	HashClear(g_hash);
 
 	eval = PvSearchMiddle(bk, wh, g_limitDepth, emptyNum, NEGAMIN, NEGAMAX, color, g_hash, NO_PASS);
 
@@ -163,12 +162,10 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	INT32 eval;
 
 	/* Ž–‘OAIÝ’èŠg’£—p(¡‚Í‰½‚à‚È‚¢) */
-	if (g_limitDepth > emptyNum)
+	if (g_limitDepth > (INT32)emptyNum)
 	{
 		g_limitDepth = emptyNum;
 	}
-
-	HashClear(g_hash);
 
 	eval = PvSearchMiddle(bk, wh, g_limitDepth, emptyNum, NEGAMIN, NEGAMAX, color, g_hash, NO_PASS);
 
@@ -189,12 +186,10 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	INT32 eval;
 
 	/* Ž–‘OAIÝ’èŠg’£—p(¡‚Í‰½‚à‚È‚¢) */
-	if (g_limitDepth > emptyNum)
+	if (g_limitDepth > (INT32)emptyNum)
 	{
 		g_limitDepth = emptyNum;
 	}
-
-	HashClear(g_hash);
 
 	eval = PvSearchMiddle(bk, wh, g_limitDepth, emptyNum, NEGAMIN, NEGAMAX, color, g_hash, NO_PASS);
 
@@ -544,7 +539,7 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 		}
 
 		/* ’uŠ·•\‚É“o˜^ */
-		if (hash->data[key].locked == FALSE && ret != LOCKED)
+		if ((depth == g_limitDepth) || (hash->data[key].locked == FALSE && ret != LOCKED))
 		{
 			HashCreate(&hash_info, bk, wh, max_move, move_cnt,
 				depth, max, alpha, beta, lower, upper);

@@ -68,7 +68,7 @@ void HashSet(HashTable *hash, int hashValue, const HashInfo *in_info)
 	memcpy(&hash->data[hashValue], in_info, sizeof(HashInfo));
 }
 
-int HashGet(HashTable *hash, int hashValue, UINT64 b_board, UINT64 w_board, HashInfo *out_info)
+INT32 HashGet(HashTable *hash, int hashValue, UINT64 b_board, UINT64 w_board, HashInfo *out_info)
 {
 	if (hash == NULL){
 		return FALSE;
@@ -81,10 +81,10 @@ int HashGet(HashTable *hash, int hashValue, UINT64 b_board, UINT64 w_board, Hash
 		return TRUE;
 	}
 	else if (hash->data[hashValue].bestLocked == LOCKED){
-		return 2;
+		return LOCKED;
 	}
 	else if (hash->data[hashValue].bestLocked == PREPARE_LOCKED){
-		return 3;
+		return PREPARE_LOCKED;
 	}
 	return FALSE;
 }
