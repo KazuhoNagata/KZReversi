@@ -256,14 +256,15 @@ UINT32 MoveOrderingMiddle(INT8 *pos_list, UINT64 b_board, UINT64 w_board,
 	if (depth < 4 && g_limitDepth >= 6){
 		do{
 			pos = CountBit((moves & (-(INT64)moves)) - 1);
+
 			/* 反転データ取得 */
 			rev = GetRev[pos](b_board, w_board);
 			move_b = b_board ^ ((1ULL << pos) | rev);
 			move_w = w_board^rev;
 			InitIndexBoard(move_w, move_b);
 
-			score = OrderingAlphaBeta(move_w, move_b, 5 - depth, empty, - NEGAMAX, -NEGAMIN,
-				color ^ 1, 0);
+			score = OrderingAlphaBeta(move_w, move_b, 5 - depth, -NEGAMAX, -NEGAMIN,
+				color ^ 1, 60 - empty, 0);
 			score_list[cnt] = score;
 			pos_list[cnt] = (char)pos;
 			rev_list[cnt] = rev;
@@ -274,6 +275,7 @@ UINT32 MoveOrderingMiddle(INT8 *pos_list, UINT64 b_board, UINT64 w_board,
 	else if (depth == 4){
 		do{
 			pos = CountBit((moves & (-(INT64)moves)) - 1);
+
 			/* 反転データ取得 */
 			rev = GetRev[pos](b_board, w_board);
 
@@ -294,6 +296,7 @@ UINT32 MoveOrderingMiddle(INT8 *pos_list, UINT64 b_board, UINT64 w_board,
 		do{
 			score = 0;
 			pos = CountBit((moves & (-(INT64)moves)) - 1);
+
 			/* 反転データ取得 */
 			rev = GetRev[pos](b_board, w_board);
 
@@ -326,6 +329,7 @@ UINT32 MoveOrderingMiddle(INT8 *pos_list, UINT64 b_board, UINT64 w_board,
 					score -= 4096;
 				}
 			}
+
 			/* 位置得点 */
 			score -= posEval[pos] << 2;
 			score += CountBit(rev) << 4;
@@ -402,7 +406,7 @@ char MoveOrderingEnd(MOVELIST *pos_list, UINT64 b_board, UINT64 w_board, UINT64 
 	int score_list[36];
 
 	do{
-		score = 0;
+		score;
 		pos = CountBit((moves & (-(INT64)moves)) - 1);
 		/* 反転データ取得 */
 		rev = GetRev[pos](b_board, w_board);

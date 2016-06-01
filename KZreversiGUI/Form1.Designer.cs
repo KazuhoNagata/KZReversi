@@ -182,13 +182,13 @@
             this.ファイルToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.終了ToolStripMenuItem});
             this.ファイルToolStripMenuItem.Name = "ファイルToolStripMenuItem";
-            this.ファイルToolStripMenuItem.Size = new System.Drawing.Size(51, 20);
+            this.ファイルToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
             this.ファイルToolStripMenuItem.Text = "ファイル";
             // 
             // 終了ToolStripMenuItem
             // 
             this.終了ToolStripMenuItem.Name = "終了ToolStripMenuItem";
-            this.終了ToolStripMenuItem.Size = new System.Drawing.Size(94, 22);
+            this.終了ToolStripMenuItem.Size = new System.Drawing.Size(98, 22);
             this.終了ToolStripMenuItem.Text = "終了";
             this.終了ToolStripMenuItem.Click += new System.EventHandler(this.終了ToolStripMenuItem_Click);
             // 
@@ -201,7 +201,7 @@
             this.手進むToolStripMenuItem,
             this.手番変更ToolStripMenuItem});
             this.編集ToolStripMenuItem.Name = "編集ToolStripMenuItem";
-            this.編集ToolStripMenuItem.Size = new System.Drawing.Size(47, 20);
+            this.編集ToolStripMenuItem.Size = new System.Drawing.Size(45, 20);
             this.編集ToolStripMenuItem.Text = "ゲーム";
             // 
             // ゲーム開始ToolStripMenuItem
@@ -211,49 +211,50 @@
             this.黒から始めるToolStripMenuItem,
             this.白から始めるToolStripMenuItem});
             this.ゲーム開始ToolStripMenuItem.Name = "ゲーム開始ToolStripMenuItem";
-            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.ゲーム開始ToolStripMenuItem.Text = "ゲーム開始";
             // 
             // 新規ゲームToolStripMenuItem
             // 
             this.新規ゲームToolStripMenuItem.Name = "新規ゲームToolStripMenuItem";
-            this.新規ゲームToolStripMenuItem.Size = new System.Drawing.Size(131, 22);
+            this.新規ゲームToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.新規ゲームToolStripMenuItem.Text = "新規ゲーム";
+            this.新規ゲームToolStripMenuItem.Click += new System.EventHandler(this.新規ゲームToolStripMenuItem_Click);
             // 
             // 黒から始めるToolStripMenuItem
             // 
             this.黒から始めるToolStripMenuItem.Name = "黒から始めるToolStripMenuItem";
-            this.黒から始めるToolStripMenuItem.Size = new System.Drawing.Size(131, 22);
+            this.黒から始めるToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.黒から始めるToolStripMenuItem.Text = "黒から始める";
             // 
             // 白から始めるToolStripMenuItem
             // 
             this.白から始めるToolStripMenuItem.Name = "白から始めるToolStripMenuItem";
-            this.白から始めるToolStripMenuItem.Size = new System.Drawing.Size(131, 22);
+            this.白から始めるToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.白から始めるToolStripMenuItem.Text = "白から始める";
             // 
             // 中断ToolStripMenuItem
             // 
             this.中断ToolStripMenuItem.Name = "中断ToolStripMenuItem";
-            this.中断ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.中断ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.中断ToolStripMenuItem.Text = "中断";
             // 
             // 手戻すToolStripMenuItem
             // 
             this.手戻すToolStripMenuItem.Name = "手戻すToolStripMenuItem";
-            this.手戻すToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.手戻すToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.手戻すToolStripMenuItem.Text = "１手戻す";
             // 
             // 手進むToolStripMenuItem
             // 
             this.手進むToolStripMenuItem.Name = "手進むToolStripMenuItem";
-            this.手進むToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.手進むToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.手進むToolStripMenuItem.Text = "１手進む";
             // 
             // 手番変更ToolStripMenuItem
             // 
             this.手番変更ToolStripMenuItem.Name = "手番変更ToolStripMenuItem";
-            this.手番変更ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.手番変更ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.手番変更ToolStripMenuItem.Text = "手番変更";
             // 
             // 盤面操作ToolStripMenuItem
@@ -263,19 +264,19 @@
             this.盤面編集ToolStripMenuItem,
             this.盤面の回転と対照変換ToolStripMenuItem});
             this.盤面操作ToolStripMenuItem.Name = "盤面操作ToolStripMenuItem";
-            this.盤面操作ToolStripMenuItem.Size = new System.Drawing.Size(65, 20);
+            this.盤面操作ToolStripMenuItem.Size = new System.Drawing.Size(67, 20);
             this.盤面操作ToolStripMenuItem.Text = "盤面操作";
             // 
             // 盤面初期化ToolStripMenuItem
             // 
             this.盤面初期化ToolStripMenuItem.Name = "盤面初期化ToolStripMenuItem";
-            this.盤面初期化ToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
+            this.盤面初期化ToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
             this.盤面初期化ToolStripMenuItem.Text = "盤面初期化";
             // 
             // 盤面編集ToolStripMenuItem
             // 
             this.盤面編集ToolStripMenuItem.Name = "盤面編集ToolStripMenuItem";
-            this.盤面編集ToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
+            this.盤面編集ToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
             this.盤面編集ToolStripMenuItem.Text = "盤面編集";
             // 
             // 盤面の回転と対照変換ToolStripMenuItem
@@ -289,49 +290,49 @@
             this.ブラックライン対称ToolStripMenuItem,
             this.ホワイトライン対照変換ToolStripMenuItem});
             this.盤面の回転と対照変換ToolStripMenuItem.Name = "盤面の回転と対照変換ToolStripMenuItem";
-            this.盤面の回転と対照変換ToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
+            this.盤面の回転と対照変換ToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
             this.盤面の回転と対照変換ToolStripMenuItem.Text = "盤面の回転と対称変換";
             // 
             // 度回転ToolStripMenuItem
             // 
             this.度回転ToolStripMenuItem.Name = "度回転ToolStripMenuItem";
-            this.度回転ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.度回転ToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
             this.度回転ToolStripMenuItem.Text = "90度回転";
             // 
             // 度回転ToolStripMenuItem1
             // 
             this.度回転ToolStripMenuItem1.Name = "度回転ToolStripMenuItem1";
-            this.度回転ToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.度回転ToolStripMenuItem1.Size = new System.Drawing.Size(184, 22);
             this.度回転ToolStripMenuItem1.Text = "180度回転";
             // 
             // 度回転ToolStripMenuItem2
             // 
             this.度回転ToolStripMenuItem2.Name = "度回転ToolStripMenuItem2";
-            this.度回転ToolStripMenuItem2.Size = new System.Drawing.Size(180, 22);
+            this.度回転ToolStripMenuItem2.Size = new System.Drawing.Size(184, 22);
             this.度回転ToolStripMenuItem2.Text = "270度回転";
             // 
             // 度回転ToolStripMenuItem3
             // 
             this.度回転ToolStripMenuItem3.Name = "度回転ToolStripMenuItem3";
-            this.度回転ToolStripMenuItem3.Size = new System.Drawing.Size(180, 22);
+            this.度回転ToolStripMenuItem3.Size = new System.Drawing.Size(184, 22);
             this.度回転ToolStripMenuItem3.Text = "X軸対称変換";
             // 
             // ｙ軸対称ToolStripMenuItem
             // 
             this.ｙ軸対称ToolStripMenuItem.Name = "ｙ軸対称ToolStripMenuItem";
-            this.ｙ軸対称ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ｙ軸対称ToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
             this.ｙ軸対称ToolStripMenuItem.Text = "Y軸対称変換";
             // 
             // ブラックライン対称ToolStripMenuItem
             // 
             this.ブラックライン対称ToolStripMenuItem.Name = "ブラックライン対称ToolStripMenuItem";
-            this.ブラックライン対称ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ブラックライン対称ToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
             this.ブラックライン対称ToolStripMenuItem.Text = "ブラックライン対称変換";
             // 
             // ホワイトライン対照変換ToolStripMenuItem
             // 
             this.ホワイトライン対照変換ToolStripMenuItem.Name = "ホワイトライン対照変換ToolStripMenuItem";
-            this.ホワイトライン対照変換ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ホワイトライン対照変換ToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
             this.ホワイトライン対照変換ToolStripMenuItem.Text = "ホワイトライン対称変換";
             // 
             // 機能ToolStripMenuItem
@@ -342,7 +343,7 @@
             this.aI設定ToolStripMenuItem,
             this.キャッシュサイズToolStripMenuItem});
             this.機能ToolStripMenuItem.Name = "機能ToolStripMenuItem";
-            this.機能ToolStripMenuItem.Size = new System.Drawing.Size(60, 20);
+            this.機能ToolStripMenuItem.Size = new System.Drawing.Size(62, 20);
             this.機能ToolStripMenuItem.Text = "オプション";
             // 
             // bookを使用ToolStripMenuItem
@@ -350,7 +351,7 @@
             this.bookを使用ToolStripMenuItem.Checked = true;
             this.bookを使用ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.bookを使用ToolStripMenuItem.Name = "bookを使用ToolStripMenuItem";
-            this.bookを使用ToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
+            this.bookを使用ToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
             this.bookを使用ToolStripMenuItem.Text = "bookを使用";
             // 
             // bookの変化度ToolStripMenuItem
@@ -362,13 +363,13 @@
             this.変化大ToolStripMenuItem,
             this.ランダムToolStripMenuItem});
             this.bookの変化度ToolStripMenuItem.Name = "bookの変化度ToolStripMenuItem";
-            this.bookの変化度ToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
+            this.bookの変化度ToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
             this.bookの変化度ToolStripMenuItem.Text = "bookの変化度";
             // 
             // 変化なしToolStripMenuItem
             // 
             this.変化なしToolStripMenuItem.Name = "変化なしToolStripMenuItem";
-            this.変化なしToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.変化なしToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.変化なしToolStripMenuItem.Text = "変化なし";
             // 
             // 変化小ToolStripMenuItem
@@ -376,25 +377,25 @@
             this.変化小ToolStripMenuItem.Checked = true;
             this.変化小ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.変化小ToolStripMenuItem.Name = "変化小ToolStripMenuItem";
-            this.変化小ToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.変化小ToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.変化小ToolStripMenuItem.Text = "変化(小)";
             // 
             // 変化中ToolStripMenuItem
             // 
             this.変化中ToolStripMenuItem.Name = "変化中ToolStripMenuItem";
-            this.変化中ToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.変化中ToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.変化中ToolStripMenuItem.Text = "変化(中)";
             // 
             // 変化大ToolStripMenuItem
             // 
             this.変化大ToolStripMenuItem.Name = "変化大ToolStripMenuItem";
-            this.変化大ToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.変化大ToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.変化大ToolStripMenuItem.Text = "変化(大)";
             // 
             // ランダムToolStripMenuItem
             // 
             this.ランダムToolStripMenuItem.Name = "ランダムToolStripMenuItem";
-            this.ランダムToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.ランダムToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.ランダムToolStripMenuItem.Text = "ランダム";
             // 
             // aI設定ToolStripMenuItem
@@ -406,7 +407,7 @@
             this.置換表を使うToolStripMenuItem,
             this.mPC探索を行うToolStripMenuItem});
             this.aI設定ToolStripMenuItem.Name = "aI設定ToolStripMenuItem";
-            this.aI設定ToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
+            this.aI設定ToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
             this.aI設定ToolStripMenuItem.Text = "AI設定";
             // 
             // 詳細結果の表示ToolStripMenuItem
@@ -414,19 +415,19 @@
             this.詳細結果の表示ToolStripMenuItem.Checked = true;
             this.詳細結果の表示ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.詳細結果の表示ToolStripMenuItem.Name = "詳細結果の表示ToolStripMenuItem";
-            this.詳細結果の表示ToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.詳細結果の表示ToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.詳細結果の表示ToolStripMenuItem.Text = "詳細結果を表示";
             // 
             // bestlineの表示ToolStripMenuItem
             // 
             this.bestlineの表示ToolStripMenuItem.Name = "bestlineの表示ToolStripMenuItem";
-            this.bestlineの表示ToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.bestlineの表示ToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.bestlineの表示ToolStripMenuItem.Text = "PVを表示";
             // 
             // 思考過程を表示ToolStripMenuItem
             // 
             this.思考過程を表示ToolStripMenuItem.Name = "思考過程を表示ToolStripMenuItem";
-            this.思考過程を表示ToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.思考過程を表示ToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.思考過程を表示ToolStripMenuItem.Text = "思考過程を表示";
             // 
             // 置換表を使うToolStripMenuItem
@@ -434,7 +435,7 @@
             this.置換表を使うToolStripMenuItem.Checked = true;
             this.置換表を使うToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.置換表を使うToolStripMenuItem.Name = "置換表を使うToolStripMenuItem";
-            this.置換表を使うToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.置換表を使うToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.置換表を使うToolStripMenuItem.Text = "置換表を使用";
             // 
             // mPC探索を行うToolStripMenuItem
@@ -442,7 +443,7 @@
             this.mPC探索を行うToolStripMenuItem.Checked = true;
             this.mPC探索を行うToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.mPC探索を行うToolStripMenuItem.Name = "mPC探索を行うToolStripMenuItem";
-            this.mPC探索を行うToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.mPC探索を行うToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.mPC探索を行うToolStripMenuItem.Text = "MPCを使用";
             // 
             // キャッシュサイズToolStripMenuItem
@@ -456,43 +457,43 @@
             this.mBToolStripMenuItem5,
             this.mBToolStripMenuItem6});
             this.キャッシュサイズToolStripMenuItem.Name = "キャッシュサイズToolStripMenuItem";
-            this.キャッシュサイズToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
+            this.キャッシュサイズToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
             this.キャッシュサイズToolStripMenuItem.Text = "キャッシュサイズ";
             // 
             // mBToolStripMenuItem
             // 
             this.mBToolStripMenuItem.Name = "mBToolStripMenuItem";
-            this.mBToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
+            this.mBToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem.Text = "4MB";
             // 
             // mBToolStripMenuItem1
             // 
             this.mBToolStripMenuItem1.Name = "mBToolStripMenuItem1";
-            this.mBToolStripMenuItem1.Size = new System.Drawing.Size(105, 22);
+            this.mBToolStripMenuItem1.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem1.Text = "8MB";
             // 
             // mBToolStripMenuItem2
             // 
             this.mBToolStripMenuItem2.Name = "mBToolStripMenuItem2";
-            this.mBToolStripMenuItem2.Size = new System.Drawing.Size(105, 22);
+            this.mBToolStripMenuItem2.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem2.Text = "16MB";
             // 
             // mBToolStripMenuItem3
             // 
             this.mBToolStripMenuItem3.Name = "mBToolStripMenuItem3";
-            this.mBToolStripMenuItem3.Size = new System.Drawing.Size(105, 22);
+            this.mBToolStripMenuItem3.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem3.Text = "32MB";
             // 
             // mBToolStripMenuItem4
             // 
             this.mBToolStripMenuItem4.Name = "mBToolStripMenuItem4";
-            this.mBToolStripMenuItem4.Size = new System.Drawing.Size(105, 22);
+            this.mBToolStripMenuItem4.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem4.Text = "64MB";
             // 
             // mBToolStripMenuItem5
             // 
             this.mBToolStripMenuItem5.Name = "mBToolStripMenuItem5";
-            this.mBToolStripMenuItem5.Size = new System.Drawing.Size(105, 22);
+            this.mBToolStripMenuItem5.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem5.Text = "128MB";
             // 
             // mBToolStripMenuItem6
@@ -500,7 +501,7 @@
             this.mBToolStripMenuItem6.Checked = true;
             this.mBToolStripMenuItem6.CheckState = System.Windows.Forms.CheckState.Checked;
             this.mBToolStripMenuItem6.Name = "mBToolStripMenuItem6";
-            this.mBToolStripMenuItem6.Size = new System.Drawing.Size(105, 22);
+            this.mBToolStripMenuItem6.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem6.Text = "256MB";
             // 
             // ツールToolStripMenuItem
@@ -524,7 +525,7 @@
             this.lEEVL7ToolStripMenuItem,
             this.lEVEL8ToolStripMenuItem});
             this.ヒントToolStripMenuItem.Name = "ヒントToolStripMenuItem";
-            this.ヒントToolStripMenuItem.Size = new System.Drawing.Size(119, 22);
+            this.ヒントToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
             this.ヒントToolStripMenuItem.Text = "ヒント表示";
             // 
             // 表示なしToolStripMenuItem
@@ -532,55 +533,55 @@
             this.表示なしToolStripMenuItem.Checked = true;
             this.表示なしToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.表示なしToolStripMenuItem.Name = "表示なしToolStripMenuItem";
-            this.表示なしToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
+            this.表示なしToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.表示なしToolStripMenuItem.Text = "表示なし";
             // 
             // lEVEL1ToolStripMenuItem
             // 
             this.lEVEL1ToolStripMenuItem.Name = "lEVEL1ToolStripMenuItem";
-            this.lEVEL1ToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
+            this.lEVEL1ToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.lEVEL1ToolStripMenuItem.Text = "LEVEL1";
             // 
             // lEVEL1ToolStripMenuItem1
             // 
             this.lEVEL1ToolStripMenuItem1.Name = "lEVEL1ToolStripMenuItem1";
-            this.lEVEL1ToolStripMenuItem1.Size = new System.Drawing.Size(113, 22);
+            this.lEVEL1ToolStripMenuItem1.Size = new System.Drawing.Size(116, 22);
             this.lEVEL1ToolStripMenuItem1.Text = "LEVEL2";
             // 
             // lEVEL1ToolStripMenuItem2
             // 
             this.lEVEL1ToolStripMenuItem2.Name = "lEVEL1ToolStripMenuItem2";
-            this.lEVEL1ToolStripMenuItem2.Size = new System.Drawing.Size(113, 22);
+            this.lEVEL1ToolStripMenuItem2.Size = new System.Drawing.Size(116, 22);
             this.lEVEL1ToolStripMenuItem2.Text = "LEVEL3";
             // 
             // lEVEL1ToolStripMenuItem3
             // 
             this.lEVEL1ToolStripMenuItem3.Name = "lEVEL1ToolStripMenuItem3";
-            this.lEVEL1ToolStripMenuItem3.Size = new System.Drawing.Size(113, 22);
+            this.lEVEL1ToolStripMenuItem3.Size = new System.Drawing.Size(116, 22);
             this.lEVEL1ToolStripMenuItem3.Text = "LEVEL4";
             // 
             // lEVEL1ToolStripMenuItem4
             // 
             this.lEVEL1ToolStripMenuItem4.Name = "lEVEL1ToolStripMenuItem4";
-            this.lEVEL1ToolStripMenuItem4.Size = new System.Drawing.Size(113, 22);
+            this.lEVEL1ToolStripMenuItem4.Size = new System.Drawing.Size(116, 22);
             this.lEVEL1ToolStripMenuItem4.Text = "LEVEL5";
             // 
             // lEVEL6ToolStripMenuItem
             // 
             this.lEVEL6ToolStripMenuItem.Name = "lEVEL6ToolStripMenuItem";
-            this.lEVEL6ToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
+            this.lEVEL6ToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.lEVEL6ToolStripMenuItem.Text = "LEVEL6";
             // 
             // lEEVL7ToolStripMenuItem
             // 
             this.lEEVL7ToolStripMenuItem.Name = "lEEVL7ToolStripMenuItem";
-            this.lEEVL7ToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
+            this.lEEVL7ToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.lEEVL7ToolStripMenuItem.Text = "LEEVL7";
             // 
             // lEVEL8ToolStripMenuItem
             // 
             this.lEVEL8ToolStripMenuItem.Name = "lEVEL8ToolStripMenuItem";
-            this.lEVEL8ToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
+            this.lEVEL8ToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.lEVEL8ToolStripMenuItem.Text = "LEVEL8";
             // 
             // ヘルプToolStripMenuItem
@@ -588,13 +589,13 @@
             this.ヘルプToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.kZreversiについてToolStripMenuItem});
             this.ヘルプToolStripMenuItem.Name = "ヘルプToolStripMenuItem";
-            this.ヘルプToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
+            this.ヘルプToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.ヘルプToolStripMenuItem.Text = "ヘルプ";
             // 
             // kZreversiについてToolStripMenuItem
             // 
             this.kZreversiについてToolStripMenuItem.Name = "kZreversiについてToolStripMenuItem";
-            this.kZreversiについてToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.kZreversiについてToolStripMenuItem.Size = new System.Drawing.Size(159, 22);
             this.kZreversiについてToolStripMenuItem.Text = "KZreversiについて";
             // 
             // listBox2

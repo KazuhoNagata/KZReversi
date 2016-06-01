@@ -8,7 +8,7 @@
 
 #pragma once
 
-#define KEY_HASH_MACRO(b, w) (UINT32)((b ^ ((w) >> 1)) % g_casheSize)
+#define KEY_HASH_MACRO(b, w) (UINT32)((b ^ ((w) >> 1ULL)) % (g_casheSize - 1))
 
 #define ILLIGAL_ARGUMENT 0x80000001
 #define MOVE_PASS 0x0
@@ -63,3 +63,9 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 ****************************************************************************/
 INT32 OrderingAlphaBeta(UINT64 bk, UINT64 wh, UINT32 depth,
 	INT32 alpha, INT32 beta, UINT32 color, UINT32 turn, UINT32 pass_cnt);
+
+/***************************************************************************
+* Name  : SetAbortFlag
+* Brief : CPUÇÃèàóùÇíÜífÇ∑ÇÈ
+****************************************************************************/
+void SetAbortFlag();

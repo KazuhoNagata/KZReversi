@@ -8,8 +8,8 @@
 
 #pragma once
 
-#define NEGAMIN -1280000
-#define NEGAMAX 1280000
+#define NEGAMIN -2500000
+#define NEGAMAX 2500000
 #define EVAL_ONE_STONE 10000
 
 #define INDEX_NUM 6561

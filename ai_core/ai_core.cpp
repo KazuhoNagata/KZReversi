@@ -68,7 +68,7 @@ KZ_EXPORT UINT64 KZ_GetBoardChangeInfo(UINT64 bk, UINT64 wh, INT32 move)
 ****************************************************************************/
 KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 {
-	UINT64 move;
+	UINT64 move = MOVE_NONE;
 	UINT32 emptyNum;
 	UINT32 turn;
 
@@ -89,6 +89,8 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 
 	}
 
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
 	// 定石に該当しない局面の場合
 	if (move == MOVE_NONE)
 	{
@@ -108,13 +110,23 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 }
 
 /***************************************************************************
-* Name  : KZ_GetCpuMove
+* Name  : KZ_GetLastEvaluation
 * Brief : 直前にCPUの着手に対応する評価値を取得する
-* Return: 着手可能位置のビット列
+* Return: CPUの算出した直近評価値
 ****************************************************************************/
 KZ_EXPORT INT32 KZ_GetLastEvaluation()
 {
 	return g_evaluation;
+}
+
+/***************************************************************************
+* Name  : KZ_SendAbort
+* Brief : AIスレッドに中断命令を送信
+* Return: 着手可能位置のビット列
+****************************************************************************/
+KZ_EXPORT void KZ_SendAbort()
+{
+	SetAbortFlag();
 }
 
 /***************************************************************************

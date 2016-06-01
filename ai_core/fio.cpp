@@ -23,12 +23,7 @@
 
 char g_fileBuffer[8192];
 
-char charSet[] =
-{
-	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
-	'\n', '.', '-', ';'
-};
+char charSet[] = "0123456789abcdefgh\n.-;";
 
 int convertChar2Index(char chr)
 {
@@ -274,6 +269,8 @@ UCHAR *DecodeEvalData(INT32 *decodeDataLen_p, char *filename)
 	TreeNode nodes[43];
 
 	if (fopen_s(&fp, filename, "rb") != 0){
+		free(data);
+		free(decodeData);
 		return NULL;
 	}
 

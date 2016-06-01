@@ -53,6 +53,15 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 INT32 AlphaBetaSearch(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 	INT32 alpha, INT32 beta, UINT32 color, UINT32 pass_cnt);
 
+UINT32 *g_temp = 0;
+
+/***************************************************************************
+* Name  : SetAbortFlag
+* Brief : CPUの処理を中断する
+****************************************************************************/
+void SetAbortFlag(){
+	g_AbortFlag = TRUE;
+}
 
 /***************************************************************************
 * Name  : GetMoveFromAI
@@ -80,7 +89,11 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 		if (g_hash == NULL)
 		{
 			g_hash = HashNew(cpuConfig->casheSize);
-			HashClear(g_hash);
+			g_casheSize = cpuConfig->casheSize;
+		}
+		else if (g_casheSize != cpuConfig->casheSize){
+			HashDelete(g_hash);
+			g_hash = HashNew(cpuConfig->casheSize);
 			g_casheSize = cpuConfig->casheSize;
 		}
 	}
@@ -107,8 +120,11 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	else
 	{
 		g_limitDepth = cpuConfig->searchDepth;
+
+		g_temp = &emptyNum;
 		g_evaluation = SearchMiddle(bk, wh, emptyNum, cpuConfig->color);
 	}
+
 
 	if (g_hash->data[key].bestmove == 64)
 	{
@@ -143,7 +159,11 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		g_limitDepth = emptyNum;
 	}
 
-	eval = PvSearchMiddle(bk, wh, g_limitDepth, emptyNum, NEGAMIN, NEGAMAX, color, g_hash, NO_PASS);
+	// 反復深化深さ優先探索
+	for (int count = 2; count <= g_limitDepth; count+=2){
+
+		eval = PvSearchMiddle(bk, wh, count, emptyNum, NEGAMIN, NEGAMAX, color, g_hash, NO_PASS);
+	}
 
 	return eval;
 }
@@ -214,6 +234,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, 
 	INT32 alpha, INT32 beta, UINT32 color, HashTable *hash, UINT32 pass_cnt)
 {
+
 	/* アボート処理 */
 	if (g_AbortFlag)
 	{
@@ -222,7 +243,7 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 
 	g_countNode++;
 
-	if (depth < 4 && g_limitDepth > 2)
+	if (depth < 5 && g_limitDepth > 4)
 	{
 		// 葉に近い探索
 		return AlphaBetaSearch(bk, wh, depth, 60 - empty, alpha, beta, color, pass_cnt);
@@ -283,33 +304,36 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 	* Multi-Prob-Cut(MPC) フェーズ
 	*
 	*************************************************************/
+#if 1
 	if (depth >= MPC_MIN_DEPTH && depth <= 24)
 	{
-		if (empty >= 36)
+		if ((60 - empty) >= 36)
 		{
-			MPC_CUT_VAL = 1.96;
+			MPC_CUT_VAL = 1.4;
 		}
 		else
 		{
-			MPC_CUT_VAL = 1.4;
+			MPC_CUT_VAL = 1.0;
 		}
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
 		INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
-		INT32 eval = AlphaBetaSearch(bk, wh, mpcInfo_p->depth, empty, value - 1, value, color, pass_cnt);
+		if (value < NEGAMIN + 1) value = NEGAMIN + 1;
+		INT32 eval = AlphaBetaSearch(bk, wh, mpcInfo_p->depth, 60 - empty, value - 1, value, color, pass_cnt);
 		if (eval < value) 
 		{
 			return alpha;
 		}
 
 		value = (INT32)(beta + (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
-		eval = AlphaBetaSearch(bk, wh, mpcInfo_p->depth, empty, value, value + 1, color, pass_cnt);
+		if (value > NEGAMAX - 1) value = NEGAMAX - 1;
+		eval = AlphaBetaSearch(bk, wh, mpcInfo_p->depth, 60 - empty, value, value + 1, color, pass_cnt);
 		if (eval > value) 
 		{
 			return beta;
 		}
 	}
-
+#endif
 	/************************************************************
 	*
 	* ネガアルファ探索フェーズ
@@ -357,11 +381,11 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 			{
 				if (bk == 0)
 				{
-					return -1400064;
+					return -2000064;
 				}
 				if (wh == 0)
 				{
-					return 1400064;
+					return 2000064;
 				}
 
 				UINT32 bkCnt = CountBit(bk);
@@ -369,15 +393,15 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 
 				if (bkCnt > whCnt)
 				{
-					return 1400000 + (bkCnt - whCnt);
+					return 2000000 + (bkCnt - whCnt);
 				}
 				else
 				{
-					return -1400000 + (bkCnt - whCnt);
+					return -2000000 + (bkCnt - whCnt);
 				}
 			}
 
-			max = -PvSearchMiddle(wh, bk, depth, empty, -beta, -alpha, color ^ 1, hash, 1);
+			max = -PvSearchMiddle(wh, bk, depth - 1, empty, -beta, -alpha, color ^ 1, hash, 1);
 			return max;
 		}
 
@@ -408,19 +432,19 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 				if (pv_flag == true)
 				{
 					// PV値を取得できているのでnull-window探索
-					eval = -PvSearchMiddle(wh ^ rev, bk ^ ((1ULL << p) | rev), depth - 1, empty,
+					eval = -PvSearchMiddle(wh ^ rev, bk ^ ((1ULL << p) | rev), depth - 1, empty - 1,
 						-(a_window + 1), -a_window, color ^ 1, hash, 0);
 					if (eval > a_window && eval < beta)  // in fail-soft
 					{
 						// re-search
-						eval = -PvSearchMiddle(wh ^ rev, bk ^ ((1ULL << p) | rev), depth - 1, empty,
+						eval = -PvSearchMiddle(wh ^ rev, bk ^ ((1ULL << p) | rev), depth - 1, empty - 1,
 							-beta, -eval, color ^ 1, hash, 0);
 					}
 				}
 				else
 				{
 					// PV値を取得できていないので通常幅での探索
-					eval = -PvSearchMiddle(wh^rev, bk ^ ((1ULL << p) | rev), depth - 1, empty,
+					eval = -PvSearchMiddle(wh^rev, bk ^ ((1ULL << p) | rev), depth - 1, empty - 1,
 						-beta, -a_window, color ^ 1, hash, 0);
 				}
 
@@ -453,25 +477,25 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 			{
 				if (bk == 0)
 				{
-					return -1400064;
+					return -2000064;
 				}
 				if (wh == 0)
 				{
-					return 1400064;
+					return 2000064;
 				}
 
 				UINT32 bkCnt = CountBit(bk);
 				UINT32 whCnt = CountBit(wh);
 
 				if (bkCnt > whCnt){
-					return 1400000 + (bkCnt - whCnt);
+					return 2000000 + (bkCnt - whCnt);
 				}
 				else{
-					return -1400000 + (bkCnt - whCnt);
+					return -2000000 + (bkCnt - whCnt);
 				}
 			}
 
-			max = -PvSearchMiddle(wh, bk, depth, empty, -beta, -alpha, color ^ 1, hash, 1);
+			max = -PvSearchMiddle(wh, bk, depth - 1, empty, -beta, -alpha, color ^ 1, hash, 1);
 			return max;
 		}
 
@@ -490,7 +514,8 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 		p = pos_list[0];
 		rev = rev_list[0];
 		max_move = p;
-		eval = -PvSearchMiddle(wh^rev, bk ^ ((1ULL << p) | rev), depth - 1, empty,
+
+		eval = -PvSearchMiddle(wh^rev, bk ^ ((1ULL << p) | rev), depth - 1, empty - 1,
 			-beta, -a_window, color ^ 1, hash, 0);
 		if (eval >= beta)
 		{
@@ -509,17 +534,17 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 
 			if (pv_flag == true){
 				// PV値を取得できているのでnull-window探索
-				eval = -PvSearchMiddle(wh ^ rev, bk ^ ((1ULL << p) | rev), depth - 1, empty,
+				eval = -PvSearchMiddle(wh ^ rev, bk ^ ((1ULL << p) | rev), depth - 1, empty - 1,
 					-(a_window + 1), -a_window, color ^ 1, hash, 0);
 				if (eval > a_window && eval < beta){ // in fail-soft
 					// re-search
-					eval = -PvSearchMiddle(wh ^ rev, bk ^ ((1ULL << p) | rev), depth - 1, empty,
+					eval = -PvSearchMiddle(wh ^ rev, bk ^ ((1ULL << p) | rev), depth - 1, empty - 1,
 						-beta, -eval, color ^ 1, hash, 0);
 				}
 			}
 			else {
 				// PV値を取得できていないので通常幅での探索
-				eval = -PvSearchMiddle(wh^rev, bk ^ ((1ULL << p) | rev), depth - 1, empty,
+				eval = -PvSearchMiddle(wh^rev, bk ^ ((1ULL << p) | rev), depth - 1, empty - 1,
 					-beta, -a_window, color ^ 1, hash, 0);
 			}
 
@@ -539,7 +564,7 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 		}
 
 		/* 置換表に登録 */
-		if ((depth == g_limitDepth) || (hash->data[key].locked == FALSE && ret != LOCKED))
+		if ((hash->data[key].locked == FALSE && ret != LOCKED))
 		{
 			HashCreate(&hash_info, bk, wh, max_move, move_cnt,
 				depth, max, alpha, beta, lower, upper);
@@ -571,23 +596,25 @@ INT32 AlphaBetaSearch(UINT64 bk, UINT64 wh, INT32 depth, INT32 turn,
 
 	if (depth >= MPC_MIN_DEPTH) 
 	{
-		if (60 - turn >= 36)
+		if (turn >= 36)
 		{
-			MPC_CUT_VAL = 1.96;
+			MPC_CUT_VAL = 1.4;
 		}
 		else
 		{
-			MPC_CUT_VAL = 1.4;
+			MPC_CUT_VAL = 1.0;
 		}
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
 		INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+		if (value < NEGAMIN + 1) value = NEGAMIN + 1;
 		INT32 eval = AlphaBetaSearch(bk, wh, mpcInfo_p->depth, turn, value - 1, value, color, pass_cnt);
 		if (eval < value) 
 		{
 			return alpha;
 		}
 		value = (INT32)(beta + (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+		if (value < NEGAMAX - 1) value = NEGAMAX - 1;
 		eval = AlphaBetaSearch(bk, wh, mpcInfo_p->depth, turn, value, value + 1, color, pass_cnt);
 		if (eval > value) 
 		{
@@ -609,11 +636,11 @@ INT32 AlphaBetaSearch(UINT64 bk, UINT64 wh, INT32 depth, INT32 turn,
 			/* 勝ち(1)と負け(-1)および引き分け(0)であれば、それ相応の評価値を返す */
 			if (bk == 0)
 			{
-				return -1400064;
+				return -2000064;
 			}
 			else if (wh == 0)
 			{
-				return 1400064;
+				return 2000064;
 			}
 			else 
 			{
@@ -622,15 +649,15 @@ INT32 AlphaBetaSearch(UINT64 bk, UINT64 wh, INT32 depth, INT32 turn,
 
 				if (bkCnt >= whCnt)
 				{
-					return 1400000 + (bkCnt - whCnt);
+					return 2000000 + (bkCnt - whCnt);
 				}
 				else
 				{
-					return -1400000 + (bkCnt - whCnt);
+					return -2000000 + (bkCnt - whCnt);
 				}
 			}
 		}
-		max = -AlphaBetaSearch(wh, bk, depth, turn, -beta, -alpha, color ^ 1, 1);
+		max = -AlphaBetaSearch(wh, bk, depth - 1, turn, -beta, -alpha, color ^ 1, 1);
 
 		return max;
 	}
@@ -694,25 +721,27 @@ INT32 OrderingAlphaBeta(UINT64 bk, UINT64 wh, UINT32 depth,
 	if ((moves = CreateMoves(bk, wh, &move_cnt)) == 0){
 		if (pass_cnt == 1)
 		{
-
 			/* 勝ち(1)と負け(-1)および引き分け(0)であれば、それ相応の評価値を返す */
 			if (bk == 0)
 			{
-				return -1400064;
+				return -2000064;
 			}
 			else if (wh == 0)
 			{
-				return 1400064;
+				return 2000064;
 			}
-			else {
-				INT32 bkcnt = CountBit(bk);
-				INT32 whcnt = CountBit(wh);
+			else
+			{
+				INT32 bkCnt = CountBit(bk);
+				INT32 whCnt = CountBit(wh);
 
-				if (bkcnt > whcnt){
-					return 1400000 + (bkcnt - whcnt);
+				if (bkCnt >= whCnt)
+				{
+					return 2000000 + (bkCnt - whCnt);
 				}
-				else{
-					return -1400000 - (bkcnt - whcnt);
+				else
+				{
+					return -2000000 + (bkCnt - whCnt);
 				}
 			}
 		}

@@ -1138,13 +1138,15 @@ BOOL OpenEvalData(char *filename)
 
 BOOL LoadData()
 {
+	BOOL result;
 	/* 定石データの読み込み */
-	BOOL result = OpenBook("src\\books.bin");
+#if 0
+	result = OpenBook("src\\books.bin");
 	if (result == FALSE)
 	{
 		return result;
 	}
-
+#endif
 	/* 評価テーブルの読み込み */
 	result = OpenEvalData("src\\eval.bin");
 	if (result == FALSE)

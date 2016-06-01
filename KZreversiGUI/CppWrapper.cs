@@ -118,6 +118,15 @@ namespace KZreversi
         }
 
         /// <summary>
+        /// CPUの処理を中断します
+        /// </summary>
+        /// <returns></returns>
+        public int SendAbort()
+        {
+            return NativeMethods.KZ_SendAbort();
+        }
+
+        /// <summary>
         /// １が立っているビット数をカウントします
         /// </summary>
         /// <returns></returns>
@@ -157,5 +166,9 @@ namespace KZreversi
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
         public extern static int KZ_GetLastEvaluation();
+
+        [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
+        [SuppressUnmanagedCodeSecurityAttribute()]
+        public extern static int KZ_SendAbort();
     }
 }
