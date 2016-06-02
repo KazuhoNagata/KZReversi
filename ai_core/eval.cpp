@@ -1140,7 +1140,7 @@ BOOL LoadData()
 {
 	BOOL result;
 	/* ’èÎƒf[ƒ^‚Ì“Ç‚İ‚İ */
-#if 0
+#if 1
 	result = OpenBook("src\\books.bin");
 	if (result == FALSE)
 	{

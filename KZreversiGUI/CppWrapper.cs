@@ -54,7 +54,7 @@ namespace KZreversi
             ulong bk, wh;
             uint count = 0;
 
-            if (bclass.GetColor() == BoardClass.BLACK) 
+            if (bclass.GetNowColor() == BoardClass.BLACK) 
             {
                 bk = bclass.GetBlack();
                 wh = bclass.GetWhite();

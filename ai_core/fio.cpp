@@ -75,7 +75,7 @@ int CreateHuffmanTree(TreeNode *nodes, int nodeNum)
 }
 
 /* C#”Å‚Å‚ÍŽg‚¤Ž–‚ª‚È‚¢ */
-/*
+#if 0
 int writeEncodeData(UCHAR *encodeData, TreeNode *nodes, int root,
 	CodeInfo *codeInfo, UCHAR *data, int dataLen){
 
@@ -174,7 +174,7 @@ int encode(UCHAR *encodeData, CodeInfo *codeInfo, UCHAR *data, int dataLen) {
 
 	return encodeDataLen;
 }
-*/
+#endif
 
 int decode(UCHAR *decodeData, int maxLen, UCHAR *data, int dataLen, TreeNode *nodes, int root)
 {

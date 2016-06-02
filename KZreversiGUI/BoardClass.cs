@@ -20,35 +20,50 @@ namespace KZreversi
         public static uint WHITE = 1;
         public static uint EMPTY = 2;
 
+        private List<int[]> moveList;
+        private List<ulong[]> boardList;
 
-        public void SetColor(uint c)
+        private uint nowColor;
+        private int nowTurn;
+
+        public BoardClass()
         {
-            color = c;
+            moveList = new List<int[]>();
+            boardList = new List<ulong[]>();
         }
 
-        public void SetBlack(ulong b)
+        public void SetBoard(ulong bw, ulong wh)
         {
-            black = b;
+            boardList.Add(new ulong[] { bw, wh });
         }
 
-        public void SetWhite(ulong w)
+        public uint GetNowColor()
         {
-            white = w;
+            return nowColor;
+        }
+
+        public int GetNowTurn()
+        {
+            return nowTurn;
         }
 
         public uint GetColor()
         {
-            return color;
+            return (uint)moveList[nowTurn][0];
+        }
+        public uint GetMove()
+        {
+            return (uint)moveList[nowTurn][1];
         }
 
         public ulong GetBlack()
         {
-            return black;
+            return boardList[nowTurn][0];
         }
 
         public ulong GetWhite()
         {
-            return white;
+            return boardList[nowTurn][1];
         }
 
 
@@ -60,7 +75,10 @@ namespace KZreversi
             UInt64 rev;
             CppWrapper cppWrapper = new CppWrapper();
 
-            if (this.color == BoardClass.BLACK)
+            black = GetBlack();
+            white = GetWhite();
+
+            if (nowColor == BoardClass.BLACK)
             {
                 rev = cppWrapper.GetBoardChangeInfo(black, white, pos);
 
@@ -85,9 +103,64 @@ namespace KZreversi
                 black ^= rev;
             }
 
+            // 着手リスト更新
+            boardList.Add(new ulong[] { black, white });
+            moveList.Add(new int[] { (int)nowColor, pos });
+
+            nowTurn++;
+            nowColor ^= 1;
+
             return true;
 
         }
 
+        public int GetRecentMove()
+        {
+
+            int[] recent = moveList[nowTurn];
+            return recent[1];
+        }
+
+        public void InitBoard(uint color)
+        {
+            nowTurn = 0;
+            nowColor = color;
+            boardList.Clear();
+            this.SetBoard(0x810000000, 0x1008000000);
+            this.moveList.Clear();
+            this.moveList.Add(new int[]{(int)nowColor ^ 1, -1});
+        }
+
+        public bool SetHistory(int index)
+        {
+            if (index < 0 || index > moveList.Count - 1)
+            {
+                return false;
+            }
+
+            nowColor = (uint)moveList[index][0] ^ 1;
+            nowTurn = index;
+
+            return true;
+        }
+
+        public int GetRecentTurn()
+        {
+            return moveList.Count - 1;
+        }
+
+        public void DeleteHistory(int turn)
+        {
+            moveList.RemoveRange(turn + 1, moveList.Count - turn - 1);
+            boardList.RemoveRange(turn + 1, boardList.Count - turn - 1);
+        }
+
+        // プレイヤーパス時に呼ぶ
+        public uint ChangeColor()
+        {
+            nowColor ^= 1;
+
+            return nowColor;
+        }
     }
 }

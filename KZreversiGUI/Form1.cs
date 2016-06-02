@@ -46,6 +46,10 @@ namespace KZreversi
         private const int ON_NOTHING = 0;
         private const int ON_GAME = 1;
         private const int ON_EDIT = 2;
+
+        private const int TURN_HUMAN = 0;
+        private const int TURN_CPU = 1;
+
         private const int BOARD_SIZE = 8;
 
         private const int COLOR_BLACK = 0;
@@ -54,11 +58,10 @@ namespace KZreversi
         private int m_mode = ON_NOTHING;
 
         private uint nowColor = COLOR_BLACK;
+        private Player nowPlayer;
 
-
-        private ulong playerPos;
-        private uint playerColor;
-
+        private Player[] playerArray;
+        
         private bool m_cpuFlag = false;
 
         private int m_passCount;
@@ -71,6 +74,11 @@ namespace KZreversi
 
         public SetMoveProperty delegateObj;
 
+        Font m_ft = new Font("MS UI Gothic", 14);
+        Font m_ft2 = new Font("MS UI Gothic", 8);
+
+        public int m_event;
+
         public Form1()
         {
             boardclass = new BoardClass();
@@ -81,13 +89,21 @@ namespace KZreversi
 
             delegateObj = new SetMoveProperty(setMove);
 
-            boardclass.SetColor(COLOR_BLACK);
-            boardclass.SetBlack(0x810000000);
-            boardclass.SetWhite(0x1008000000);
+            boardclass.InitBoard(COLOR_BLACK);
 
             InitializeComponent();
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = 3;
+
+            // プレイヤー情報を初期化
+            playerArray = new Player[2];
+            playerArray[COLOR_BLACK] = new Player(Player.PLAYER_HUMAN, COLOR_BLACK);
+            playerArray[COLOR_WHITE] = new Player(Player.PLAYER_CPU, COLOR_WHITE);
+
+            // デフォルトプレイヤー
+            nowPlayer = playerArray[COLOR_BLACK];
+            label3.Visible = true;
+            label4.Visible = false;
         }
 
         private void 終了ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -112,9 +128,20 @@ namespace KZreversi
             if (sender == this.button5) // ゲーム開始ボタン
             {
                 m_mode = ON_GAME;
-                playerColor = nowColor;
+                boardclass.DeleteHistory(boardclass.GetNowTurn());
+                nowColor = boardclass.GetNowColor();
 
+                SetPlayerInfo();
                 this.panel1.Refresh();
+
+                ChangePlayer();
+
+                if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+                {
+                    // CPUモードに移行(ハンドラコール)
+                    m_cpuFlagProperty = true;
+                }
+
             }
             else if (sender == this.button6) // 中断ボタン
             {
@@ -131,6 +158,82 @@ namespace KZreversi
                 }
 
                 this.panel1.Refresh();
+            }
+            else if (sender == this.button1) // 最初に戻るボタン
+            {
+                bool ret = boardclass.SetHistory(0);
+                if (ret == true)
+                {
+                    m_mode = ON_NOTHING;
+                    ChangePlayer();
+                    this.panel1.Refresh();
+                }
+            }
+            else if (sender == this.button2) // 最新に進むボタン
+            {
+                bool ret = boardclass.SetHistory(boardclass.GetRecentTurn());
+                if (ret == true)
+                {
+                    m_mode = ON_NOTHING;
+                    ChangePlayer();
+                    this.panel1.Refresh();
+                }
+            }
+            else if (sender == this.button3) // 一手戻るボタン
+            {
+                bool ret = boardclass.SetHistory(boardclass.GetNowTurn() - 1);
+                if (ret == true)
+                {
+                    m_mode = ON_NOTHING;
+                    ChangePlayer();
+                    this.panel1.Refresh();
+                }
+            }
+            else if (sender == this.button4) // 一手進むボタン
+            {
+                bool ret = boardclass.SetHistory(boardclass.GetNowTurn() + 1);
+                if (ret == true)
+                {
+                    m_mode = ON_NOTHING;
+                    ChangePlayer();
+                    this.panel1.Refresh();
+                }
+            }
+        }
+
+        private void ChangePlayer()
+        {
+            nowColor = boardclass.GetNowColor();
+            nowPlayer = playerArray[nowColor];
+            if (nowColor == COLOR_BLACK)
+            {
+                label3.Visible = true;
+                label4.Visible = false;
+            }
+            else
+            {
+                label3.Visible = false;
+                label4.Visible = true;
+            }
+        }
+
+        private void SetPlayerInfo()
+        {
+            if (comboBox1.SelectedIndex == 0)
+            {
+                playerArray[0] = new Player(Player.PLAYER_HUMAN, COLOR_BLACK);
+            }
+            else
+            {
+                playerArray[0] = new Player(Player.PLAYER_CPU, COLOR_BLACK);
+            }
+            if (comboBox2.SelectedIndex == 0)
+            {
+                playerArray[1] = new Player(Player.PLAYER_HUMAN, COLOR_WHITE);
+            }
+            else
+            {
+                playerArray[1] = new Player(Player.PLAYER_CPU, COLOR_WHITE);
             }
 
         }
@@ -182,6 +285,8 @@ namespace KZreversi
             int pos;
             ulong temp;
 
+            nowPlayer = playerArray[nowColor];
+            // 盤面情報から描画
             temp = boardclass.GetBlack();
             while (temp > 0)
             {
@@ -204,61 +309,32 @@ namespace KZreversi
                 temp ^= (1UL << (int)pos);
             }
 
-            if (m_mode == ON_GAME && CheckGameEnd() == true)
+            // 最後に打った手を強調する
+            pos = boardclass.GetRecentMove();
+            if (pos >= 0)
             {
-                // ゲーム終了状態へ遷移
-                m_mode = ON_NOTHING;
-                PrintResult();
-                return;
+                e.Graphics.DrawString("●", m_ft2, Brushes.Orange,
+                (pos / BOARD_SIZE) * 60 + 25,
+                (pos % BOARD_SIZE) * 60 + 26);
             }
 
             // ゲーム中の場合かつプレイヤーの手番の場合、着手可能場所を表示
-            if (m_mode == ON_GAME && m_cpuFlag == false)
+            if (m_mode == ON_GAME && m_cpuFlagProperty == false)
             {
-                Font ft = new Font("MS UI Gothic", 14);
-                Font ft2 = new Font("MS UI Gothic", 8);
-
-                // CPUが最後に打った手を強調する
-                pos = cppWrapper.ConvertMoveBit(m_cpuMoveProperty);
-                if (pos >= 0)
-                {
-                    e.Graphics.DrawString("●", ft2, Brushes.Blue,
-                    (pos / BOARD_SIZE) * 60 + 25,
-                    (pos % BOARD_SIZE) * 60 + 26);
-                }
-
                 temp = cppWrapper.GetEnumMove(boardclass);
-                playerPos = temp;
-                if (playerPos != 0)
+                playerArray[nowColor].moves = temp;
+                if (temp != 0)
                 {
                     m_passCount = 0;
                     while (temp > 0)
                     {
                         pos = cppWrapper.ConvertMoveBit(temp);
-                        e.Graphics.DrawString("◆", ft, Brushes.Red,
+                        e.Graphics.DrawString("◆", m_ft, Brushes.Red,
                             (pos / BOARD_SIZE) * 60 + 20,
                             (pos % BOARD_SIZE) * 60 + 20);
                         temp ^= (1UL << pos);
                     }
                 }
-                else if (m_passCount == 2)
-                {
-                    // ゲーム終了状態へ遷移
-                    m_mode = ON_NOTHING;
-                    // CPUがパスでプレイヤーもパス->ゲーム終了
-                    PrintResult();
-                }
-                else
-                {
-                    m_passCount++;
-                    m_cpuFlag = true;
-                    boardclass.SetColor(playerColor ^ 1);
-                    // プレイヤーが打てないのでCPUが再度打つ
-                    MessageBox.Show("あなたはパスです", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    // CPU処理開始
-                    cpuClass[boardclass.GetColor()].StartCpuThread(boardclass, this);
-                }
-
             }
         }
 
@@ -268,10 +344,12 @@ namespace KZreversi
             {
                 case ON_GAME:
 
-                    if (m_cpuFlag == true)
+                    if (m_cpuFlagProperty == true)
                     {
+                        // CPU処理中のため操作無効
                         break;
                     }
+
                     Point pos = Cursor.Position;
                     // ゲーム中の場合は着手処理
                     pos = panel1.PointToClient(pos);
@@ -279,44 +357,23 @@ namespace KZreversi
                     int num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
 
                     // 着手出来るかチェック
-                    if ((playerPos & (1UL << num)) != 0)
+                    if ((nowPlayer.moves & (1UL << num)) != 0)
                     {
                         // 着手に合わせて盤面情報を更新
                         boardclass.move(num);
+                        // プレイヤー変更
+                        nowColor = boardclass.GetNowColor();
+                        ChangePlayer();
 
+                        if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+                        {
+                            // CPUモードに移行(ハンドラコール)
+                            m_cpuFlagProperty = true;
+                        }
                         // 画面再描画
                         panel1.Refresh();
-
-                        // 相手番の処理開始
-                        if (playerColor == BoardClass.BLACK)
-                        {
-                            // ボードの状態を相手側の色にする
-                            boardclass.SetColor(BoardClass.WHITE);
-                            // 相手がCPUかをチェック
-                            if (comboBox2.SelectedIndex != 0)
-                            {
-                                // CPU処理開始
-                                m_cpuFlag = true;
-                                // 画面再描画
-                                panel1.Refresh();
-                                cpuClass[BoardClass.WHITE].StartCpuThread(boardclass, this);
-                            }
-                        }
-                        else
-                        {
-                            // ボードの状態を相手側の色にする
-                            boardclass.SetColor(BoardClass.BLACK);
-                            // 相手がCPUかをチェック
-                            if (comboBox1.SelectedIndex != 0)
-                            {
-                                // CPU処理開始
-                                m_cpuFlag = true;
-                                // 画面再描画
-                                panel1.Refresh();
-                                cpuClass[BoardClass.BLACK].StartCpuThread(boardclass, this);
-                            }
-                        }
                     }
+
                     break;
                 case ON_EDIT:
                     // エディットモードの処理
@@ -346,21 +403,63 @@ namespace KZreversi
             }
         }
 
+        private bool _m_cpuFlag;
+        public bool m_cpuFlagProperty
+        {
+            get
+            {
+                return _m_cpuFlag;
+            }
+            set
+            {
+                _m_cpuFlag = value;
+                if (value == true)
+                {
+                    OnPropertyChanged("CpuMode");
+                }
+            }
+        }
+
         protected void OnPropertyChanged(string name)
         {
-            PropertyChangedEventHandler handler = PropertyChanged;
+            PropertyChangedEventHandler handler = null;
+
+            if (name == "CpuMove")
+            {
+                handler = PropertyChangedCpuMove;
+            }
+            else if (name == "CpuMode")
+            {
+                handler = PropertyChangedCpuMode;
+            }
+            
             if (handler != null)
             {
                 handler(this, new PropertyChangedEventArgs(name));
             }
+
         }
 
-        public void PropertyChanged(object sender, PropertyChangedEventArgs e)
+        public void PropertyChangedCpuMove(object sender, PropertyChangedEventArgs e)
         {
             if (m_cpuMoveProperty == MOVE_PASS)
             {
                 // CPUはパス
                 m_passCount++;
+
+                // ゲーム終了？
+                if (m_passCount == 2)
+                {
+                    // ゲーム終了
+                    m_mode = ON_NOTHING;
+                    // 結果表示
+                    PrintResult();
+                    // 画面描画
+                    panel1.Refresh();
+                    
+                    return;
+                }
+
                 MessageBox.Show("CPUはパスです", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
@@ -371,39 +470,41 @@ namespace KZreversi
                 boardclass.move(cppWrapper.ConvertMoveBit(m_cpuMoveProperty));
             }
 
-            // CPU処理終了
-            m_cpuFlag = false;
-            // ボードの状態をプレイヤー側の色にする
-            boardclass.SetColor(playerColor);
+            if(cppWrapper.GetEnumMove(boardclass) == 0)
+            {
+                // プレイヤーを再度CPUにする
+                nowColor = boardclass.ChangeColor();
+                MessageBox.Show("あなたはパスです", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                // ゲームスレッドにCPU処理リクエスト送信
+                GameThread gmt = new GameThread();
+                object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
+                gmt.m_recvcmdProperty = args;
+
+            }
+            else
+            {
+                // プレイヤー変更
+                ChangePlayer();
+            }
+
+            m_cpuFlagProperty = false;
             // 画面再描画
             panel1.Refresh();
         }
 
-        private bool CheckGameEnd()
+        public void PropertyChangedCpuMode(object sender, PropertyChangedEventArgs e)
         {
-            ulong bk = boardclass.GetBlack();
-            ulong wh = boardclass.GetWhite();
+            // 画面再描画
+            panel1.Refresh();
 
-            if (cppWrapper.CountBit(bk | wh) == 64)
-            {
-                return true;
-            }
+            // ゲームスレッドにCPU処理リクエスト送信
+            GameThread gmt = new GameThread();
+            object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
+            //MessageBox.Show("ゲームスレッドにCPU処理リクエスト送信", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            gmt.m_recvcmdProperty = args;
 
-            if (cppWrapper.GetEnumMove(boardclass) == 0)
-            {
-                // 色反転
-                boardclass.SetColor(boardclass.GetColor() ^ 1);
-                if (cppWrapper.GetEnumMove(boardclass) == 0)
-                {
-                    // 色反転は元に戻す
-                    boardclass.SetColor(boardclass.GetColor() ^ 1);
-                    return true;
-                }
-                // 色反転は元に戻す
-                boardclass.SetColor(boardclass.GetColor() ^ 1);
-            }
-
-            return false;
+            // 画面再描画
+            panel1.Refresh();
         }
 
         private void PrintResult()
@@ -430,6 +531,9 @@ namespace KZreversi
 
             msg = String.Format("黒{0:D}-白{1:D}で{2}です。", bkCnt, whCnt, winStr);
             MessageBox.Show(msg, "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            m_mode = ON_NOTHING;
+            m_passCount = 0;
         }
 
         private void comboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -459,12 +563,11 @@ namespace KZreversi
 
         private void 新規ゲームToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            boardclass.SetColor(COLOR_BLACK);
-            boardclass.SetBlack(0x810000000);
-            boardclass.SetWhite(0x1008000000);
+            boardclass.InitBoard(COLOR_BLACK);
+            nowColor = boardclass.GetNowColor();
+            SetPlayerInfo();
 
             m_mode = ON_GAME;
-            playerColor = nowColor;
 
             this.panel1.Refresh();
         }

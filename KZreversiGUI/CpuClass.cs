@@ -31,40 +31,12 @@ namespace KZreversi
     public class CpuClass
     {
         private CpuConfig cConfig;
-        private ulong moves;
 
         public CpuClass() 
         {
             cConfig = new CpuConfig();
         }
 
-        public void StartCpuThread(BoardClass boardclass, Form1 context)
-        {
-            object[] args = new object[2];
-
-            args[0] = boardclass;
-            args[1] = context;
-
-            Thread th = new Thread(new ParameterizedThreadStart(CpuFunc));
-            th.Start(args);
-        }
-
-
-        private void CpuFunc(object args) 
-        {
-            object[] argArray = (object[])args;
-            BoardClass boardclass = (BoardClass)argArray[0];
-            object formobj = argArray[1];
-
-            CppWrapper cp = new CppWrapper();
-            ulong bk = boardclass.GetBlack();
-            ulong wh = boardclass.GetWhite();
-            moves = cp.GetCpuMove(bk, wh, cConfig);
-
-            // Form1のプロパティにCPUの着手を設定
-            ((Form1)formobj).Invoke(((Form1)formobj).delegateObj, new object[] { moves });
-
-        }
 
         public uint GetColor()
         {

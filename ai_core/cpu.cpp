@@ -104,7 +104,12 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	HashClear(g_hash);
 	// 今の局面の置換表を初期化しておく
 	int key = KEY_HASH_MACRO(bk, wh);
-	g_hash->data[key].bestmove = 64;
+
+	UINT32 temp;
+	// CPUはパス
+	if (CreateMoves(bk, wh, &temp) == 0){
+		return MOVE_PASS;
+	}
 
 	// 中盤かどうかをチェック
 	if (emptyNum <= cpuConfig->winLossDepth && emptyNum > cpuConfig->exactDepth)
@@ -120,23 +125,13 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	else
 	{
 		g_limitDepth = cpuConfig->searchDepth;
-
-		g_temp = &emptyNum;
 		g_evaluation = SearchMiddle(bk, wh, emptyNum, cpuConfig->color);
 	}
 
 
-	if (g_hash->data[key].bestmove == 64)
-	{
-		// パスだった
-		move = MOVE_PASS;
-	}
-	else{
-		// 置換表から着手を取得
-		move = 1ULL << (g_hash->data[key].bestmove);
-	}
+	// 置換表から着手を取得
+	move = 1ULL << (g_hash->data[key].bestmove);
 	
-
 	return move;
 }
 

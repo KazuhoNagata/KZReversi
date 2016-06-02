@@ -98,16 +98,18 @@
             this.listBox1 = new System.Windows.Forms.ListBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
+            this.button4 = new System.Windows.Forms.Button();
+            this.button3 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
-            this.button3 = new System.Windows.Forms.Button();
-            this.button4 = new System.Windows.Forms.Button();
             this.statusStrip2 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel4 = new System.Windows.Forms.ToolStripStatusLabel();
             this.button5 = new System.Windows.Forms.Button();
             this.button6 = new System.Windows.Forms.Button();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.statusStrip2.SuspendLayout();
@@ -211,50 +213,50 @@
             this.黒から始めるToolStripMenuItem,
             this.白から始めるToolStripMenuItem});
             this.ゲーム開始ToolStripMenuItem.Name = "ゲーム開始ToolStripMenuItem";
-            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.ゲーム開始ToolStripMenuItem.Text = "ゲーム開始";
             // 
             // 新規ゲームToolStripMenuItem
             // 
             this.新規ゲームToolStripMenuItem.Name = "新規ゲームToolStripMenuItem";
-            this.新規ゲームToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.新規ゲームToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
             this.新規ゲームToolStripMenuItem.Text = "新規ゲーム";
             this.新規ゲームToolStripMenuItem.Click += new System.EventHandler(this.新規ゲームToolStripMenuItem_Click);
             // 
             // 黒から始めるToolStripMenuItem
             // 
             this.黒から始めるToolStripMenuItem.Name = "黒から始めるToolStripMenuItem";
-            this.黒から始めるToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.黒から始めるToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
             this.黒から始めるToolStripMenuItem.Text = "黒から始める";
             // 
             // 白から始めるToolStripMenuItem
             // 
             this.白から始めるToolStripMenuItem.Name = "白から始めるToolStripMenuItem";
-            this.白から始めるToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.白から始めるToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
             this.白から始めるToolStripMenuItem.Text = "白から始める";
             // 
             // 中断ToolStripMenuItem
             // 
             this.中断ToolStripMenuItem.Name = "中断ToolStripMenuItem";
-            this.中断ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.中断ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.中断ToolStripMenuItem.Text = "中断";
             // 
             // 手戻すToolStripMenuItem
             // 
             this.手戻すToolStripMenuItem.Name = "手戻すToolStripMenuItem";
-            this.手戻すToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.手戻すToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.手戻すToolStripMenuItem.Text = "１手戻す";
             // 
             // 手進むToolStripMenuItem
             // 
             this.手進むToolStripMenuItem.Name = "手進むToolStripMenuItem";
-            this.手進むToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.手進むToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.手進むToolStripMenuItem.Text = "１手進む";
             // 
             // 手番変更ToolStripMenuItem
             // 
             this.手番変更ToolStripMenuItem.Name = "手番変更ToolStripMenuItem";
-            this.手番変更ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.手番変更ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.手番変更ToolStripMenuItem.Text = "手番変更";
             // 
             // 盤面操作ToolStripMenuItem
@@ -627,7 +629,7 @@
             "Level 12 (24手読み)",
             "WinLoss   (勝敗探索)",
             "Exact       (石差探索)"});
-            this.comboBox1.Location = new System.Drawing.Point(566, 172);
+            this.comboBox1.Location = new System.Drawing.Point(590, 172);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(153, 28);
             this.comboBox1.TabIndex = 5;
@@ -653,7 +655,7 @@
             "Level 12 (24手読み)",
             "WinLoss   (勝敗探索)",
             "Exact       (石差探索)"});
-            this.comboBox2.Location = new System.Drawing.Point(566, 219);
+            this.comboBox2.Location = new System.Drawing.Point(590, 219);
             this.comboBox2.Name = "comboBox2";
             this.comboBox2.Size = new System.Drawing.Size(153, 28);
             this.comboBox2.TabIndex = 5;
@@ -672,7 +674,7 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("MS UI Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.label1.Location = new System.Drawing.Point(520, 175);
+            this.label1.Location = new System.Drawing.Point(544, 178);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(40, 16);
             this.label1.TabIndex = 6;
@@ -682,47 +684,51 @@
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("MS UI Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.label2.Location = new System.Drawing.Point(520, 222);
+            this.label2.Location = new System.Drawing.Point(544, 224);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(40, 16);
             this.label2.TabIndex = 6;
             this.label2.Text = "白番";
             // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(628, 97);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(46, 23);
-            this.button1.TabIndex = 7;
-            this.button1.Text = ">";
-            this.button1.UseVisualStyleBackColor = true;
-            // 
-            // button2
-            // 
-            this.button2.Location = new System.Drawing.Point(573, 97);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(46, 23);
-            this.button2.TabIndex = 7;
-            this.button2.Text = "<";
-            this.button2.UseVisualStyleBackColor = true;
-            // 
-            // button3
-            // 
-            this.button3.Location = new System.Drawing.Point(520, 97);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(46, 23);
-            this.button3.TabIndex = 7;
-            this.button3.Text = "<<";
-            this.button3.UseVisualStyleBackColor = true;
-            // 
             // button4
             // 
-            this.button4.Location = new System.Drawing.Point(680, 97);
+            this.button4.Location = new System.Drawing.Point(628, 97);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(46, 23);
             this.button4.TabIndex = 7;
-            this.button4.Text = ">>";
+            this.button4.Text = ">";
             this.button4.UseVisualStyleBackColor = true;
+            this.button4.Click += new System.EventHandler(this.buttonClick);
+            // 
+            // button3
+            // 
+            this.button3.Location = new System.Drawing.Point(573, 97);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(46, 23);
+            this.button3.TabIndex = 7;
+            this.button3.Text = "<";
+            this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.buttonClick);
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(520, 97);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(46, 23);
+            this.button1.TabIndex = 7;
+            this.button1.Text = "<<";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.buttonClick);
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(680, 97);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(46, 23);
+            this.button2.TabIndex = 7;
+            this.button2.Text = ">>";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.buttonClick);
             // 
             // statusStrip2
             // 
@@ -781,19 +787,41 @@
             this.panel1.Click += new System.EventHandler(this.panel1_Click);
             this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("MS UI Gothic", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.label3.Location = new System.Drawing.Point(517, 178);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(31, 13);
+            this.label3.TabIndex = 11;
+            this.label3.Text = "-->";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("MS UI Gothic", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.label4.Location = new System.Drawing.Point(517, 227);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(31, 13);
+            this.label4.TabIndex = 11;
+            this.label4.Text = "-->";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(799, 574);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.button6);
             this.Controls.Add(this.button5);
             this.Controls.Add(this.statusStrip2);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.button4);
-            this.Controls.Add(this.button1);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.comboBox2);
@@ -881,10 +909,10 @@
         private System.Windows.Forms.ToolStripMenuItem ホワイトライン対照変換ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem lEEVL7ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem lEVEL8ToolStripMenuItem;
+        private System.Windows.Forms.Button button4;
+        private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.Button button4;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel3;
         private System.Windows.Forms.StatusStrip statusStrip2;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel4;
@@ -900,6 +928,8 @@
         private System.Windows.Forms.Button button6;
         private System.Windows.Forms.ImageList imageList1;
         private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label4;
     }
 }
 
