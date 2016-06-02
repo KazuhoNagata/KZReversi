@@ -13,6 +13,8 @@
 #define CHANGE_MIDDLE 2
 #define CHANGE_RANDOM 3
 
+extern BOOL g_book_done;
+
 /***************************************************************************
 * Name  : GetMoveFromBooks
 * Brief : ’èÎ‚â‚©‚çCPU‚Ì’…è‚ğŒˆ’è‚·‚é

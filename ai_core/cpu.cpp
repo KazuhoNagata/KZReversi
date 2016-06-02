@@ -146,7 +146,10 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 ****************************************************************************/
 INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 {
-	INT32 eval;
+	INT32 alpha = NEGAMIN;
+	INT32 beta = NEGAMAX;
+	INT32 eval = 0;
+	INT32 eval_b = 0;
 
 	/* 事前AI設定拡張用(今は何もない) */
 	if (g_limitDepth > (INT32)emptyNum)
@@ -155,9 +158,33 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	}
 
 	// 反復深化深さ優先探索
-	for (int count = 2; count <= g_limitDepth; count+=2){
+	for (int count = 2; count <= g_limitDepth && eval != ABORT; count += 2)
+	{
+		eval_b = eval;
+		eval = PvSearchMiddle(bk, wh, count, emptyNum, alpha, beta, color, g_hash, NO_PASS);
 
-		eval = PvSearchMiddle(bk, wh, count, emptyNum, NEGAMIN, NEGAMAX, color, g_hash, NO_PASS);
+		// 設定した窓より評価値が低いか？
+		if (eval <= alpha)
+		{
+			// 低いならαを下限に再設定して検索
+			eval = PvSearchMiddle(bk, wh, count, emptyNum, NEGAMIN, eval, color, g_hash, NO_PASS);
+		}
+		// 設定した窓より評価値が高いか？
+		if (eval >= beta)
+		{
+			// 高いならβを上限に再設定して検索
+			eval = PvSearchMiddle(bk, wh, count, emptyNum, eval, NEGAMAX, color, g_hash, NO_PASS);
+		}
+
+		// 窓の幅を±8にして検索 (α,β) ---> (eval - 8, eval + 8)
+		alpha = eval - (8 * EVAL_ONE_STONE);
+		beta = eval + (8 * EVAL_ONE_STONE);
+	}
+
+	// 中断されたので直近の確定評価値を返却
+	if (eval == ABORT){
+		g_AbortFlag = FALSE;
+		return eval_b;
 	}
 
 	return eval;
@@ -231,7 +258,7 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 {
 
 	/* アボート処理 */
-	if (g_AbortFlag)
+	if (g_AbortFlag == TRUE)
 	{
 		return ABORT;
 	}

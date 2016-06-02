@@ -43,9 +43,11 @@ namespace KZreversi
         private BoardClass boardclass;
         private CpuClass[] cpuClass;
 
+        private int EVAL_THRESHOLD = 10000;
+
         private const int ON_NOTHING = 0;
         private const int ON_GAME = 1;
-        private const int ON_EDIT = 2;
+        private const int ON_EDIT = 3;
 
         private const int TURN_HUMAN = 0;
         private const int TURN_CPU = 1;
@@ -56,13 +58,12 @@ namespace KZreversi
         private const int COLOR_WHITE = 1;
 
         private int m_mode = ON_NOTHING;
+        private bool m_abort = false;
 
         private uint nowColor = COLOR_BLACK;
         private Player nowPlayer;
 
         private Player[] playerArray;
-        
-        private bool m_cpuFlag = false;
 
         private int m_passCount;
 
@@ -145,19 +146,25 @@ namespace KZreversi
             }
             else if (sender == this.button6) // 中断ボタン
             {
-                if (m_cpuFlag == false)
+                if (m_cpuFlagProperty == false)
                 {
                     m_mode = ON_NOTHING;
+                    this.panel1.Refresh();
                 }
                 else
                 {
                     // CPUスレッドに停止命令送信
-                    CppWrapper cp = new CppWrapper();
-                    cp.SendAbort();
+                    m_abort = true;
                     m_mode = ON_NOTHING;
+                    cppWrapper.SendAbort();
+                    MessageBox.Show(
+                        "AIの処理を中断しました。再開はゲーム開始ボタンを押してください。",
+                        "中断",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                 }
 
-                this.panel1.Refresh();
+               // this.panel1.Refresh();
             }
             else if (sender == this.button1) // 最初に戻るボタン
             {
@@ -313,7 +320,7 @@ namespace KZreversi
             pos = boardclass.GetRecentMove();
             if (pos >= 0)
             {
-                e.Graphics.DrawString("●", m_ft2, Brushes.Orange,
+                e.Graphics.DrawString("●", m_ft2, Brushes.OrangeRed,
                 (pos / BOARD_SIZE) * 60 + 25,
                 (pos % BOARD_SIZE) * 60 + 26);
             }
@@ -424,7 +431,7 @@ namespace KZreversi
         {
             PropertyChangedEventHandler handler = null;
 
-            if (name == "CpuMove")
+            if (name == "CpuMove" && m_mode == ON_GAME)
             {
                 handler = PropertyChangedCpuMove;
             }
@@ -432,7 +439,7 @@ namespace KZreversi
             {
                 handler = PropertyChangedCpuMode;
             }
-            
+
             if (handler != null)
             {
                 handler(this, new PropertyChangedEventArgs(name));
@@ -442,6 +449,9 @@ namespace KZreversi
 
         public void PropertyChangedCpuMove(object sender, PropertyChangedEventArgs e)
         {
+            // CPUの算出した評価値を取得
+            int eval = cppWrapper.GetLastEvaluation();
+
             if (m_cpuMoveProperty == MOVE_PASS)
             {
                 // CPUはパス
@@ -452,15 +462,18 @@ namespace KZreversi
                 {
                     // ゲーム終了
                     m_mode = ON_NOTHING;
+                    m_cpuFlagProperty = false;
+                    m_passCount = 0;
                     // 結果表示
                     PrintResult();
                     // 画面描画
                     panel1.Refresh();
-                    
+
                     return;
                 }
 
-                MessageBox.Show("CPUはパスです", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
@@ -470,13 +483,34 @@ namespace KZreversi
                 boardclass.move(cppWrapper.ConvertMoveBit(m_cpuMoveProperty));
             }
 
-            if(cppWrapper.GetEnumMove(boardclass) == 0)
+            // 評価値の表示
+            toolStripStatusLabel2.Text = ConvertEvaltoString(eval);
+
+            GameThread gmt;
+
+            if (cppWrapper.GetEnumMove(boardclass) == 0)
             {
                 // プレイヤーを再度CPUにする
                 nowColor = boardclass.ChangeColor();
-                MessageBox.Show("あなたはパスです", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                m_passCount++;
+                if (m_passCount == 2)
+                {
+                    // ゲーム終了
+                    m_mode = ON_NOTHING;
+                    m_cpuFlagProperty = false;
+                    m_passCount = 0;
+                    // 結果表示
+                    PrintResult();
+                    // 画面描画
+                    panel1.Refresh();
+
+                    return;
+                }
                 // ゲームスレッドにCPU処理リクエスト送信
-                GameThread gmt = new GameThread();
+                gmt = new GameThread();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
                 gmt.m_recvcmdProperty = args;
 
@@ -490,6 +524,43 @@ namespace KZreversi
             m_cpuFlagProperty = false;
             // 画面再描画
             panel1.Refresh();
+
+            // CPUなら再度ゲームスレッドにリクエスト送信(双方がCPUの場合)
+            if(nowPlayer.playerInfo == Player.PLAYER_CPU)
+            {
+                gmt = new GameThread();
+                object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
+                gmt.m_recvcmdProperty = args;
+            }
+        }
+
+        private string ConvertEvaltoString(int eval)
+        {
+            StringBuilder evalSb = new StringBuilder();
+
+            if (eval >= 0)
+            {
+                evalSb.Append("+");
+            }
+
+            evalSb.Append((eval / (double)EVAL_THRESHOLD).ToString("f3"));
+
+            // CPUが定石から手を算出した場合
+            if (cppWrapper.GetIsUseBook())
+            {
+                evalSb.Append("(book)");
+            }
+
+            // 中断ボタンが押された場合
+            if (m_abort)
+            {
+                evalSb.Append("?(abort)");
+                m_cpuFlagProperty = false;
+                m_abort = false;
+            }
+
+            return evalSb.ToString();
+
         }
 
         public void PropertyChangedCpuMode(object sender, PropertyChangedEventArgs e)
@@ -532,8 +603,6 @@ namespace KZreversi
             msg = String.Format("黒{0:D}-白{1:D}で{2}です。", bkCnt, whCnt, winStr);
             MessageBox.Show(msg, "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            m_mode = ON_NOTHING;
-            m_passCount = 0;
         }
 
         private void comboBox_SelectedIndexChanged(object sender, EventArgs e)

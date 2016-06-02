@@ -94,6 +94,7 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 	// 定石に該当しない局面の場合
 	if (move == MOVE_NONE)
 	{
+		g_book_done = FALSE;
 		if (cpuConfig->color == BLACK)
 		{
 			// 探索開始
@@ -105,18 +106,31 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 			move = GetMoveFromAI(wh, bk, emptyNum, cpuConfig);
 		}
 	}
+	else{
+		g_book_done = TRUE;
+	}
 
 	return move;
 }
 
 /***************************************************************************
 * Name  : KZ_GetLastEvaluation
-* Brief : 直前にCPUの着手に対応する評価値を取得する
+* Brief : 直前のCPUの着手に対応する評価値を取得する
 * Return: CPUの算出した直近評価値
 ****************************************************************************/
 KZ_EXPORT INT32 KZ_GetLastEvaluation()
 {
 	return g_evaluation;
+}
+
+/***************************************************************************
+* Name  : KZ_GetIsUseBook
+* Brief : 直前のCPUの着手が定石手かどうかを取得する
+* Return: CPUの算出した直近評価値
+****************************************************************************/
+KZ_EXPORT BOOL KZ_GetIsUseBook()
+{
+	return g_book_done;
 }
 
 /***************************************************************************

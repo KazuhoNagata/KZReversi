@@ -149,7 +149,6 @@
             this.toolStripStatusLabel2.BorderStyle = System.Windows.Forms.Border3DStyle.SunkenOuter;
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
             this.toolStripStatusLabel2.Size = new System.Drawing.Size(150, 17);
-            this.toolStripStatusLabel2.Text = "+1.465(book)";
             // 
             // toolStripStatusLabel3
             // 

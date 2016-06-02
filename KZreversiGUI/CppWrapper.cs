@@ -118,6 +118,15 @@ namespace KZreversi
         }
 
         /// <summary>
+        /// 直前のCPUの着手が定石手かどうかを取得する
+        /// </summary>
+        /// <returns></returns>
+        public bool GetIsUseBook()
+        {
+            return NativeMethods.KZ_GetIsUseBook();
+        }
+
+        /// <summary>
         /// CPUの処理を中断します
         /// </summary>
         /// <returns></returns>
@@ -166,6 +175,10 @@ namespace KZreversi
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
         public extern static int KZ_GetLastEvaluation();
+
+        [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
+        [SuppressUnmanagedCodeSecurityAttribute()]
+        public extern static bool KZ_GetIsUseBook();
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
