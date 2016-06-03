@@ -118,6 +118,15 @@ namespace KZreversi
         }
 
         /// <summary>
+        /// 探索済みのノード数を取得する
+        /// </summary>
+        /// <returns></returns>
+        public UInt64 GetCountNode()
+        {
+            return NativeMethods.KZ_GetCountNode();
+        }
+
+        /// <summary>
         /// 直前のCPUの着手が定石手かどうかを取得する
         /// </summary>
         /// <returns></returns>
@@ -142,6 +151,11 @@ namespace KZreversi
         public int CountBit(ulong bit)
         {
             return NativeMethods.KZ_CountBit(bit);
+        }
+
+        public void EntryFunction(IntPtr cpuMessageDelegatePtr)
+        {
+            NativeMethods.KZ_EntryFunction(cpuMessageDelegatePtr);
         }
     }
 
@@ -178,10 +192,18 @@ namespace KZreversi
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
+        public extern static UInt64 KZ_GetCountNode();
+
+        [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
+        [SuppressUnmanagedCodeSecurityAttribute()]
         public extern static bool KZ_GetIsUseBook();
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
         public extern static int KZ_SendAbort();
+
+        [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
+        [SuppressUnmanagedCodeSecurityAttribute()]
+        public extern static void KZ_EntryFunction(IntPtr cpuMessageDelegatePtr);
     }
 }

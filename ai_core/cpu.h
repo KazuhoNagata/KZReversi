@@ -27,6 +27,10 @@ typedef struct
 
 }CPUCONFIG;
 
+
+typedef void(__stdcall *SetMessageToGUI)(char *);
+extern SetMessageToGUI g_set_message_funcptr;
+
 /* MPC */
 typedef struct
 {
@@ -35,9 +39,12 @@ typedef struct
 	int deviation;
 }MPCINFO;
 
+extern char g_cordinates_table[64][4];
 extern INT32 g_limitDepth;
 extern UINT64 g_casheSize;
 extern MPCINFO mpcInfo[22];
+extern UINT64 g_countNode;
+
 
 /***************************************************************************
 * Name  : GetMoveFromAI

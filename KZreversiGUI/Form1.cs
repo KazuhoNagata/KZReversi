@@ -24,8 +24,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
@@ -71,14 +73,22 @@ namespace KZreversi
 
         private uint[] dcTable = { 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26 };
 
+        private Stopwatch m_sw;
+
         public delegate void SetMoveProperty(ulong moves);
+        public delegate void SetNodeCountProperty(ulong nodeCount);
+        public delegate void SetCpuMessageProperty(string cpuMsg);
 
         public SetMoveProperty delegateObj;
+        public SetNodeCountProperty nodeCountDelegate;
+        public SetCpuMessageProperty cpuMessageDelegate;
 
         Font m_ft = new Font("MS UI Gothic", 14);
         Font m_ft2 = new Font("MS UI Gothic", 8);
 
         public int m_event;
+
+        public IntPtr cpuMessageDelegatePtr;
 
         public Form1()
         {
@@ -89,6 +99,8 @@ namespace KZreversi
             cpuClass[1] = new CpuClass(); // WHITE
 
             delegateObj = new SetMoveProperty(setMove);
+            nodeCountDelegate = new SetNodeCountProperty(setNodeCount);
+            cpuMessageDelegate = new SetCpuMessageProperty(setCpuMessage);
 
             boardclass.InitBoard(COLOR_BLACK);
 
@@ -105,6 +117,8 @@ namespace KZreversi
             nowPlayer = playerArray[COLOR_BLACK];
             label3.Visible = true;
             label4.Visible = false;
+
+            m_sw = new Stopwatch();
         }
 
         private void 終了ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -114,6 +128,8 @@ namespace KZreversi
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
+            m_ft.Dispose();
+            m_ft2.Dispose();
             // デバッグ作業で煩わしいため一旦コメントアウト
             //if (MessageBox.Show(
             //"終了してもいいですか？", "確認",
@@ -264,6 +280,13 @@ namespace KZreversi
                 this.Close();
             }
 
+            // このdelegateをGC対象外にする
+            GCHandle gcHandle = GCHandle.Alloc(cpuMessageDelegate);
+            // C++側から呼び出せるようにする
+            cpuMessageDelegatePtr = Marshal.GetFunctionPointerForDelegate(cpuMessageDelegate);
+            // C側に関数ポインタを登録
+            cppWrapper.EntryFunction(cpuMessageDelegatePtr);
+
             // デフォルトのCPU設定
             for (int i = 0; i < cpuClass.Length; i++)
             {
@@ -396,6 +419,54 @@ namespace KZreversi
             m_cpuMoveProperty = move;
         }
 
+        private void setNodeCount(ulong nodeCount)
+        {
+            StringBuilder sb = new StringBuilder(128);
+            string temp;
+
+            // 探索済みノード数
+            sb.Append("node:");
+
+            if (nodeCount >= 1000000000)  // Gn
+            {
+                sb.Append((nodeCount / (double)1000000000).ToString("f2"));
+                sb.Append("[Gn]");
+            }
+            else if (nodeCount >= 1000000) // Mn
+            {
+                sb.Append((nodeCount / (double)1000000).ToString("f2"));
+                sb.Append("[Mn]");
+            }
+            else if (nodeCount >= 1000) // Kn
+            {
+                sb.Append((nodeCount / (double)1000).ToString("f2"));
+                sb.Append("[Kn]");
+            }
+            else
+            {
+                sb.Append(nodeCount);
+                sb.Append("[n]");
+            }
+            
+            // 経過時間
+            sb.Append(" time:");
+            sb.Append((m_sw.ElapsedMilliseconds / (double)1000).ToString("f2"));
+
+            // NPS(node per second)
+            sb.Append(" nps:");
+            temp = ((nodeCount / (m_sw.ElapsedMilliseconds / (double)1000)) / 1000).ToString("f0");
+            sb.Append(temp);
+            sb.Append("[Knps]");
+
+            toolStripStatusLabel1.Text = sb.ToString();
+        }
+
+        
+        private void setCpuMessage(string cpuMessage)
+        {
+            toolStripStatusLabel3.Text = cpuMessage;
+        }
+
         private ulong _m_cpuMove;
         public ulong m_cpuMoveProperty
         {
@@ -431,7 +502,7 @@ namespace KZreversi
         {
             PropertyChangedEventHandler handler = null;
 
-            if (name == "CpuMove" && m_mode == ON_GAME)
+            if (name == "CpuMove")
             {
                 handler = PropertyChangedCpuMove;
             }
@@ -513,6 +584,7 @@ namespace KZreversi
                 gmt = new GameThread();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
                 gmt.m_recvcmdProperty = args;
+                m_sw.Restart();
 
             }
             else
@@ -531,6 +603,7 @@ namespace KZreversi
                 gmt = new GameThread();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
                 gmt.m_recvcmdProperty = args;
+                m_sw.Restart();
             }
         }
 
@@ -573,6 +646,7 @@ namespace KZreversi
             object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
             //MessageBox.Show("ゲームスレッドにCPU処理リクエスト送信", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
             gmt.m_recvcmdProperty = args;
+            m_sw.Restart();
 
             // 画面再描画
             panel1.Refresh();
@@ -640,6 +714,7 @@ namespace KZreversi
 
             this.panel1.Refresh();
         }
+
 
     }
 }

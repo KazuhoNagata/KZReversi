@@ -35,6 +35,9 @@ namespace KZreversi
         public const int CMD_CHK = 2;
 
         private object[] _m_recvcmd;
+
+        private bool m_onAi;
+
         public object[] m_recvcmdProperty
         {
             get
@@ -81,6 +84,9 @@ namespace KZreversi
                 Thread th = new Thread(CpuThreadFunc);
                 th.Start(m_recvcmdProperty);
 
+                // ノード数表示用
+                Thread th2 = new Thread(GetNodeCountFunc);
+                th2.Start(m_recvcmdProperty);
             }
             else
             {
@@ -103,12 +109,30 @@ namespace KZreversi
             ulong bk = board.GetBlack();
             ulong wh = board.GetWhite();
 
+            m_onAi = true;
             // AIで着手
             ulong moves = cp.GetCpuMove(bk, wh, cpuConfig);
 
             // Form1のプロパティにCPUの着手を設定
             ((Form1)formobj).Invoke(((Form1)formobj).delegateObj, new object[] { moves });
+            m_onAi = false;
 
+        }
+
+        private void GetNodeCountFunc(object args)
+        {
+            object[] argsarray = (object[])args;
+            CppWrapper cp = new CppWrapper();
+            Form1 formobj = (Form1)argsarray[3];
+
+            ulong nodeCount;
+            while (m_onAi)
+            {
+                nodeCount = cp.GetCountNode();
+                // Form1のプロパティにノード数を設定
+                ((Form1)formobj).Invoke(((Form1)formobj).nodeCountDelegate, new object[] { nodeCount });
+                Thread.Sleep(30);
+            }
         }
 
         private CpuConfig SetCpuConfig(CpuClass cpuClass)

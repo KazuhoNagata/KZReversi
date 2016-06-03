@@ -35,6 +35,15 @@ KZ_EXPORT BOOL KZ_LibInit()
 		result = LoadData();
 	}
 
+	/* pos番号-->指し手文字列変換テーブル */
+	char cordinate[4];
+	/* 指し手の座標表記変換用 */
+	for (int i = 0; i < 64; i++)
+	{
+		sprintf_s(cordinate, "%c%d", i / 8 + 'a', (i % 8) + 1);
+		strcpy_s(g_cordinates_table[i], 4, cordinate);
+	}
+
 	return result;
 }
 
@@ -133,6 +142,17 @@ KZ_EXPORT BOOL KZ_GetIsUseBook()
 	return g_book_done;
 }
 
+
+/***************************************************************************
+* Name  : KZ_GetCountNode
+* Brief : 探索済みのノード数を取得する
+* Return: CPUが探索したノード数
+****************************************************************************/
+KZ_EXPORT UINT64 KZ_GetCountNode()
+{
+	return g_countNode;
+}
+
 /***************************************************************************
 * Name  : KZ_SendAbort
 * Brief : AIスレッドに中断命令を送信
@@ -152,4 +172,14 @@ KZ_EXPORT void KZ_SendAbort()
 KZ_EXPORT UINT32 KZ_CountBit(UINT64 bit)
 {
 	return CountBit(bit);
+}
+
+/***************************************************************************
+* Name  : KZ_EntryFunction
+* Brief : AIのメッセージを設定するデリゲートをC側に渡す
+* Args  : デリゲートのポインタ
+****************************************************************************/
+KZ_EXPORT void KZ_EntryFunction(SetMessageToGUI ptr)
+{
+	g_set_message_funcptr = ptr;
 }

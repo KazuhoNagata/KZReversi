@@ -13,6 +13,8 @@
 #include "eval.h"
 #include "ordering.h"
 
+#include <stdio.h>
+
 #define NO_PASS 0
 #define ABORT 0x80000000
 
@@ -38,6 +40,8 @@ HashTable *g_hash = NULL;
 MPCINFO mpcInfo[22];
 double MPC_CUT_VAL;
 
+char g_cordinates_table[64][4];
+SetMessageToGUI g_set_message_funcptr;
 
 /***************************************************************************
 *
@@ -54,6 +58,36 @@ INT32 AlphaBetaSearch(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 	INT32 alpha, INT32 beta, UINT32 color, UINT32 pass_cnt);
 
 UINT32 *g_temp = 0;
+
+
+void CreateCpuMessage(char *msg, int msglen, int eval, int move, int cnt)
+{
+	if (eval > 2000000)
+	{
+		sprintf_s(msg, msglen, "%s[WIN:%+d](depth = %d)", g_cordinates_table[move], 
+			eval - 2000000, cnt);
+	}
+	else if (eval < -2000000)
+	{
+		sprintf_s(msg, msglen, "%s[LOSS:%d](depth = %d)", g_cordinates_table[move],
+			eval + 2000000, cnt);
+	}
+	else if (eval == 2000000)
+	{
+		sprintf_s(msg, msglen, "%s[DRAW](depth = %d)", g_cordinates_table[move], cnt);
+	}
+	else if (eval >= 0)
+	{
+		sprintf_s(msg, msglen, "%s[%+.3f](depth = %d)", g_cordinates_table[move],
+			eval / (double) EVAL_ONE_STONE, cnt);
+	}
+	else
+	{
+		sprintf_s(msg, msglen, "%s[%.3f](depth = %d)", g_cordinates_table[move],
+			eval / (double)EVAL_ONE_STONE, cnt);
+	}
+}
+
 
 /***************************************************************************
 * Name  : SetAbortFlag
@@ -150,6 +184,10 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	INT32 beta = NEGAMAX;
 	INT32 eval = 0;
 	INT32 eval_b = 0;
+	INT32 limit = g_limitDepth;
+	UINT32 key = KEY_HASH_MACRO(bk, wh);
+	INT32 move;
+	char msg[64];
 
 	/* 事前AI設定拡張用(今は何もない) */
 	if (g_limitDepth > (INT32)emptyNum)
@@ -157,11 +195,20 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		g_limitDepth = emptyNum;
 	}
 
+	// カウントリセット
+	g_countNode = 0;
+
 	// 反復深化深さ優先探索
-	for (int count = 2; count <= g_limitDepth && eval != ABORT; count += 2)
+	for (int count = 2; count <= limit; count += 2)
 	{
 		eval_b = eval;
+		g_limitDepth = count;
 		eval = PvSearchMiddle(bk, wh, count, emptyNum, alpha, beta, color, g_hash, NO_PASS);
+
+		if (eval == ABORT)
+		{
+			break;
+		}
 
 		// 設定した窓より評価値が低いか？
 		if (eval <= alpha)
@@ -170,7 +217,7 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 			eval = PvSearchMiddle(bk, wh, count, emptyNum, NEGAMIN, eval, color, g_hash, NO_PASS);
 		}
 		// 設定した窓より評価値が高いか？
-		if (eval >= beta)
+		else if (eval >= beta)
 		{
 			// 高いならβを上限に再設定して検索
 			eval = PvSearchMiddle(bk, wh, count, emptyNum, eval, NEGAMAX, color, g_hash, NO_PASS);
@@ -179,6 +226,12 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		// 窓の幅を±8にして検索 (α,β) ---> (eval - 8, eval + 8)
 		alpha = eval - (8 * EVAL_ONE_STONE);
 		beta = eval + (8 * EVAL_ONE_STONE);
+
+		// UIにメッセージを送信
+		move = g_hash->data[key].bestmove;
+		CreateCpuMessage(msg, sizeof(msg), eval, move, count);
+		g_set_message_funcptr(msg);
+
 	}
 
 	// 中断されたので直近の確定評価値を返却
@@ -547,6 +600,9 @@ INT32 PvSearchMiddle(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty,
 		{
 			a_window = max(a_window, eval);
 			max = eval;
+			if (eval > alpha) {
+				pv_flag = true;
+			}
 		}
 
 		for (int i = 1; i < move_cnt; i++){
