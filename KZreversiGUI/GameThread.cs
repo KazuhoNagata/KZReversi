@@ -125,9 +125,13 @@ namespace KZreversi
             CppWrapper cp = new CppWrapper();
             Form1 formobj = (Form1)argsarray[3];
 
-            ulong nodeCount;
+            ulong nodeCount = 0;
+            // Form1のプロパティにノード数を設定(初期値)
+            ((Form1)formobj).Invoke(((Form1)formobj).nodeCountDelegate, new object[] { nodeCount });
+
             while (m_onAi)
             {
+                // CPU処理が終了するまで更新する
                 nodeCount = cp.GetCountNode();
                 // Form1のプロパティにノード数を設定
                 ((Form1)formobj).Invoke(((Form1)formobj).nodeCountDelegate, new object[] { nodeCount });

@@ -107,7 +107,6 @@
             this.button5 = new System.Windows.Forms.Button();
             this.button6 = new System.Windows.Forms.Button();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
-            this.panel1 = new System.Windows.Forms.Panel();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
@@ -279,6 +278,7 @@
             this.盤面編集ToolStripMenuItem.Name = "盤面編集ToolStripMenuItem";
             this.盤面編集ToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
             this.盤面編集ToolStripMenuItem.Text = "盤面編集";
+            this.盤面編集ToolStripMenuItem.Click += new System.EventHandler(this.盤面編集ToolStripMenuItem_Click);
             // 
             // 盤面の回転と対照変換ToolStripMenuItem
             // 
@@ -775,17 +775,6 @@
             this.imageList1.Images.SetKeyName(0, "black.png");
             this.imageList1.Images.SetKeyName(1, "white.png");
             // 
-            // panel1
-            // 
-            this.panel1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("panel1.BackgroundImage")));
-            this.panel1.Location = new System.Drawing.Point(18, 37);
-            this.panel1.Margin = new System.Windows.Forms.Padding(0);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(480, 480);
-            this.panel1.TabIndex = 10;
-            this.panel1.Click += new System.EventHandler(this.panel1_Click);
-            this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
-            // 
             // label3
             // 
             this.label3.AutoSize = true;
@@ -813,7 +802,6 @@
             this.ClientSize = new System.Drawing.Size(799, 574);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
-            this.Controls.Add(this.panel1);
             this.Controls.Add(this.button6);
             this.Controls.Add(this.button5);
             this.Controls.Add(this.statusStrip2);
@@ -830,9 +818,10 @@
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.menuStrip1);
             this.DoubleBuffered = true;
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Form1";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "KZReversi";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -926,7 +915,6 @@
         private System.Windows.Forms.Button button5;
         private System.Windows.Forms.Button button6;
         private System.Windows.Forms.ImageList imageList1;
-        private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
     }

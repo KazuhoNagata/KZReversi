@@ -162,5 +162,11 @@ namespace KZreversi
 
             return nowColor;
         }
+
+        public void EditBoard(ulong bk, ulong wh)
+        {
+            boardList[nowTurn][0] = bk;
+            boardList[nowTurn][1] = wh;
+        }
     }
 }

@@ -81,6 +81,11 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 	UINT32 emptyNum;
 	UINT32 turn;
 
+	// カウントリセット(カウントリセットは以降の処理との順番入れ替え×)
+	g_countNode = 0;
+	// CPUメッセージ初期化
+	g_set_message_funcptr("");
+
 	emptyNum = CountBit(~(bk | wh));
 	turn = 60 - emptyNum;
 
@@ -95,10 +100,9 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 		m_BookFlag = TRUE;
 		move = GetMoveFromBooks(bk, wh, cpuConfig->color, 
 			cpuConfig->bookVariability, turn);
-
 	}
 
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	// 定石に該当しない局面の場合
 	if (move == MOVE_NONE)

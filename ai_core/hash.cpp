@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include "hash.h"
+#include "eval.h"
 
 int freeFlag = TRUE;
 
@@ -171,5 +172,78 @@ void HashCreate(
 	{
 		hash_info->lower = max;
 		hash_info->upper = max;
+	}
+}
+
+void FixTableToMiddle(HashTable *hash)
+{
+	for (int i = 0; i < hash->num; i++)
+	{
+		hash->data[i].lower = NEGAMIN;
+		hash->data[i].upper = NEGAMAX;
+	}
+
+}
+
+void FixTableToWinLoss(HashTable *hash)
+{
+	for (int i = 0; i < hash->num; i++)
+	{
+		hash->data[i].lower = LOSS;
+		hash->data[i].upper = WIN;
+	}
+}
+
+void FixTableToExact(HashTable *hash)
+{
+	UINT32 lower;
+	UINT32 upper;
+
+	for (int i = 0; i < hash->num; i++)
+	{
+#if 0
+		lower = hash->data[i].lower;
+		upper = hash->data[i].upper;
+
+		if (lower == LOSS && upper == LOSS)
+		{
+			hash->data[i].lower = -64;
+			hash->data[i].upper = -2;
+		}
+		else if (lower == LOSS && upper == DRAW)
+		{
+			hash->data[i].lower = -64;
+			hash->data[i].upper = 0;
+		}
+		else if (lower == LOSS && upper == WIN)
+		{
+			hash->data[i].lower = -64;
+			hash->data[i].upper = 64;
+		}
+		else if (lower == DRAW && upper == DRAW)
+		{
+			hash->data[i].lower = 0;
+			hash->data[i].upper = 0;
+		}
+		else if (lower == DRAW && upper == WIN)
+		{
+			hash->data[i].lower = 0;
+			hash->data[i].upper = 64;
+		}
+		else if (lower == WIN && upper == WIN)
+		{
+			hash->data[i].lower = 2;
+			hash->data[i].upper = 64;
+		}
+		else
+		{
+			hash->data[i].lower = -64;
+			hash->data[i].upper = 64;
+		}
+#else
+		hash->data[i].lower = -64;
+		hash->data[i].upper = 64;
+#endif
+
 	}
 }

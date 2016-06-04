@@ -36,6 +36,8 @@ namespace KZreversi
     public partial class Form1 : Form
     {
 
+        private BufferedPanel panel1;
+
         public CppWrapper cppWrapper;
         public bool loadResult;
 
@@ -64,6 +66,7 @@ namespace KZreversi
 
         private uint nowColor = COLOR_BLACK;
         private Player nowPlayer;
+        //private int nowTurn;
 
         private Player[] playerArray;
 
@@ -266,6 +269,17 @@ namespace KZreversi
             bkImg = imageList1.Images[0];
             whImg = imageList1.Images[1];
 
+            // 盤面のセット
+            panel1 = new BufferedPanel();
+            panel1.Width = 480;
+            panel1.Height = 480;
+            panel1.Location = new Point(18, 37);
+            panel1.BackgroundImage = new Bitmap(KZreversi.Properties.Resources.boardPicture);
+            panel1.Paint += panel1_Paint;
+            panel1.Click += panel1_Click;
+            panel1.DoubleClick += panel1_Click;
+            this.Controls.Add(panel1);
+
             LoadForm lf = new LoadForm();
             lf.ShowDialog(this);
 
@@ -352,7 +366,7 @@ namespace KZreversi
             if (m_mode == ON_GAME && m_cpuFlagProperty == false)
             {
                 temp = cppWrapper.GetEnumMove(boardclass);
-                playerArray[nowColor].moves = temp;
+                nowPlayer.moves = temp;
                 if (temp != 0)
                 {
                     m_passCount = 0;
@@ -370,6 +384,11 @@ namespace KZreversi
 
         private void panel1_Click(object sender, EventArgs e)
         {
+            Point pos;
+            int num;
+            MouseEventArgs mouseEvent = (MouseEventArgs)e;
+            MouseButtons buttons = mouseEvent.Button;
+
             switch (m_mode)
             {
                 case ON_GAME:
@@ -380,11 +399,9 @@ namespace KZreversi
                         break;
                     }
 
-                    Point pos = Cursor.Position;
-                    // ゲーム中の場合は着手処理
-                    pos = panel1.PointToClient(pos);
-
-                    int num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
+                    // 押された瞬間の座標を取得
+                    pos = mouseEvent.Location;
+                    num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
 
                     // 着手出来るかチェック
                     if ((nowPlayer.moves & (1UL << num)) != 0)
@@ -392,26 +409,108 @@ namespace KZreversi
                         // 着手に合わせて盤面情報を更新
                         boardclass.move(num);
                         // プレイヤー変更
-                        nowColor = boardclass.GetNowColor();
                         ChangePlayer();
+                        // 画面再描画
+                        panel1.Refresh();
 
                         if (nowPlayer.playerInfo == Player.PLAYER_CPU)
                         {
                             // CPUモードに移行(ハンドラコール)
                             m_cpuFlagProperty = true;
+
+                            return;
                         }
-                        // 画面再描画
-                        panel1.Refresh();
+
+                        // 相手が打てない
+                        if (cppWrapper.GetEnumMove(boardclass) == 0)
+                        {
+                            m_passCount++;
+
+                            if (m_passCount == 2)
+                            {
+                                // ゲーム終了
+                                m_mode = ON_NOTHING;
+                                m_cpuFlagProperty = false;
+                                m_passCount = 0;
+                                // 結果表示
+                                PrintResult();
+                                // 画面描画
+                                panel1.Refresh();
+
+                                return;
+                            }
+
+                            MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            // プレイヤー変更
+                            ChangePlayerReasonPass();
+
+                            if (cppWrapper.GetEnumMove(boardclass) == 0) 
+                            {
+                                // 双方が人間でお互いがパスだった場合にここに来る
+                                m_mode = ON_NOTHING;
+                                m_cpuFlagProperty = false;
+                                m_passCount = 0;
+                                // 結果表示
+                                PrintResult();
+                                // 画面描画
+                                panel1.Refresh();
+                            }
+                        }
+
                     }
 
                     break;
                 case ON_EDIT:
                     // エディットモードの処理
+
+                    // 押された瞬間の座標を取得
+                    pos = mouseEvent.Location;
+                    num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
+                    ulong posBit = (1UL << num);
+                    ulong bk = boardclass.GetBlack();
+                    ulong wh = boardclass.GetWhite();
+
+                    if (buttons == MouseButtons.Left)
+                    {
+                        // 黒を置くor白を置く
+                        if ((bk & posBit) != 0)
+                        {
+                            // 黒がすでに置いてある場合は白にする
+                            boardclass.EditBoard(bk & ~posBit, wh | posBit);
+                        }
+                        else if ((wh & posBit) != 0)
+                        {
+                            // 白がすでに置いてある場合は黒にする
+                            boardclass.EditBoard(bk | posBit, wh & ~posBit);
+                        }
+                        else
+                        {
+                            // 置いてない場合は黒を置く
+                            boardclass.EditBoard(bk | posBit, wh);
+                        }
+                        
+                    }
+                    else
+                    {
+                        // 消す
+                        boardclass.EditBoard(bk & ~posBit, wh & ~posBit);
+                    }
+
+                    // 画面再描画
+                    panel1.Refresh();
+
                     break;
                 default:
                     // 何もしない
                     break;
             }
+        }
+
+        private void ChangePlayerReasonPass()
+        {
+            boardclass.ChangeColor();
+            ChangePlayer();
         }
 
         private void setMove(ulong move)
@@ -515,7 +614,6 @@ namespace KZreversi
             {
                 handler(this, new PropertyChangedEventArgs(name));
             }
-
         }
 
         public void PropertyChangedCpuMove(object sender, PropertyChangedEventArgs e)
@@ -535,6 +633,7 @@ namespace KZreversi
                     m_mode = ON_NOTHING;
                     m_cpuFlagProperty = false;
                     m_passCount = 0;
+                    m_sw.Stop();
                     // 結果表示
                     PrintResult();
                     // 画面描画
@@ -543,8 +642,11 @@ namespace KZreversi
                     return;
                 }
 
-                MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                //MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報", 
+                //    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                // CPUがパスなのでプレイヤー変更
+                ChangePlayerReasonPass();
             }
             else
             {
@@ -552,19 +654,32 @@ namespace KZreversi
                 m_passCount = 0;
                 // 盤面情報更新
                 boardclass.move(cppWrapper.ConvertMoveBit(m_cpuMoveProperty));
+                // CPUが打ったのでプレイヤー変更
+                ChangePlayer();
+                // 画面再描画
+                panel1.Refresh();
             }
 
             // 評価値の表示
-            toolStripStatusLabel2.Text = ConvertEvaltoString(eval);
+            toolStripStatusLabel2.Text = ConvertEvaltoString(eval, cpuClass[nowColor]);
 
             GameThread gmt;
-
-            if (cppWrapper.GetEnumMove(boardclass) == 0)
+            // プレイヤー変更後もCPUなら再度ゲームスレッドにリクエスト送信(双方がCPUの場合)
+            if (nowPlayer.playerInfo == Player.PLAYER_CPU)
             {
-                // プレイヤーを再度CPUにする
-                nowColor = boardclass.ChangeColor();
+                gmt = new GameThread();
+                object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
+                gmt.m_recvcmdProperty = args;
+                m_sw.Restart();
+
+                return;
+            }
+
+            // 人間がパスだった場合は通知して再度ゲームスレッドにリクエスト送信
+            if (nowPlayer.playerInfo == Player.PLAYER_HUMAN && cppWrapper.GetEnumMove(boardclass) == 0)
+            {
                 MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 m_passCount++;
                 if (m_passCount == 2)
@@ -580,43 +695,67 @@ namespace KZreversi
 
                     return;
                 }
+
+                // プレイヤー変更
+                ChangePlayerReasonPass();
                 // ゲームスレッドにCPU処理リクエスト送信
                 gmt = new GameThread();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
                 gmt.m_recvcmdProperty = args;
                 m_sw.Restart();
+                // 画面再描画
+                panel1.Refresh();
+                return;
 
             }
-            else
-            {
-                // プレイヤー変更
-                ChangePlayer();
-            }
 
+            // ここに来るのは次のプレイヤーが人間でかつ手を打てる状態
             m_cpuFlagProperty = false;
+            m_passCount = 0;
             // 画面再描画
             panel1.Refresh();
 
-            // CPUなら再度ゲームスレッドにリクエスト送信(双方がCPUの場合)
-            if(nowPlayer.playerInfo == Player.PLAYER_CPU)
-            {
-                gmt = new GameThread();
-                object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
-                gmt.m_recvcmdProperty = args;
-                m_sw.Restart();
-            }
         }
 
-        private string ConvertEvaltoString(int eval)
+        private string ConvertEvaltoString(int eval, CpuClass cpu)
         {
             StringBuilder evalSb = new StringBuilder();
 
-            if (eval >= 0)
-            {
-                evalSb.Append("+");
-            }
+            int empty = cppWrapper.CountBit(~(boardclass.GetBlack() | boardclass.GetWhite()));
 
-            evalSb.Append((eval / (double)EVAL_THRESHOLD).ToString("f3"));
+            if (empty < cpu.GetExactDepth())
+            {
+                if (eval >= 0)
+                {
+                    evalSb.Append("+");
+                }
+
+                evalSb.Append(eval);
+            }
+            else if (empty < cpu.GetWinLossDepth())
+            {
+                if (eval > 0)
+                {
+                    evalSb.Append("WIN");
+                }
+                else if (eval < 0)
+                {
+                    evalSb.Append("LOSS");
+                }
+                else
+                {
+                    evalSb.Append("DRAW");
+                }
+            }
+            else
+            {
+                if (eval >= 0)
+                {
+                    evalSb.Append("+");
+                }
+
+                evalSb.Append((eval / (double)EVAL_THRESHOLD).ToString("f3"));
+            }
 
             // CPUが定石から手を算出した場合
             if (cppWrapper.GetIsUseBook())
@@ -646,6 +785,8 @@ namespace KZreversi
             object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
             //MessageBox.Show("ゲームスレッドにCPU処理リクエスト送信", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
             gmt.m_recvcmdProperty = args;
+
+            toolStripStatusLabel1.Text = "";
             m_sw.Restart();
 
             // 画面再描画
@@ -713,6 +854,66 @@ namespace KZreversi
             m_mode = ON_GAME;
 
             this.panel1.Refresh();
+        }
+
+        private void 盤面編集ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            m_mode = ON_EDIT;
+        }
+
+        private void panel1_DoubleClick(object sender, EventArgs e)
+        {
+            Point pos;
+            int num;
+            MouseEventArgs mouseEvent = (MouseEventArgs)e;
+            MouseButtons buttons = mouseEvent.Button;
+
+            switch (m_mode)
+            {
+                case ON_EDIT:
+                    // エディットモードの処理
+
+                    // 押された瞬間の座標を取得
+                    pos = mouseEvent.Location;
+                    num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
+                    ulong posBit = (1UL << num);
+                    ulong bk = boardclass.GetBlack();
+                    ulong wh = boardclass.GetWhite();
+
+                    if (buttons == MouseButtons.Left)
+                    {
+                        // 黒を置くor白を置く
+                        if ((bk & posBit) != 0)
+                        {
+                            // 黒がすでに置いてある場合は白にする
+                            boardclass.EditBoard(bk & ~posBit, wh | posBit);
+                        }
+                        else if ((wh & posBit) != 0)
+                        {
+                            // 白がすでに置いてある場合は黒にする
+                            boardclass.EditBoard(bk | posBit, wh & ~posBit);
+                        }
+                        else
+                        {
+                            // 置いてない場合は黒を置く
+                            boardclass.EditBoard(bk | posBit, wh);
+                        }
+
+                    }
+                    else
+                    {
+                        // 消す
+                        boardclass.EditBoard(bk & ~posBit, wh & ~posBit);
+                    }
+
+                    // 画面再描画
+                    panel1.Refresh();
+
+                    break;
+                default:
+                    // 何もしない
+                    break;
+            }
         }
 
 

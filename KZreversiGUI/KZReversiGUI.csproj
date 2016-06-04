@@ -52,6 +52,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BoardClass.cs" />
+    <Compile Include="BufferedPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="CppWrapper.cs" />
     <Compile Include="CpuClass.cs" />
     <Compile Include="CpuConfig.cs" />
@@ -98,6 +101,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\boardPicture.bmp" />
+    <None Include="reversi.png" />
     <Content Include="reversi2.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

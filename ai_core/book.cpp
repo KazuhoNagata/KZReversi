@@ -66,9 +66,10 @@ UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32
 	INT64 move;
 	if (turn == 0)
 	{
+		srand((UINT32)time(NULL));
 		// ˆêŽè–Ú‚Ì’…Žè‚Í‚Ç‚±‚É’…Žè‚µ‚Ä‚à“¯‚¶‚È‚Ì‚Åƒ‰ƒ“ƒ_ƒ€‚Æ‚·‚é
-		UINT32 cnt;
-		INT64 enumMove = CreateMoves(bk, wh, &cnt);
+		int cnt;
+		INT64 enumMove = CreateMoves(bk, wh, (UINT32 *)&cnt);
 		int rnd = rand() % cnt;
 
 		while (rnd)

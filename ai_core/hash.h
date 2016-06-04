@@ -1,5 +1,5 @@
 /***************************************************************************
-* Name  : hash.cpp
+* Name  : hash.h
 * Brief : 置換表関連の処理を行う
 * Date  : 2016/02/01
 ****************************************************************************/
@@ -60,3 +60,7 @@ void HashCreate(
 	INT32 max,
 	INT32 alpha, INT32 beta,
 	INT32 lower, INT32 upper);
+
+void FixTableToMiddle(HashTable *hash);
+void FixTableToWinLoss(HashTable *hash);
+void FixTableToExact(HashTable *hash);

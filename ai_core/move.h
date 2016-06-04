@@ -12,3 +12,4 @@
 
 UINT64 CreateMoves(UINT64 bk_p, UINT64 wh_p, UINT32 *p_count_p);
 UINT64 GetPotentialMoves(UINT64 P, UINT64 O, UINT64 blank);
+UINT64 GetFirstRandomMove(UINT64 move);

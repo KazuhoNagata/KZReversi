@@ -13,6 +13,10 @@
 #define ILLIGAL_ARGUMENT 0x80000001
 #define MOVE_PASS 0x0
 
+#define ON_MIDDLE 0
+#define ON_WINLOSS 1
+#define ON_EXACT 2
+
 typedef struct
 {
 	UINT32 color;				// CPUの色
@@ -56,8 +60,6 @@ extern UINT64 g_countNode;
 * Return: 着手可能位置のビット列
 ****************************************************************************/
 UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig);
-
-
 
 /***************************************************************************
 * Name  : OrderingAlphaBeta

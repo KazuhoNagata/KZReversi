@@ -11,6 +11,9 @@
 #define NEGAMIN -2500000
 #define NEGAMAX 2500000
 #define EVAL_ONE_STONE 10000
+#define WIN 1
+#define DRAW 0
+#define LOSS -1
 
 #define INDEX_NUM 6561
 #define MOBILITY_NUM 64

@@ -1,8 +1,8 @@
-/*#
-# 手の並べ替え、様々なデータのソートを行います
-#
-##############################################
-*/
+/***************************************************************************
+* Name  : ordering.cpp
+* Brief : 手の並び替え関連の処理を行う
+* Date  : 2016/02/02
+****************************************************************************/
 
 #include "stdafx.h"
 #include "rev.h"
@@ -352,10 +352,10 @@ UINT32 MoveOrderingMiddle(INT8 *pos_list, UINT64 b_board, UINT64 w_board,
 }
 
 /*  終盤用 move ordering */
-char MoveOrderingEnd(INT8 *pos_list, UINT64 b_board, UINT64 w_board, 
+UINT32 MoveOrderingEnd(INT8 *pos_list, UINT64 b_board, UINT64 w_board, 
 	HashTable *hash, UINT64 moves, UINT64 rev_list[], UINT32 depth)
 {
-	char cnt = 0;
+	UINT32 cnt = 0;
 	int pos = 0;
 	UINT64 rev, ligal_move_w;
 	UINT64 move_b, move_w;
