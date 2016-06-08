@@ -175,7 +175,6 @@ void SortListUseTable(INT8 *pos_list, INT32 move_list[], UINT64 rev_list[], INT3
 	}
 }
 
-/* 隅の安定性を算出 */
 int get_corner_stability(UINT64 color){
 
 	int n_stable = 0;
@@ -239,158 +238,175 @@ UINT32 GetOrderPosition(UINT64 blank)
 
 }
 
-/* 序盤中盤用 move ordering */
-UINT32 MoveOrderingMiddle(INT8 *pos_list, UINT64 b_board, UINT64 w_board,
-	HashTable *hash, UINT64 moves, UINT64 rev_list[], INT32 depth, UINT32 empty,
-	INT32 alpha, INT32 beta, UINT32 color)
+void sort_movelist_score_descending(MoveList *movelist)
 {
-	UINT32 cnt = 0;
-	UINT32 pos = 0;
-	UINT64 rev;
-	UINT64 move_b, move_w, ligal_move_w;
-	UINT32 move_cnt;
-	INT32 score;
-	INT32 key, lower, upper;
-	INT32 score_list[35];
+	MoveList *iter, *best, *previous_best, *previous;
 
-	if (depth < 4 && g_limitDepth >= 6){
-		do{
-			pos = CountBit((moves & (-(INT64)moves)) - 1);
-
-			/* 反転データ取得 */
-			rev = GetRev[pos](b_board, w_board);
-			move_b = b_board ^ ((1ULL << pos) | rev);
-			move_w = w_board^rev;
-			InitIndexBoard(move_w, move_b);
-
-			score = OrderingAlphaBeta(move_w, move_b, 5 - depth, -NEGAMAX, -NEGAMIN,
-				color ^ 1, 60 - empty, 0);
-			score_list[cnt] = score;
-			pos_list[cnt] = (char)pos;
-			rev_list[cnt] = rev;
-			cnt++;
-			moves = moves & (moves - 1);
-		} while (moves);
+	for (iter = movelist; iter->next != NULL; iter = iter->next) 
+	{
+		previous_best = iter;
+		for (previous = previous_best->next; previous->next != NULL; previous = previous->next) 
+		{
+			if (previous_best->next->move.score <  previous->next->move.score)
+			{
+				previous_best = previous;
+			}
+		}
+		if (previous_best != iter) {
+			best = previous_best->next;
+			previous_best->next = best->next;
+			best->next = iter->next;
+			iter->next = best;
+		}
 	}
-	else if (depth == 4){
-		do{
-			pos = CountBit((moves & (-(INT64)moves)) - 1);
+}
 
-			/* 反転データ取得 */
-			rev = GetRev[pos](b_board, w_board);
+void sort_movelist_score_ascending(MoveList *movelist)
+{
+	MoveList *iter, *best, *previous_best, *previous;
 
-			move_b = b_board ^ ((1ULL << pos) | rev);
-			move_w = w_board^rev;
+	for (iter = movelist; iter->next != NULL; iter = iter->next) {
+		previous_best = iter;
+		for (previous = previous_best->next; previous->next != NULL; previous = previous->next) 
+		{
+			if (previous_best->next->move.score >  previous->next->move.score) 
+			{
+				previous_best = previous;
+			}
+		}
+		if (previous_best != iter) {
+			best = previous_best->next;
+			previous_best->next = best->next;
+			best->next = iter->next;
+			iter->next = best;
+		}
+	}
+}
+
+/*!
+* \brief Sort a list of move, fastest-first.
+*
+* Sort a list to accelerate the alphabeta research. The moves that minimize
+* opponent mobility and increase player's relative stability will be played
+* first.
+* \param movelist   : list of moves to sort.
+* \param board      : board on which the moves applied.
+*/
+void SortFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh)
+{
+	MoveList *iter;
+	UINT32 n_moves_wh;
+	UINT64 move_b, move_w;
+
+	for (iter = movelist->next; iter != NULL; iter = iter->next) 
+	{
+		iter->move.rev = GetRev[iter->move.pos](bk, wh);
+		move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
+		move_w = wh ^ (iter->move.rev);
+		CreateMoves(move_w, move_b, &n_moves_wh);
+		iter->move.score = (n_moves_wh << 4) - get_corner_stability(bk);
+	}
+
+	sort_movelist_score_ascending(movelist);
+}
+
+#if 1
+/* 序盤中盤用 move ordering */
+void SortMoveListMiddle(
+	MoveList *movelist, 
+	UINT64 bk, UINT64 wh,
+	HashTable *hash, 
+	INT32 depth, 
+	UINT32 empty,
+	INT32 alpha, INT32 beta, 
+	UINT32 color)
+{
+	MoveList *iter;
+	INT32 score;
+	UINT32 cnt = 0;
+	UINT32 move_cnt;
+	UINT64 move_b, move_w;
+	UINT64 n_moves_wh;
+
+	INT32 searched = g_empty - empty;
+	if (searched < 6 && g_limitDepth >= 14)
+	{
+		for (iter = movelist->next; iter != NULL; iter = iter->next)
+		{
+			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
+			move_w = wh ^ (iter->move.rev);
+
+			score = -OrderingAlphaBeta(move_w, move_b, 6 - searched, empty - 1, color ^ 1,
+				-NEGAMAX, -NEGAMIN, 0);
+			iter->move.score = score;
+		}
+		/* 自分の得点の多い順にソート */
+		sort_movelist_score_descending(movelist);
+	}
+	else if (g_empty - empty == 6){
+		for (iter = movelist->next; iter != NULL; iter = iter->next)
+		{
+			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
+			move_w = wh ^ (iter->move.rev);
 			InitIndexBoard(move_w, move_b);
 
-			score = Evaluation(g_board, move_w, move_b, color ^ 1, 60 - empty);
-			score_list[cnt] = score;
-			pos_list[cnt] = (char)pos;
-			rev_list[cnt] = rev;
-			cnt++;
-			moves = moves & (moves - 1);
-		} while (moves);
+			score = Evaluation(g_board, move_w, move_b, color ^ 1, 59 - (empty - 1));
+			iter->move.score = score;
+		}
+		/* 自分の得点の多い順にソート */
+		sort_movelist_score_descending(movelist);
 	}
 	else
 	{
-		do{
+		for (iter = movelist->next; iter != NULL; iter = iter->next)
+		{
 			score = 0;
-			pos = CountBit((moves & (-(INT64)moves)) - 1);
-
-			/* 反転データ取得 */
-			rev = GetRev[pos](b_board, w_board);
-
-			move_b = b_board ^ ((1ULL << pos) | rev);
-			move_w = w_board^rev;
-
-			ligal_move_w = CreateMoves(move_w, move_b, &move_cnt);
-
-			key = KEY_HASH_MACRO(move_w, move_b);
-			if (hash->data[key].b_board == move_w && hash->data[key].w_board == move_b){
-				if (hash->data[key].depth + 1 >= g_limitDepth - depth){
-					lower = hash->data[key].lower;
-					upper = hash->data[key].upper;
-					if (upper == lower){
-						score -= 65536;
-					}
-					else if (lower >= -alpha)
-					{
-						score -= 65536;
-					}
-					else if (upper <= -beta)
-					{
-						score -= 65536;
-					}
-					else{
-						score -= 8192;
-					}
-				}
-				else{
-					score -= 4096;
-				}
-			}
+			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
+			move_w = wh ^ (iter->move.rev);
+			n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
 
 			/* 位置得点 */
-			score -= posEval[pos] << 2;
-			score += CountBit(rev) << 4;
+			score -= posEval[iter->move.pos] << 2;
+			score += CountBit(iter->move.rev) << 4;
 			/* 敵の着手可能数を取得 */
-			score += ((CountBit(ligal_move_w) + CountBit(ligal_move_w & 0x8100000000000081)) << 4) 
+			score += ((move_cnt + CountBit(n_moves_wh & 0x8100000000000081)) << 4)
 				- get_corner_stability(move_b);
 			score += CountBit(GetPotentialMoves(move_w, move_b, ~(move_b | move_w))) << 3;
-			score_list[cnt] = score;
-			pos_list[cnt] = (char)pos;
-			rev_list[cnt] = rev;
-			cnt++;
-			moves = moves & (moves - 1);
-
-		} while (moves);
+			iter->move.score = score;
+		}
+		/* 敵の得点の少ない順にソート */
+		sort_movelist_score_ascending(movelist);
 	}
-	/* 敵の得点の少ない順にソート */
-	SortListUseTable(pos_list, score_list, rev_list, cnt);
-
-	return cnt;
 }
 
+#endif
+
 /*  終盤用 move ordering */
-UINT32 MoveOrderingEnd(INT8 *pos_list, UINT64 b_board, UINT64 w_board, 
-	HashTable *hash, UINT64 moves, UINT64 rev_list[], UINT32 depth)
+void SortMoveListEnd(MoveList *movelist, UINT64 bk, UINT64 wh)
 {
-	UINT32 cnt = 0;
-	int pos = 0;
-	UINT64 rev, ligal_move_w;
+	MoveList *iter;
+	INT32 score;
+	UINT64 ligal_move_w;
 	UINT64 move_b, move_w;
 	UINT32 move_cnt;
-	int score;
-	int score_list[35];
-	//int key;
 
-	do{
+	for (iter = movelist->next; iter != NULL; iter = iter->next)
+	{
 		score = 0;
-		pos = CountBit((moves & (-(INT64)moves)) - 1);
-		/* 反転データ取得 */
-		rev = GetRev[pos](b_board, w_board);
-
-		move_b = b_board ^ ((1ULL << pos) | rev);
-		move_w = w_board^rev;
+		move_b = bk ^ ((1ULL << iter->move.pos) | iter->move.rev);
+		move_w = wh ^ iter->move.rev;
 
 		ligal_move_w = CreateMoves(move_w, move_b, &move_cnt);
 
 		/* 敵の着手可能数を取得 */
-		score += ((CountBit(ligal_move_w) + CountBit(ligal_move_w & 0x8100000000000081)) << 4);
+		score += (move_cnt + CountBit(ligal_move_w & 0x8100000000000081)) << 4;
 		score -= get_corner_stability(move_b);
-		//score += CountBit(get_potential_moves(move_w, move_b, ~(move_b | move_w)));
 
-		score_list[cnt] = score;
-		pos_list[cnt] = (char)pos;
-		rev_list[cnt] = rev;
-		cnt++;
-		moves = moves & (moves - 1);
-	} while (moves);
+		iter->move.score = score;
+	}
 
 	/* 敵の得点の少ない順にソート */
-	SortListUseTable(pos_list, score_list, rev_list, cnt);
-
-	return cnt;
+	sort_movelist_score_ascending(movelist);
 }
 
 
@@ -444,4 +460,18 @@ char MoveOrderingEnd(MOVELIST *pos_list, UINT64 b_board, UINT64 w_board, UINT64 
 	SortListUseTable(pos_list, score_list, cnt);
 
 	return cnt;
+}
+
+void SortMoveListTableMoveFirst(MoveList *movelist, int move){
+
+	MoveList *iter, *previous;
+
+	for (iter = (previous = movelist)->next; iter != NULL; iter = (previous = iter)->next){
+		if (iter->move.pos == move){
+			previous->next = iter->next;
+			iter->next = movelist->next;
+			movelist->next = iter;
+			break;
+		}
+	}
 }

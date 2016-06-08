@@ -148,6 +148,7 @@ namespace KZreversi
             if (sender == this.button5) // ゲーム開始ボタン
             {
                 m_mode = ON_GAME;
+                // cppWrapper.ReleaseHash();
                 boardclass.DeleteHistory(boardclass.GetNowTurn());
                 nowColor = boardclass.GetNowColor();
 
@@ -620,6 +621,8 @@ namespace KZreversi
         {
             // CPUの算出した評価値を取得
             int eval = cppWrapper.GetLastEvaluation();
+            // 評価値の表示
+            toolStripStatusLabel2.Text = ConvertEvaltoString(eval, cpuClass[nowColor]);
 
             if (m_cpuMoveProperty == MOVE_PASS)
             {
@@ -660,8 +663,6 @@ namespace KZreversi
                 panel1.Refresh();
             }
 
-            // 評価値の表示
-            toolStripStatusLabel2.Text = ConvertEvaltoString(eval, cpuClass[nowColor]);
 
             GameThread gmt;
             // プレイヤー変更後もCPUなら再度ゲームスレッドにリクエスト送信(双方がCPUの場合)
@@ -843,11 +844,48 @@ namespace KZreversi
                 cpuClass[color].SetWinLossDepth(dcTable[index - 1]);
                 cpuClass[color].SetExactDepth(dcTable[index - 1] - 2);
             }
+            else if (index == 13)
+            {
+                // 強制勝敗探索モード
+                if (cbox == this.comboBox1)
+                {
+                    cpuClass[BoardClass.BLACK].SetColor(BoardClass.BLACK);
+                    color = BoardClass.BLACK;
+                }
+                else
+                {
+                    cpuClass[BoardClass.WHITE].SetColor(BoardClass.WHITE);
+                    color = BoardClass.WHITE;
+                }
+
+                cpuClass[color].SetSearchDepth(0);
+                cpuClass[color].SetWinLossDepth(60);
+                cpuClass[color].SetExactDepth(0);
+            }
+            else if (index == 14)
+            {
+                // 強制石差探索モード
+                if (cbox == this.comboBox1)
+                {
+                    cpuClass[BoardClass.BLACK].SetColor(BoardClass.BLACK);
+                    color = BoardClass.BLACK;
+                }
+                else
+                {
+                    cpuClass[BoardClass.WHITE].SetColor(BoardClass.WHITE);
+                    color = BoardClass.WHITE;
+                }
+
+                cpuClass[color].SetSearchDepth(0);
+                cpuClass[color].SetWinLossDepth(0);
+                cpuClass[color].SetExactDepth(60);
+            }
         }
 
         private void 新規ゲームToolStripMenuItem_Click(object sender, EventArgs e)
         {
             boardclass.InitBoard(COLOR_BLACK);
+            cppWrapper.ReleaseHash();
             nowColor = boardclass.GetNowColor();
             SetPlayerInfo();
 
@@ -914,6 +952,101 @@ namespace KZreversi
                     // 何もしない
                     break;
             }
+        }
+
+        private void 盤面初期化ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            boardclass.InitBoard(COLOR_BLACK);
+            nowColor = boardclass.GetNowColor();
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void mPC探索を行うToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            if (MPC_ToolStripMenuItem.Checked)
+            {
+                cpuClass[0].SetMpcFlag(false);
+                cpuClass[1].SetMpcFlag(false);
+                MPC_ToolStripMenuItem.Checked = false;
+            }
+            else
+            {
+                cpuClass[0].SetMpcFlag(true);
+                cpuClass[1].SetMpcFlag(true);
+                MPC_ToolStripMenuItem.Checked = true;
+            }
+        }
+
+        private void bookを使用ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (BOOKFLAG_ToolStripMenuItem.Checked)
+            {
+                cpuClass[0].SetBookFlag(false);
+                cpuClass[1].SetBookFlag(false);
+                BOOKFLAG_ToolStripMenuItem.Checked = false;
+            }
+            else
+            {
+                cpuClass[0].SetBookFlag(true);
+                cpuClass[1].SetBookFlag(true);
+                BOOKFLAG_ToolStripMenuItem.Checked = true;
+            }
+        }
+
+        private void fFO40ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#40(black to move) (WinLoss:[a2:WIN] Exact:[a2:+38])
+            boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
+            nowColor = boardclass.GetNowColor();
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO41ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#41(black to move) (WinLoss:(h4:DRAW) 3.46sec Exact:(h4:+0) 3.28sec)
+            boardclass.InitBoard(COLOR_BLACK, 616174399789064, 39493460025648416);
+            nowColor = boardclass.GetNowColor();
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO42ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#42(black to move) (WinLoss:(g2:WIN) 2.26sec Exact:(g2:+6) 3.88sec)
+            boardclass.InitBoard(COLOR_BLACK, 22586176447709200, 9091853944868375556);
+            nowColor = boardclass.GetNowColor();
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO43ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#43(white to move) (WinLoss:(c7:LOSS) 0.501sec Exact:(c7:-12) 8.06sec)
+            boardclass.InitBoard(COLOR_WHITE, 38808086923902976, 13546258740034592);
+            nowColor = boardclass.GetNowColor();
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO44ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#44(white to move) (WinLoss:(d2:LOSS) 0.729sec  Exact:(d2:-14) 2.09ec)
+            boardclass.InitBoard(COLOR_WHITE, 2494790880993312, 1010251075753548824);
+            nowColor = boardclass.GetNowColor();
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO45ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#45(black to move) (WinLoss:(b2:WIN) 2.37sec Exact:(b2:+6) 38.21sec)
+            boardclass.InitBoard(COLOR_BLACK, 282828816915486, 9287318235258944);
+            nowColor = boardclass.GetNowColor();
+            SetPlayerInfo();
+            panel1.Refresh();
         }
 
 

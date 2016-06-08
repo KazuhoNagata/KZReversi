@@ -904,24 +904,26 @@ double check_parity(UINT64 blank, UINT32 color)
 {
 	int p;
 
-	p = (CountBit(blank) % 2) + (color * 2);
-	key_parity = parity[p];
+	p = CountBit(blank & 0x0f0f0f0f) % 2;
+	p |= (CountBit(blank & 0xf0f0f0f0) % 2) << 1;
+	p |= (CountBit(blank & 0x0f0f0f0f00000000) % 2) << 2;
+	p |= (CountBit(blank & 0xf0f0f0f000000000) % 2) << 3;
 
 	return parity[p];
 }
 
 double check_mobility(UINT64 b_board, UINT64 w_board)
 {
-	UINT32 mob1, mob2;
+	UINT32 mob1;
 
 	CreateMoves(b_board, w_board, &mob1);
-	CreateMoves(w_board, b_board, &mob2);
-	key_mobility = mobility[mob1 - mob2 + 32];
+	//CreateMoves(w_board, b_board, &mob2);
+	key_mobility = mob1 * mobility[0];
 
 	return key_mobility;
 }
 
-INT32 Evaluation(UINT8 *board, UINT64 b_board, UINT64 w_board, UINT32 color, UINT32 stage)
+INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 {
 	double eval;
 
@@ -937,8 +939,8 @@ INT32 Evaluation(UINT8 *board, UINT64 b_board, UINT64 w_board, UINT32 color, UIN
 	corner5_2 = corner5_2_data[color][stage];
 	corner3_3 = corner3_3_data[color][stage];
 	triangle = triangle_data[color][stage];
-	mobility = mobility_data[0][stage];
-	parity = parity_data[0][stage];
+	mobility = mobility_data[color][stage];
+	parity = parity_data[color][stage];
 
 	eval = check_h_ver1(board);
 	eval += check_h_ver2(board);
@@ -954,11 +956,12 @@ INT32 Evaluation(UINT8 *board, UINT64 b_board, UINT64 w_board, UINT32 color, UIN
 	eval += check_corner3_3(board);
 	eval += check_triangle(board);
 
-	eval += check_mobility(b_board, w_board);
-	eval += constant_data[color][stage];
-
+	eval += check_parity(~(bk | wh), color);
 	eval_sum = eval;
 	eval *= EVAL_ONE_STONE;
+
+	if (eval <= -640000) eval = -640000 + 1;
+	else if (eval >= 640000) eval = 640000 - 1;
 
 	return (INT32)eval;
 
@@ -1103,7 +1106,7 @@ BOOL OpenEvalData(char *filename)
 			p_table_op[opponent_feature(i, 10)] = -p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
-
+#if 0
 		/* mobility */
 		p_table = mobility_data[0][stage];
 		p_table_op = mobility_data[1][stage];
@@ -1113,20 +1116,20 @@ BOOL OpenEvalData(char *filename)
 			p_table_op[i] = -p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
-
+#endif
 		/* parity */
 		p_table = parity_data[0][stage];
 		p_table_op = parity_data[1][stage];
 		for (i = 0; i < PARITY_NUM; i++)
 		{
 			p_table[i] = (float)atof(line);
-			p_table_op[i] = -p_table[i];
+			p_table_op[i] = p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
 		
 		/* constant */
-		constant_data[0][stage] = (float)atof(line);
-		line = strtok_s(NULL, "\n", &ctr);
+		//constant_data[0][stage] = (float)atof(line);
+		//line = strtok_s(NULL, "\n", &ctr);
 
 		stage++;
 	}

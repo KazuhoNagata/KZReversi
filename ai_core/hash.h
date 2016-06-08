@@ -8,58 +8,51 @@
 
 #pragma once
 
-/* ’uŠ·•\’è‹` */
-struct HashInfo
-{
-	UINT64 b_board;
-	UINT64 w_board;
-	INT32 lower;
-	INT32 upper;
-	INT8 bestmove;
-	INT8 depth;
-	INT8 move_cnt;
-	INT8 locked;
-	INT8 bestLocked;
-};
-
-struct HashTable
-{
-	INT32 num;
-	HashInfo *data;
-	INT32 getNum;
-	INT32 hitNum;
-};
 
 #define PREPARE_LOCKED 3
 #define LOCKED 2
+
+/*! Hash : item stored in the hash table */
+typedef struct HashInfo {
+	UINT64 bk;
+	UINT64 wh;
+	INT32 lower;        /*!< lower bound of the position score */
+	INT32 upper;        /*!< upper bound of the position score */
+	INT8 bestmove;       /*!< best move */
+	INT8 empty;      /*!< depth of the analysis ( = board->n_empties) */
+	INT8 locked;
+} HashInfo;
+
+/*! HashEntry: an entry, with two items, of the hash table */
+typedef struct HashEntry {
+	HashInfo deepest; /*!< entry for the highest cost search */
+	HashInfo newest;  /*!< entry for the most recent search */
+} HashEntry;
+
+/*! HashTable : hash table */
+typedef struct HashTable {
+	HashEntry *entry; 
+	INT32 size; 
+} HashTable;
 
 HashTable *HashNew(UINT32 in_size);
 void HashDelete(HashTable *hash);
 void HashClear(HashTable *hash);
 
 void HashSet(HashTable *hash, int hashValue, const HashInfo *in_info);
-INT32 HashGet(HashTable *hash, int hashValue, UINT64 b_board, UINT64 w_board, HashInfo *out_info);
+HashInfo *HashGet(HashTable *hash, int key, UINT64 bk, UINT64 wh);
 
 void HashUpdate(
-	HashInfo *hash_info,
-	INT8 bestmove,
-	UINT32 depth,
-	INT32 max,
+	HashTable* hash_table,
+	UINT32 key,
+	UINT64 bk,
+	UINT64 wh,
 	INT32 alpha,
 	INT32 beta,
-	INT32 lower,
-	INT32 upper);
-
-void HashCreate(
-	HashInfo *hash_info,
-	UINT64 b_board,
-	UINT64 w_board,
-	INT32 bestmove,
-	INT32 move_cnt,
-	UINT32 depth,
-	INT32 max,
-	INT32 alpha, INT32 beta,
-	INT32 lower, INT32 upper);
+	INT32 score,
+	INT32 empty,
+	INT8 move,
+	INT32 inf_score);
 
 void FixTableToMiddle(HashTable *hash);
 void FixTableToWinLoss(HashTable *hash);

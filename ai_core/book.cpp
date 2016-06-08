@@ -408,7 +408,7 @@ void SortBookNode(BooksNode *best_node[], int e_list[], int cnt)
 INT32 SelectNode(int e_list[], int cnt, UINT32 change, INT32 turn)
 {
 	int ret;
-
+	srand((UINT32)time(NULL));
 	if (change == NOT_CHANGE)
 	{
 		int count;

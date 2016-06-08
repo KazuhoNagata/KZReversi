@@ -153,9 +153,22 @@ namespace KZreversi
             return NativeMethods.KZ_CountBit(bit);
         }
 
+        /// <summary>
+        /// ネイティブ層にC#デリゲートを登録する
+        /// </summary>
+        /// <returns></returns>
         public void EntryFunction(IntPtr cpuMessageDelegatePtr)
         {
             NativeMethods.KZ_EntryFunction(cpuMessageDelegatePtr);
+        }
+
+        /// <summary>
+        /// AIで使用するハッシュを解放する
+        /// </summary>
+        /// <returns></returns>
+        public void ReleaseHash()
+        {
+            NativeMethods.KZ_ReleaseHash();
         }
     }
 
@@ -205,5 +218,9 @@ namespace KZreversi
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
         public extern static void KZ_EntryFunction(IntPtr cpuMessageDelegatePtr);
+
+        [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
+        [SuppressUnmanagedCodeSecurityAttribute()]
+        public extern static void KZ_ReleaseHash();
     }
 }

@@ -16,8 +16,11 @@
 #define LOSS -1
 
 #define INDEX_NUM 6561
-#define MOBILITY_NUM 64
-#define PARITY_NUM 4
+#define MOBILITY_NUM 1
+#define PARITY_NUM 16
+// îÕàÕäOÇÃì_êî
+#define INF_SCORE 127
+
 
 extern UINT8 posEval[64];
 extern INT32 g_evaluation;
@@ -93,6 +96,8 @@ extern UINT64 h5;			/* h5 */
 extern UINT64 h6;			/* h6 */
 extern UINT64 h7;			/* h7 */
 extern UINT64 h8;			/* h8 */
+
+extern double eval_sum;
 
 INT32 Evaluation(UINT8 *board, UINT64 b_board, UINT64 w_board, UINT32 color, UINT32 stage);
 BOOL LoadData(void);

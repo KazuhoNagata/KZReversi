@@ -70,7 +70,7 @@ namespace KZreversi
         /**
          * 盤面の着手処理を行います
          */
-        public bool move(int pos) 
+        public bool move(int pos)
         {
             UInt64 rev;
             CppWrapper cppWrapper = new CppWrapper();
@@ -82,7 +82,7 @@ namespace KZreversi
             {
                 rev = cppWrapper.GetBoardChangeInfo(black, white, pos);
 
-                if (rev == 0) 
+                if (rev == 0)
                 {
                     return false;
                 }
@@ -128,7 +128,17 @@ namespace KZreversi
             boardList.Clear();
             this.SetBoard(0x810000000, 0x1008000000);
             this.moveList.Clear();
-            this.moveList.Add(new int[]{(int)nowColor ^ 1, -1});
+            this.moveList.Add(new int[] { (int)nowColor ^ 1, -1 });
+        }
+
+        public void InitBoard(uint color, ulong bk, ulong wh)
+        {
+            nowTurn = 0;
+            nowColor = color;
+            boardList.Clear();
+            this.SetBoard(bk, wh);
+            this.moveList.Clear();
+            this.moveList.Add(new int[] { (int)nowColor ^ 1, -1 });
         }
 
         public bool SetHistory(int index)

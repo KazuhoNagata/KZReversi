@@ -6,6 +6,8 @@
 #include "stdafx.h"
 #include "bit64.h"
 #include "board.h"
+#include "move.h"
+#include "rev.h"
 
 typedef void(*INIT_MMX)(void);
 
@@ -58,6 +60,25 @@ UINT64 CreateMoves(UINT64 bk_p, UINT64 wh_p, UINT32 *p_count_p)
 	*p_count_p = g_bit_mob(g_stbit_bk, g_stbit_wh, &moves);
 
 	return moves;
+
+}
+
+
+
+
+void StoreMovelist(MoveList *start, UINT64 bk, UINT64 wh, UINT64 moves)
+{
+	MoveList *list = start + 1, *previous = start;
+
+	while (moves)
+	{
+		list->move.pos = CountBit((~moves) & (moves - 1));
+		list->move.rev = GetRev[list->move.pos](bk, wh);
+		previous = previous->next = list;
+		moves ^= 1ULL << list->move.pos;
+		list++;
+	}
+	previous->next = NULL;
 
 }
 

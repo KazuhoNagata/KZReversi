@@ -9,6 +9,7 @@
 #include "move.h"
 #include "book.h"
 #include "eval.h"
+#include "hash.h"
 #include "bit64.h"
 #include "cpu.h"
 #include "rev.h"
@@ -186,4 +187,17 @@ KZ_EXPORT UINT32 KZ_CountBit(UINT64 bit)
 KZ_EXPORT void KZ_EntryFunction(SetMessageToGUI ptr)
 {
 	g_set_message_funcptr = ptr;
+}
+
+/***************************************************************************
+* Name  : KZ_ReleaseHash
+* Brief : ハッシュテーブルを解放する
+****************************************************************************/
+KZ_EXPORT void KZ_ReleaseHash()
+{
+	if (g_hash != NULL)
+	{
+		HashDelete(g_hash);
+		g_hash = NULL;
+	}
 }

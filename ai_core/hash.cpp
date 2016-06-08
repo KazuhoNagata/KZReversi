@@ -12,13 +12,25 @@
 
 int freeFlag = TRUE;
 
+
+/*
+* ハッシュテーブルを解放する。
+* パラメータ：
+* hash_table 解放するハッシュテーブル
+*/
+void hash_free(HashTable* hash_table){
+	free(hash_table->entry);
+	hash_table->entry = NULL;
+}
+
+
 static void HashFinalize(HashTable *hash)
 {
 	if (freeFlag == TRUE){
 		return;
 	}
-	if (hash->data) {
-		free(hash->data);
+	if (hash->entry) {
+		free(hash->entry);
 	}
 	freeFlag = TRUE;
 }
@@ -31,17 +43,16 @@ void HashDelete(HashTable *hash)
 
 void HashClear(HashTable *hash)
 {
-	memset(hash->data, 0, sizeof(HashInfo) * hash->num);
-	hash->getNum = 0;
-	hash->hitNum = 0;
+	memset(hash->entry, 0, sizeof(HashEntry) * hash->size);
 }
 
 static int HashInitialize(HashTable *hash, int in_size)
 {
 	memset(hash, 0, sizeof(HashTable));
-	hash->num = in_size;
-	hash->data = (HashInfo *)malloc(sizeof(HashInfo) * hash->num);
-	if (!hash->data) {
+	hash->size = in_size;
+	hash->entry = (HashEntry *)malloc(sizeof(HashEntry) * in_size);
+
+	if (!hash->entry) {
 		return FALSE;
 	}
 
@@ -66,140 +77,121 @@ HashTable *HashNew(UINT32 in_size)
 
 void HashSet(HashTable *hash, int hashValue, const HashInfo *in_info)
 {
-	memcpy(&hash->data[hashValue], in_info, sizeof(HashInfo));
+	memcpy(&hash->entry[hashValue], in_info, sizeof(HashInfo));
 }
 
-INT32 HashGet(HashTable *hash, int hashValue, UINT64 b_board, UINT64 w_board, HashInfo *out_info)
+HashInfo *HashGet(HashTable *hash, int key, UINT64 bk, UINT64 wh)
 {
-	if (hash == NULL){
-		return FALSE;
-	}
-	//hash->getNum++;
-	if (hash->data[hashValue].b_board == b_board && hash->data[hashValue].w_board == w_board)
-	{
-		memcpy(out_info, &hash->data[hashValue], sizeof(HashInfo));
-		//hash->hitNum++;
-		return TRUE;
-	}
-	else if (hash->data[hashValue].bestLocked == LOCKED){
-		return LOCKED;
-	}
-	else if (hash->data[hashValue].bestLocked == PREPARE_LOCKED){
-		return PREPARE_LOCKED;
-	}
-	return FALSE;
-}
+	HashEntry *hash_entry;
 
-void HashClearInfo(HashTable *hash)
-{
-	hash->getNum = 0;
-	hash->hitNum = 0;
-}
+	if (hash != NULL) {
+		hash_entry = &hash->entry[key];
+		if (hash_entry->deepest.bk == bk && hash_entry->deepest.wh == wh)
+			return &(hash_entry->deepest);
+		if (hash_entry->newest.bk == bk && hash_entry->newest.wh == wh)
+			return &(hash_entry->newest);
+	}
 
-int HashCountGet(HashTable *hash)
-{
-	return hash->getNum;
-}
+	return NULL;
 
-int HashCountHit(HashTable *hash)
-{
-	return hash->hitNum;
 }
 
 void HashUpdate(
-	HashInfo *hash_info, 
-	INT8 bestmove, 
-	UINT32 depth,
-	INT32 max, 
+	HashTable* hash_table,
+	UINT32 key,
+	UINT64 bk,
+	UINT64 wh,
 	INT32 alpha,
 	INT32 beta,
-	INT32 lower,
-	INT32 upper){
+	INT32 score,
+	INT32 empty,
+	INT8 move,
+	INT32 inf_score)
+{
+	HashEntry *hash_entry;
+	HashInfo *deepest, *newest;
 
-	hash_info->locked = FALSE;
-	hash_info->bestmove = bestmove;
-	hash_info->depth = depth;
+	if (hash_table == NULL) return;
 
-	if (max >= beta)
+	// ハッシュエントリのアドレス
+	hash_entry = &(hash_table->entry[key]);
+	deepest = &(hash_entry->deepest);
+	newest = &(hash_entry->newest);
+
+	/* deepestエントリの更新を試みる */
+	if (hash_entry->deepest.bk == bk && hash_entry->deepest.wh == wh)
 	{
-		hash_info->lower = max;
-		hash_info->upper = upper;
+		if (score < beta && score < deepest->upper)
+			deepest->upper = (char)score;
+		if (score > alpha && score > deepest->lower)
+			deepest->lower = (char)score;
+		deepest->bestmove = (char)move;
+		/* newestエントリの更新を試みる */
 	}
-	else if (max <= alpha)
+	else if (hash_entry->newest.bk == bk && hash_entry->newest.wh == wh)
 	{
-		hash_info->lower = lower;
-		hash_info->upper = max;
+		if (score < beta && score < newest->upper)
+			newest->upper = (char)score;
+		if (score > alpha && score > newest->lower)
+			newest->lower = (char)score;
+		newest->bestmove = move;
+		/* それ以外の場合でdeepestエントリの更新を試みる */
 	}
-	else
+	else if (deepest->empty < empty)
 	{
-		hash_info->lower = max;
-		hash_info->upper = max;
+		if (newest->empty < deepest->empty) *newest = *deepest;
+		deepest->bk = bk;
+		deepest->wh = wh;
+		deepest->empty = (INT8)empty;
+		deepest->lower = -inf_score;
+		deepest->upper = inf_score;
+		if (score < beta) deepest->upper = (char)score;
+		if (score > alpha) deepest->lower = (char)score;
+		deepest->bestmove = (char)move;
+		/* それ以外の場合でnewestエントリを更新する */
 	}
-}
-
-void HashCreate(
-	HashInfo *hash_info,
-	UINT64 b_board, 
-	UINT64 w_board,
-	INT32 bestmove,
-	INT32 move_cnt,
-	UINT32 depth,
-	INT32 max,
-	INT32 alpha, INT32 beta,
-	INT32 lower, INT32 upper){
-
-	/* 置換表に登録 */
-	hash_info->b_board = b_board;
-	hash_info->w_board = w_board;
-	hash_info->depth = depth;
-	/* 現在の局面の指し手優先順位と着手可能数を保存 */
-	hash_info->move_cnt = move_cnt;
-	hash_info->bestmove = bestmove;
-
-	hash_info->locked = FALSE;
-
-	if (max >= beta)
+	else if (newest->empty < empty)
 	{
-		hash_info->lower = max;
-		hash_info->upper = upper;
-	}
-	else if (max <= alpha)
-	{
-		hash_info->lower = lower;
-		hash_info->upper = max;
-	}
-	else
-	{
-		hash_info->lower = max;
-		hash_info->upper = max;
+		newest->bk = bk;
+		newest->wh = wh;
+		newest->empty = empty;
+		newest->lower = -inf_score;
+		newest->upper = inf_score;
+		if (score < beta) newest->upper = (char)score;
+		if (score > alpha) newest->lower = (char)score;
+		newest->bestmove = move;
 	}
 }
 
 void FixTableToMiddle(HashTable *hash)
 {
-	for (int i = 0; i < hash->num; i++)
+	for (int i = 0; i < hash->size; i++)
 	{
-		hash->data[i].lower = NEGAMIN;
-		hash->data[i].upper = NEGAMAX;
+		hash->entry[i].deepest.lower = NEGAMIN;
+		hash->entry[i].newest.lower = NEGAMIN;
+		hash->entry[i].deepest.upper = NEGAMAX;
+		hash->entry[i].newest.upper = NEGAMAX;
 	}
 
 }
 
 void FixTableToWinLoss(HashTable *hash)
 {
-	for (int i = 0; i < hash->num; i++)
+	for (int i = 0; i < hash->size; i++)
 	{
-		hash->data[i].lower = LOSS;
-		hash->data[i].upper = WIN;
+		hash->entry[i].deepest.lower = LOSS - 1;
+		hash->entry[i].newest.lower = LOSS - 1;
+		hash->entry[i].deepest.upper = WIN + 1;
+		hash->entry[i].newest.upper = WIN + 1;
 	}
 }
 
 void FixTableToExact(HashTable *hash)
 {
-	UINT32 lower;
-	UINT32 upper;
+	//UINT32 lower;
+	//UINT32 upper;
 
-	for (int i = 0; i < hash->num; i++)
+	for (int i = 0; i < hash->size; i++)
 	{
 #if 0
 		lower = hash->data[i].lower;
@@ -241,8 +233,10 @@ void FixTableToExact(HashTable *hash)
 			hash->data[i].upper = 64;
 		}
 #else
-		hash->data[i].lower = -64;
-		hash->data[i].upper = 64;
+		hash->entry[i].deepest.lower = -INF_SCORE;
+		hash->entry[i].newest.lower = -INF_SCORE;
+		hash->entry[i].deepest.upper = +INF_SCORE;
+		hash->entry[i].newest.upper = +INF_SCORE;
 #endif
 
 	}
