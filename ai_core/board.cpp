@@ -7,8 +7,23 @@
 #include "stdafx.h"
 #include "board.h"
 #include "eval.h"
+#include "bit64.h"
 
 UCHAR g_board[64];
+
+UINT8 board_parity[] =
+{
+	0, 0, 0, 0, 2, 2, 2, 2,
+	0, 0, 0, 0, 2, 2, 2, 2,
+	0, 0, 0, 0, 2, 2, 2, 2,
+	0, 0, 0, 0, 2, 2, 2, 2,
+	1, 1, 1, 1, 3, 3, 3, 3,
+	1, 1, 1, 1, 3, 3, 3, 3,
+	1, 1, 1, 1, 3, 3, 3, 3,
+	1, 1, 1, 1, 3, 3, 3, 3
+};
+
+
 
 /***************************************************************************
 * Name  : Swap
@@ -97,6 +112,26 @@ void InitIndexBoard(UINT64 bk, UINT64 wh)
 	g_board[63] = (int)((bk & h8) >> 63) + (int)((wh & h8) >> 62);
 }
 
+/***************************************************************************
+* Name  : create_empty_list
+* Brief : 空きマス＋偶奇情報のリストを作成する
+* Args  : bk        : 黒のビット列
+*         wh        : 白のビット列
+****************************************************************************/
+void create_empty_list(EmptyList *start, UINT64 blank)
+{
+	EmptyList *list = start + 1, *previous = start;
+
+	while (blank)
+	{
+		list->empty.position = CountBit((~blank) & (blank - 1));
+		list->empty.parity = board_parity[list->empty.position];
+		previous = previous->next = list;
+		blank ^= 1ULL << list->empty.position;
+		list++;
+	}
+	previous->next = NULL;
+}
 
 /*
 ############################################################################

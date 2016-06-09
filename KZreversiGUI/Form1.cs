@@ -1049,6 +1049,84 @@ namespace KZreversi
             panel1.Refresh();
         }
 
+        private void fFO46ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#46(black to move) (WinLoss:(b7:LOSS) 8.09sec Exact:(b3:-8) 15.63sec)
+            boardclass.InitBoard(COLOR_BLACK, 4052165999611379712, 36117299622447104);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO47ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#47(white to move) (WinLoss:(g2:WIN) 2.87sec: Exact:(g2:+4) 4.70sec)
+            boardclass.InitBoard(COLOR_WHITE, 277938752194568, 3536224466208);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO48ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#48(white to move) (WinLoss:(f6:WIN) 0.98sec: Exact:(f6:+28) 42.42sec)
+            boardclass.InitBoard(COLOR_WHITE, 38519958422848574, 4725679339520);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO49ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#49(black to move) (WinLoss:(e1:WIN) 4.52sec: Exact:(e1:+16) 95.10sec)
+            boardclass.InitBoard(COLOR_WHITE, 5765976742297600, 4253833575484);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO50ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#50(black to move) (WinLoss:(d8:WIN) 2.861sec: Exact:(d8:+10) 141.83sec)
+            boardclass.InitBoard(COLOR_BLACK, 4504145659822080, 4336117619740130304);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO51ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#51(white to move) (WinLoss:(e2:WIN) 2.92sec: Exact:(e2:+6) 137.96sec)
+            boardclass.InitBoard(COLOR_WHITE, 349834415978528, 8664011788383158280);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO52ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#52(white to move) (WinLoss:(a3:DRAW) 140.0sec: Exact:(a3:+0) 167.26sec)
+            boardclass.InitBoard(COLOR_WHITE, 9096176176681728056, 35409824317440);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+
 
     }
 }

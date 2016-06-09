@@ -122,18 +122,18 @@ void HashUpdate(
 	if (hash_entry->deepest.bk == bk && hash_entry->deepest.wh == wh)
 	{
 		if (score < beta && score < deepest->upper)
-			deepest->upper = (char)score;
+			deepest->upper = score;
 		if (score > alpha && score > deepest->lower)
-			deepest->lower = (char)score;
-		deepest->bestmove = (char)move;
+			deepest->lower = score;
+		deepest->bestmove = move;
 		/* newestエントリの更新を試みる */
 	}
 	else if (hash_entry->newest.bk == bk && hash_entry->newest.wh == wh)
 	{
 		if (score < beta && score < newest->upper)
-			newest->upper = (char)score;
+			newest->upper = score;
 		if (score > alpha && score > newest->lower)
-			newest->lower = (char)score;
+			newest->lower = score;
 		newest->bestmove = move;
 		/* それ以外の場合でdeepestエントリの更新を試みる */
 	}
@@ -142,12 +142,12 @@ void HashUpdate(
 		if (newest->empty < deepest->empty) *newest = *deepest;
 		deepest->bk = bk;
 		deepest->wh = wh;
-		deepest->empty = (INT8)empty;
+		deepest->empty = empty;
 		deepest->lower = -inf_score;
 		deepest->upper = inf_score;
-		if (score < beta) deepest->upper = (char)score;
-		if (score > alpha) deepest->lower = (char)score;
-		deepest->bestmove = (char)move;
+		if (score < beta) deepest->upper = score;
+		if (score > alpha) deepest->lower = score;
+		deepest->bestmove = move;
 		/* それ以外の場合でnewestエントリを更新する */
 	}
 	else if (newest->empty < empty)
@@ -157,8 +157,8 @@ void HashUpdate(
 		newest->empty = empty;
 		newest->lower = -inf_score;
 		newest->upper = inf_score;
-		if (score < beta) newest->upper = (char)score;
-		if (score > alpha) newest->lower = (char)score;
+		if (score < beta) newest->upper = score;
+		if (score > alpha) newest->lower = score;
 		newest->bestmove = move;
 	}
 }
@@ -179,58 +179,61 @@ void FixTableToWinLoss(HashTable *hash)
 {
 	for (int i = 0; i < hash->size; i++)
 	{
-		hash->entry[i].deepest.lower = LOSS - 1;
-		hash->entry[i].newest.lower = LOSS - 1;
-		hash->entry[i].deepest.upper = WIN + 1;
-		hash->entry[i].newest.upper = WIN + 1;
+		hash->entry[i].deepest.lower = -INF_SCORE;
+		hash->entry[i].newest.lower = -INF_SCORE;
+		hash->entry[i].deepest.upper = +INF_SCORE;
+		hash->entry[i].newest.upper = +INF_SCORE;
 	}
 }
 
 void FixTableToExact(HashTable *hash)
 {
-	//UINT32 lower;
-	//UINT32 upper;
+	UINT32 lower_d, lower_n;
+	UINT32 upper_d, upper_n;
 
 	for (int i = 0; i < hash->size; i++)
 	{
-#if 0
-		lower = hash->data[i].lower;
-		upper = hash->data[i].upper;
+#if 1
+		lower_d = hash->entry[i].deepest.lower;
+		upper_d = hash->entry[i].deepest.upper;
+		lower_n = hash->entry[i].newest.lower;
+		upper_n = hash->entry[i].newest.upper;
 
-		if (lower == LOSS && upper == LOSS)
+		/*  refresh deepest */
+		if (lower_d == LOSS && upper_d == LOSS)
 		{
-			hash->data[i].lower = -64;
-			hash->data[i].upper = -2;
+			hash->entry[i].deepest.lower = -INF_SCORE;
+			hash->entry[i].deepest.upper = -2 - 1;
 		}
-		else if (lower == LOSS && upper == DRAW)
+		else if (lower_d == LOSS && upper_d == DRAW)
 		{
-			hash->data[i].lower = -64;
-			hash->data[i].upper = 0;
+			hash->entry[i].deepest.lower = -INF_SCORE;
+			hash->entry[i].deepest.upper = 0 + 1;
 		}
-		else if (lower == LOSS && upper == WIN)
+		else if (lower_d == LOSS && upper_d == WIN)
 		{
-			hash->data[i].lower = -64;
-			hash->data[i].upper = 64;
+			hash->entry[i].deepest.lower = -INF_SCORE;
+			hash->entry[i].deepest.upper = INF_SCORE;
 		}
-		else if (lower == DRAW && upper == DRAW)
+		else if (lower_d == DRAW && upper_d == DRAW)
 		{
-			hash->data[i].lower = 0;
-			hash->data[i].upper = 0;
+			hash->entry[i].deepest.lower = 0;
+			hash->entry[i].deepest.upper = 0;
 		}
-		else if (lower == DRAW && upper == WIN)
+		else if (lower_d == DRAW && upper_d == WIN)
 		{
-			hash->data[i].lower = 0;
-			hash->data[i].upper = 64;
+			hash->entry[i].deepest.lower = 0 + 1;
+			hash->entry[i].deepest.upper = INF_SCORE;
 		}
-		else if (lower == WIN && upper == WIN)
+		else if (lower_d == WIN && upper_d == WIN)
 		{
-			hash->data[i].lower = 2;
-			hash->data[i].upper = 64;
+			hash->entry[i].deepest.lower = 2 + 1;
+			hash->entry[i].deepest.upper = INF_SCORE;
 		}
 		else
 		{
-			hash->data[i].lower = -64;
-			hash->data[i].upper = 64;
+			hash->entry[i].deepest.lower = -INF_SCORE;
+			hash->entry[i].deepest.upper = INF_SCORE;
 		}
 #else
 		hash->entry[i].deepest.lower = -INF_SCORE;

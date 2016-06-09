@@ -14,19 +14,25 @@
 #define BK_FIRST 34628173824
 #define WH_FIRST 68853694464
 
+extern UINT8 board_parity[];
 
-struct BoardClass
+typedef struct
 {
-	UINT32 color;
-	UINT64 black;
-	UINT64 white;
+	INT32 position; // ‹ó‚«ƒ}ƒX‚ÌˆÊ’u
+	UINT8 parity;   // 4x4‚Ì‹ôŠï
+}EmptyPosition;
 
+struct EmptyList
+{
+	EmptyPosition empty;
+	EmptyList *next;
 };
 
 extern UCHAR g_board[64];
 
 void InitIndexBoard(UINT64 bk, UINT64 wh);
 void Swap(UINT64 *bk, UINT64 *wh);
+void create_empty_list(EmptyList *start, UINT64 blank);
 
 UINT64 rotate_90(UINT64 board);
 UINT64 rotate_180(UINT64 board);
