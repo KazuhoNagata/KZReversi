@@ -181,8 +181,8 @@ void FixTableToWinLoss(HashTable *hash)
 	{
 		hash->entry[i].deepest.lower = -INF_SCORE;
 		hash->entry[i].newest.lower = -INF_SCORE;
-		hash->entry[i].deepest.upper = +INF_SCORE;
-		hash->entry[i].newest.upper = +INF_SCORE;
+		hash->entry[i].deepest.upper = INF_SCORE;
+		hash->entry[i].newest.upper = INF_SCORE;
 	}
 }
 
@@ -203,12 +203,12 @@ void FixTableToExact(HashTable *hash)
 		if (lower_d == LOSS && upper_d == LOSS)
 		{
 			hash->entry[i].deepest.lower = -INF_SCORE;
-			hash->entry[i].deepest.upper = -2 - 1;
+			hash->entry[i].deepest.upper = -2;
 		}
 		else if (lower_d == LOSS && upper_d == DRAW)
 		{
 			hash->entry[i].deepest.lower = -INF_SCORE;
-			hash->entry[i].deepest.upper = 0 + 1;
+			hash->entry[i].deepest.upper = 0;
 		}
 		else if (lower_d == LOSS && upper_d == WIN)
 		{
@@ -222,12 +222,12 @@ void FixTableToExact(HashTable *hash)
 		}
 		else if (lower_d == DRAW && upper_d == WIN)
 		{
-			hash->entry[i].deepest.lower = 0 + 1;
+			hash->entry[i].deepest.lower = 0;
 			hash->entry[i].deepest.upper = INF_SCORE;
 		}
 		else if (lower_d == WIN && upper_d == WIN)
 		{
-			hash->entry[i].deepest.lower = 2 + 1;
+			hash->entry[i].deepest.lower = 2;
 			hash->entry[i].deepest.upper = INF_SCORE;
 		}
 		else
@@ -238,8 +238,8 @@ void FixTableToExact(HashTable *hash)
 #else
 		hash->entry[i].deepest.lower = -INF_SCORE;
 		hash->entry[i].newest.lower = -INF_SCORE;
-		hash->entry[i].deepest.upper = +INF_SCORE;
-		hash->entry[i].newest.upper = +INF_SCORE;
+		hash->entry[i].deepest.upper = INF_SCORE;
+		hash->entry[i].newest.upper = INF_SCORE;
 #endif
 
 	}

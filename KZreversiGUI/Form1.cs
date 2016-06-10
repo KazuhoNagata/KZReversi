@@ -131,8 +131,6 @@ namespace KZreversi
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            m_ft.Dispose();
-            m_ft2.Dispose();
             // デバッグ作業で煩わしいため一旦コメントアウト
             //if (MessageBox.Show(
             //"終了してもいいですか？", "確認",
@@ -143,11 +141,24 @@ namespace KZreversi
             //}
         }
 
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            // リソースの解放
+            m_ft.Dispose();
+            m_ft2.Dispose();
+            cppWrapper.ReleaseHash();
+            cppWrapper.ReleaseBook();
+        }
+
         private void buttonClick(object sender, EventArgs e)
         {
             if (sender == this.button5) // ゲーム開始ボタン
             {
                 m_mode = ON_GAME;
+                toolStripStatusLabel1.Text = "";
+                toolStripStatusLabel2.Text = "";
+                toolStripStatusLabel3.Text = "";
+                //toolStripStatusLabel4.Text = "";
                 // cppWrapper.ReleaseHash();
                 boardclass.DeleteHistory(boardclass.GetNowTurn());
                 nowColor = boardclass.GetNowColor();
@@ -184,7 +195,7 @@ namespace KZreversi
                         MessageBoxIcon.Information);
                 }
 
-               // this.panel1.Refresh();
+                // this.panel1.Refresh();
             }
             else if (sender == this.button1) // 最初に戻るボタン
             {
@@ -314,7 +325,7 @@ namespace KZreversi
                     cpuClass[i].SetColor(BoardClass.WHITE);
                 }
 
-                cpuClass[i].SetCasheSize(1 << 21);
+                cpuClass[i].SetCasheSize(1 << 22); // 256MB default
                 cpuClass[i].SetSearchDepth(6);
                 cpuClass[i].SetWinLossDepth(14);
                 cpuClass[i].SetExactDepth(12);
@@ -446,7 +457,7 @@ namespace KZreversi
                             // プレイヤー変更
                             ChangePlayerReasonPass();
 
-                            if (cppWrapper.GetEnumMove(boardclass) == 0) 
+                            if (cppWrapper.GetEnumMove(boardclass) == 0)
                             {
                                 // 双方が人間でお互いがパスだった場合にここに来る
                                 m_mode = ON_NOTHING;
@@ -490,7 +501,7 @@ namespace KZreversi
                             // 置いてない場合は黒を置く
                             boardclass.EditBoard(bk | posBit, wh);
                         }
-                        
+
                     }
                     else
                     {
@@ -547,7 +558,7 @@ namespace KZreversi
                 sb.Append(nodeCount);
                 sb.Append("[n]");
             }
-            
+
             // 経過時間
             sb.Append(" time:");
             sb.Append((m_sw.ElapsedMilliseconds / (double)1000).ToString("f2"));
@@ -561,7 +572,7 @@ namespace KZreversi
             toolStripStatusLabel1.Text = sb.ToString();
         }
 
-        
+
         private void setCpuMessage(string cpuMessage)
         {
             toolStripStatusLabel3.Text = cpuMessage;
@@ -1000,6 +1011,8 @@ namespace KZreversi
             //FFO#40(black to move) (WinLoss:[a2:WIN] Exact:[a2:+38])
             boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
             nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
             panel1.Refresh();
         }
@@ -1009,6 +1022,8 @@ namespace KZreversi
             //FFO#41(black to move) (WinLoss:(h4:DRAW) 3.46sec Exact:(h4:+0) 3.28sec)
             boardclass.InitBoard(COLOR_BLACK, 616174399789064, 39493460025648416);
             nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
             panel1.Refresh();
         }
@@ -1018,6 +1033,8 @@ namespace KZreversi
             //FFO#42(black to move) (WinLoss:(g2:WIN) 2.26sec Exact:(g2:+6) 3.88sec)
             boardclass.InitBoard(COLOR_BLACK, 22586176447709200, 9091853944868375556);
             nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
             panel1.Refresh();
         }
@@ -1027,6 +1044,8 @@ namespace KZreversi
             //FFO#43(white to move) (WinLoss:(c7:LOSS) 0.501sec Exact:(c7:-12) 8.06sec)
             boardclass.InitBoard(COLOR_WHITE, 38808086923902976, 13546258740034592);
             nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
             panel1.Refresh();
         }
@@ -1036,6 +1055,8 @@ namespace KZreversi
             //FFO#44(white to move) (WinLoss:(d2:LOSS) 0.729sec  Exact:(d2:-14) 2.09ec)
             boardclass.InitBoard(COLOR_WHITE, 2494790880993312, 1010251075753548824);
             nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
             panel1.Refresh();
         }
@@ -1045,6 +1066,8 @@ namespace KZreversi
             //FFO#45(black to move) (WinLoss:(b2:WIN) 2.37sec Exact:(b2:+6) 38.21sec)
             boardclass.InitBoard(COLOR_BLACK, 282828816915486, 9287318235258944);
             nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
             panel1.Refresh();
         }
@@ -1054,8 +1077,8 @@ namespace KZreversi
             //FFO#46(black to move) (WinLoss:(b7:LOSS) 8.09sec Exact:(b3:-8) 15.63sec)
             boardclass.InitBoard(COLOR_BLACK, 4052165999611379712, 36117299622447104);
             nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
             panel1.Refresh();
         }
@@ -1085,10 +1108,10 @@ namespace KZreversi
         private void fFO49ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#49(black to move) (WinLoss:(e1:WIN) 4.52sec: Exact:(e1:+16) 95.10sec)
-            boardclass.InitBoard(COLOR_WHITE, 5765976742297600, 4253833575484);
+            boardclass.InitBoard(COLOR_BLACK, 5765976742297600, 4253833575484);
             nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
             panel1.Refresh();
         }
@@ -1126,7 +1149,101 @@ namespace KZreversi
             panel1.Refresh();
         }
 
+        private void fFO53ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#53(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            boardclass.InitBoard(COLOR_BLACK, 2515768979493888, 8949795312300457984);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
 
+        private void fFO54ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#54(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            boardclass.InitBoard(COLOR_BLACK, 277938752194568, 3536224466208);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO55ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#55(white to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            boardclass.InitBoard(COLOR_WHITE, 4635799596172290, 289361502099486840);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO56ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#56(white to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            boardclass.InitBoard(COLOR_WHITE, 4925086697193472, 9007372734053408);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 14;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO57ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#57(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            boardclass.InitBoard(COLOR_BLACK, 9060166336512000, 8943248156475301888);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO58ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#58(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            boardclass.InitBoard(COLOR_BLACK, 4636039783186432, 3383245044333600);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void fFO59ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //FFO#59(black to move) (WinLoss:(g8:WIN) 0.32sec: Exact:(g8:+64) 0.34sec)
+            boardclass.InitBoard(COLOR_BLACK, 17320879491911778304, 295223649004691488);
+            nowColor = boardclass.GetNowColor();
+            comboBox1.SelectedIndex = 14;
+            comboBox2.SelectedIndex = 0;
+            SetPlayerInfo();
+            panel1.Refresh();
+        }
+
+        private void ConfigCasheToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int size = CasheToolStripMenuItem.DropDownItems.Count;
+            ToolStripMenuItem stripItem = ((ToolStripMenuItem)sender);
+
+            // チェック全解除
+            for (int i = 0; i < size; i++)
+            {
+                ((ToolStripMenuItem)CasheToolStripMenuItem.DropDownItems[i]).Checked = false;
+            }
+
+            uint casheSize = Convert.ToUInt32(stripItem.Text.Replace("MB", ""));
+
+            // size(MB)--> size * 1024 * 1024 / sizeof(hash_entry) = size * 1024 * 16
+            cpuClass[0].SetCasheSize(casheSize * 1024 * 16);
+            cpuClass[1].SetCasheSize(casheSize * 1024 * 16);
+            stripItem.Checked = true;
+        }
 
     }
 }

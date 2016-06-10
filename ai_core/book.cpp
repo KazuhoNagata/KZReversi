@@ -27,20 +27,9 @@ BOOL g_book_done;
 /* 指し手の回転・対称変換フラグ */
 int TRANCE_MOVE;
 
-typedef struct node
-{
-	struct node *child;
-	struct node *next;
-	UINT64 bk;
-	UINT64 wh;
-	int eval;
-	short move;
-	short depth;
-}BooksNode;
 
 BooksNode g_bookTree;
 BooksNode *g_bestNode;
-
 
 /***************************************************************************
 * 
@@ -652,4 +641,29 @@ BOOL OpenBook(char *filename)
 	}
 
 	return TRUE;
+}
+
+/***************************************************************************
+* Name  : BookFree
+* Brief : 定石データのためのメモリを解放
+****************************************************************************/
+void BookFree(BooksNode *head)
+{
+	// 葉ノード？
+	if (head->next == NULL && head->child == NULL)
+	{
+		free(head);
+		return;
+	}
+
+	if (head->child)
+	{
+		BookFree(head->child);
+	}
+	if (head->next)
+	{
+		BookFree(head->next);
+	}
+
+	return;
 }

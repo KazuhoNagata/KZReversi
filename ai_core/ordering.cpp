@@ -367,7 +367,7 @@ void SortMoveListMiddle(
 
 			/* ˆÊ’u“¾“_ */
 			score -= posEval[iter->move.pos] << 2;
-			score += CountBit(iter->move.rev) << 4;
+			//score += CountBit(iter->move.rev) << 4;
 			/* “G‚Ì’…Žè‰Â”\”‚ðŽæ“¾ */
 			score += ((move_cnt + CountBit(n_moves_wh & 0x8100000000000081)) << 4)
 				- get_corner_stability(move_b);

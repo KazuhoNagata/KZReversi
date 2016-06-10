@@ -170,6 +170,16 @@ namespace KZreversi
         {
             NativeMethods.KZ_ReleaseHash();
         }
+
+        /// <summary>
+        /// AIで使用する定石データを解放する
+        /// </summary>
+        /// <returns></returns>
+        public void ReleaseBook()
+        {
+            NativeMethods.KZ_ReleaseBook();
+        }
+
     }
 
 
@@ -222,5 +232,10 @@ namespace KZreversi
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
         public extern static void KZ_ReleaseHash();
+
+        [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
+        [SuppressUnmanagedCodeSecurityAttribute()]
+        public extern static void KZ_ReleaseBook();
+        
     }
 }

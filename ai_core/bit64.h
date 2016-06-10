@@ -8,6 +8,10 @@
 
 #pragma once
 
+extern const unsigned long long X_TO_BIT[];
+
+#define x_to_bit(x) X_TO_BIT[x]
+
 /* ’…è‰Â”\”ŒvZ—p */
 typedef struct {
 	unsigned long high;

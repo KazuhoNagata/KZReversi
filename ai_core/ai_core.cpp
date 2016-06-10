@@ -45,6 +45,8 @@ KZ_EXPORT BOOL KZ_LibInit()
 		strcpy_s(g_cordinates_table[i], 4, cordinate);
 	}
 
+	edge_stability_init();
+
 	return result;
 }
 
@@ -199,5 +201,18 @@ KZ_EXPORT void KZ_ReleaseHash()
 	{
 		HashDelete(g_hash);
 		g_hash = NULL;
+	}
+}
+
+/***************************************************************************
+* Name  : KZ_ReleaseBook
+* Brief : ’èÎƒf[ƒ^‚ğ‰ğ•ú‚·‚é
+****************************************************************************/
+KZ_EXPORT void KZ_ReleaseBook()
+{
+	if (g_bookTree.child != NULL)
+	{
+		BookFree(g_bookTree.child);
+		g_bookTree.child = NULL;
 	}
 }
