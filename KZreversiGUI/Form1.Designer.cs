@@ -231,7 +231,7 @@
             this.黒から始めるToolStripMenuItem,
             this.白から始めるToolStripMenuItem});
             this.ゲーム開始ToolStripMenuItem.Name = "ゲーム開始ToolStripMenuItem";
-            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.ゲーム開始ToolStripMenuItem.Text = "ゲーム開始";
             // 
             // 新規ゲームToolStripMenuItem
@@ -373,7 +373,7 @@
             this.BOOKFLAG_ToolStripMenuItem.Checked = true;
             this.BOOKFLAG_ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.BOOKFLAG_ToolStripMenuItem.Name = "BOOKFLAG_ToolStripMenuItem";
-            this.BOOKFLAG_ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.BOOKFLAG_ToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
             this.BOOKFLAG_ToolStripMenuItem.Text = "bookを使用";
             this.BOOKFLAG_ToolStripMenuItem.Click += new System.EventHandler(this.bookを使用ToolStripMenuItem_Click);
             // 
@@ -386,7 +386,7 @@
             this.変化大ToolStripMenuItem,
             this.ランダムToolStripMenuItem});
             this.bookの変化度ToolStripMenuItem.Name = "bookの変化度ToolStripMenuItem";
-            this.bookの変化度ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.bookの変化度ToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
             this.bookの変化度ToolStripMenuItem.Text = "bookの変化度";
             // 
             // 変化なしToolStripMenuItem
@@ -430,7 +430,7 @@
             this.置換表を使うToolStripMenuItem,
             this.MPC_ToolStripMenuItem});
             this.aI設定ToolStripMenuItem.Name = "aI設定ToolStripMenuItem";
-            this.aI設定ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.aI設定ToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
             this.aI設定ToolStripMenuItem.Text = "AI設定";
             // 
             // 詳細結果の表示ToolStripMenuItem
@@ -481,48 +481,48 @@
             this.mBToolStripMenuItem5,
             this.mBToolStripMenuItem6});
             this.CasheToolStripMenuItem.Name = "CasheToolStripMenuItem";
-            this.CasheToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.CasheToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
             this.CasheToolStripMenuItem.Text = "キャッシュサイズ";
             // 
             // mBToolStripMenuItem
             // 
             this.mBToolStripMenuItem.Name = "mBToolStripMenuItem";
-            this.mBToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.mBToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem.Text = "4MB";
             this.mBToolStripMenuItem.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem1
             // 
             this.mBToolStripMenuItem1.Name = "mBToolStripMenuItem1";
-            this.mBToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+            this.mBToolStripMenuItem1.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem1.Text = "8MB";
             this.mBToolStripMenuItem1.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem2
             // 
             this.mBToolStripMenuItem2.Name = "mBToolStripMenuItem2";
-            this.mBToolStripMenuItem2.Size = new System.Drawing.Size(152, 22);
+            this.mBToolStripMenuItem2.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem2.Text = "16MB";
             this.mBToolStripMenuItem2.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem3
             // 
             this.mBToolStripMenuItem3.Name = "mBToolStripMenuItem3";
-            this.mBToolStripMenuItem3.Size = new System.Drawing.Size(152, 22);
+            this.mBToolStripMenuItem3.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem3.Text = "32MB";
             this.mBToolStripMenuItem3.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem4
             // 
             this.mBToolStripMenuItem4.Name = "mBToolStripMenuItem4";
-            this.mBToolStripMenuItem4.Size = new System.Drawing.Size(152, 22);
+            this.mBToolStripMenuItem4.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem4.Text = "64MB";
             this.mBToolStripMenuItem4.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem5
             // 
             this.mBToolStripMenuItem5.Name = "mBToolStripMenuItem5";
-            this.mBToolStripMenuItem5.Size = new System.Drawing.Size(152, 22);
+            this.mBToolStripMenuItem5.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem5.Text = "128MB";
             this.mBToolStripMenuItem5.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
@@ -531,7 +531,7 @@
             this.mBToolStripMenuItem6.Checked = true;
             this.mBToolStripMenuItem6.CheckState = System.Windows.Forms.CheckState.Checked;
             this.mBToolStripMenuItem6.Name = "mBToolStripMenuItem6";
-            this.mBToolStripMenuItem6.Size = new System.Drawing.Size(152, 22);
+            this.mBToolStripMenuItem6.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem6.Text = "256MB";
             this.mBToolStripMenuItem6.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
@@ -557,7 +557,7 @@
             this.lEEVL7ToolStripMenuItem,
             this.lEVEL8ToolStripMenuItem});
             this.ヒントToolStripMenuItem.Name = "ヒントToolStripMenuItem";
-            this.ヒントToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.ヒントToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
             this.ヒントToolStripMenuItem.Text = "ヒント表示";
             // 
             // 表示なしToolStripMenuItem
@@ -640,7 +640,7 @@
             this.fFO58ToolStripMenuItem,
             this.fFO59ToolStripMenuItem});
             this.fFOテストToolStripMenuItem.Name = "fFOテストToolStripMenuItem";
-            this.fFOテストToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.fFOテストToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
             this.fFOテストToolStripMenuItem.Text = "FFOテスト";
             // 
             // fFO40ToolStripMenuItem
@@ -1001,6 +1001,7 @@
             this.button7.TabIndex = 12;
             this.button7.Text = "新規ゲーム開始";
             this.button7.UseVisualStyleBackColor = true;
+            this.button7.Click += new System.EventHandler(this.buttonClick);
             // 
             // Form1
             // 

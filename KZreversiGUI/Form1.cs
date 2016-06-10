@@ -152,14 +152,25 @@ namespace KZreversi
 
         private void buttonClick(object sender, EventArgs e)
         {
-            if (sender == this.button5) // ゲーム開始ボタン
+            if (sender == this.button7)  // ゲーム開始ボタン
+            {
+                boardclass.InitBoard(COLOR_BLACK);
+                cppWrapper.ReleaseHash();
+                nowColor = boardclass.GetNowColor();
+                SetPlayerInfo();
+
+                m_mode = ON_GAME;
+
+                this.panel1.Refresh();
+            }
+            else if (sender == this.button5) // ゲーム再開ボタン
             {
                 m_mode = ON_GAME;
                 toolStripStatusLabel1.Text = "";
                 toolStripStatusLabel2.Text = "";
                 toolStripStatusLabel3.Text = "";
                 //toolStripStatusLabel4.Text = "";
-                // cppWrapper.ReleaseHash();
+
                 boardclass.DeleteHistory(boardclass.GetNowTurn());
                 nowColor = boardclass.GetNowColor();
 
@@ -1244,6 +1255,5 @@ namespace KZreversi
             cpuClass[1].SetCasheSize(casheSize * 1024 * 16);
             stripItem.Checked = true;
         }
-
     }
 }
