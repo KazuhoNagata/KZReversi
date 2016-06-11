@@ -242,12 +242,12 @@ void sort_movelist_score_descending(MoveList *movelist)
 {
 	MoveList *iter, *best, *previous_best, *previous;
 
-	for (iter = movelist; iter->next != NULL; iter = iter->next) 
+	for (iter = movelist; iter->next != NULL; iter = iter->next)
 	{
 		previous_best = iter;
-		for (previous = previous_best->next; previous->next != NULL; previous = previous->next) 
+		for (previous = previous_best->next; previous->next != NULL; previous = previous->next)
 		{
-			if (previous_best->next->move.score <  previous->next->move.score)
+			if (previous_best->next->move.score < previous->next->move.score)
 			{
 				previous_best = previous;
 			}
@@ -267,9 +267,9 @@ void sort_movelist_score_ascending(MoveList *movelist)
 
 	for (iter = movelist; iter->next != NULL; iter = iter->next) {
 		previous_best = iter;
-		for (previous = previous_best->next; previous->next != NULL; previous = previous->next) 
+		for (previous = previous_best->next; previous->next != NULL; previous = previous->next)
 		{
-			if (previous_best->next->move.score >  previous->next->move.score) 
+			if (previous_best->next->move.score > previous->next->move.score)
 			{
 				previous_best = previous;
 			}
@@ -298,7 +298,7 @@ void SortFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh)
 	UINT32 n_moves_wh;
 	UINT64 move_b, move_w;
 
-	for (iter = movelist->next; iter != NULL; iter = iter->next) 
+	for (iter = movelist->next; iter != NULL; iter = iter->next)
 	{
 		iter->move.rev = GetRev[iter->move.pos](bk, wh);
 		move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
@@ -313,12 +313,12 @@ void SortFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh)
 #if 1
 /* 序盤中盤用 move ordering */
 void SortMoveListMiddle(
-	MoveList *movelist, 
+	MoveList *movelist,
 	UINT64 bk, UINT64 wh,
-	HashTable *hash, 
-	INT32 depth, 
+	HashTable *hash,
+	INT32 depth,
 	UINT32 empty,
-	INT32 alpha, INT32 beta, 
+	INT32 alpha, INT32 beta,
 	UINT32 color)
 {
 	MoveList *iter;
@@ -381,32 +381,76 @@ void SortMoveListMiddle(
 
 #endif
 
-/*  終盤用 move ordering */
-void SortMoveListEnd(MoveList *movelist, UINT64 bk, UINT64 wh)
+/**
+* @brief スコア順に手を並び替える
+*
+* 重要な順に以下の要素を考慮
+*   - 相手を全滅させる手か                              : 1 << 30
+*   - 第一ハッシュテーブル(deepest)に登録されている手か : 1 << 29
+*   - 第二ハッシュテーブル(newest)に登録されている手か  : 1 << 28
+*   - 浅い探索による評価値                              : 1 << 14
+*   - 相手の着手可能数                                  : 1 << 15
+*   - 相手の４隅における安定度                          : 1 << 11
+*   - 相手の潜在的着手可能数(開放度理論)                : 1 << 5
+*/
+void SortMoveListEnd(
+	MoveList *movelist,
+	UINT64 bk, UINT64 wh,
+	HashTable *hash,
+	UINT32 empty,
+	INT32 alpha, INT32 beta,
+	UINT32 color)
 {
 	MoveList *iter;
-	INT32 score;
-	UINT64 ligal_move_w;
+	UINT64 blank, n_moves_wh;
 	UINT64 move_b, move_w;
-	UINT32 move_cnt;
+	UINT32 key, move_cnt;
+	UINT32 parity;
+	INT32 sort_depth = 6 - (g_empty - empty);
 
 	for (iter = movelist->next; iter != NULL; iter = iter->next)
 	{
-		score = 0;
+		iter->move.score = 0;
 		move_b = bk ^ ((1ULL << iter->move.pos) | iter->move.rev);
 		move_w = wh ^ iter->move.rev;
+		key = KEY_HASH_MACRO(move_w, move_b);
 
-		ligal_move_w = CreateMoves(move_w, move_b, &move_cnt);
+		// 相手を全滅させる手か
+		if (move_w == 0) {
+			iter->move.score += (1 << 30);
+			continue;
+		}
+		// 第一ハッシュテーブル(deepest)に登録されている手か 
+		else if (hash->entry[key].deepest.bk == move_w &&
+			hash->entry[key].deepest.wh == move_b) iter->move.score += (1 << 8);
+		// 第二ハッシュテーブル(newest)に登録されている手か 
+		else if (hash->entry[key].newest.bk == move_w &&
+			hash->entry[key].newest.wh == move_b) iter->move.score += (1 << 7);
 
-		/* 敵の着手可能数を取得 */
-		score += (move_cnt + CountBit(ligal_move_w & 0x8100000000000081)) << 4;
-		score -= get_corner_stability(move_b);
+		blank = ~(move_w | move_b);
 
-		iter->move.score = score;
+		// 着手可能数を計算
+		n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
+		// 相手の着手可能数
+		iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081)) * (1 << 15);
+		// 自分の４隅における安定度
+		iter->move.score -= get_edge_stability(move_w, move_b) * (1 << 11);
+		// 相手の潜在的着手可能数(開放度理論)
+		iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b, blank))) * (1 << 5);
+
+		// 浅い探索による評価値
+		if (sort_depth > 0)
+		{
+			INT32 temp_eval;
+			if (HashGet(hash, key, move_w, move_b)) iter->move.score += (1 << 15); // 着手した後の局面が置換表に登録されていたら加算
+			temp_eval = -OrderingAlphaBeta(move_w, move_b, sort_depth, empty - 1, color ^ 1,
+				NEGAMIN, NEGAMAX, 0);
+			iter->move.score += (temp_eval) * (1 << 2);
+		}
 	}
 
-	/* 敵の得点の少ない順にソート */
-	sort_movelist_score_ascending(movelist);
+	/* 得点の高い順にソート */
+	sort_movelist_score_descending(movelist);
 }
 
 

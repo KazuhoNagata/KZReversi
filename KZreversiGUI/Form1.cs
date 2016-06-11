@@ -160,8 +160,14 @@ namespace KZreversi
                 SetPlayerInfo();
 
                 m_mode = ON_GAME;
-
                 this.panel1.Refresh();
+
+                ChangePlayer();
+                if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+                {
+                    // CPUモードに移行(ハンドラコール)
+                    m_cpuFlagProperty = true;
+                }
             }
             else if (sender == this.button5) // ゲーム再開ボタン
             {

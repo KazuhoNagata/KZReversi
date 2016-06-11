@@ -665,5 +665,7 @@ void BookFree(BooksNode *head)
 		BookFree(head->next);
 	}
 
+	free(head);
+
 	return;
 }

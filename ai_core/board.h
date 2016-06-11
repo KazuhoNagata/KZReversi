@@ -15,8 +15,10 @@
 #define WH_FIRST 68853694464
 
 extern UINT8 board_parity[];
+extern UINT8 board_parity_bit[];
 extern UINT64 quad_parity_bitmask[];
 extern const INT32 NWS_STABILITY_THRESHOLD[];
+extern const INT32 PVS_STABILITY_THRESHOLD[];
 
 typedef struct
 {
@@ -34,6 +36,7 @@ extern UCHAR g_board[64];
 
 void edge_stability_init(void);
 int get_stability(const unsigned long long P, const unsigned long long O);
+int get_edge_stability(const unsigned long long P, const unsigned long long O);
 void create_quad_parity(UINT32 *q_parity, UINT64 blank);
 void InitIndexBoard(UINT64 bk, UINT64 wh);
 void Swap(UINT64 *bk, UINT64 *wh);

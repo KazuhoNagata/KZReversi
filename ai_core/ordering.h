@@ -30,4 +30,10 @@ void SortMoveListMiddle(
 	UINT32 empty,
 	INT32 alpha, INT32 beta,
 	UINT32 color);
-void SortMoveListEnd(MoveList *movelist, UINT64 bk, UINT64 wh);
+void SortMoveListEnd(
+	MoveList *movelist,
+	UINT64 bk, UINT64 wh,
+	HashTable *hash,
+	UINT32 empty,
+	INT32 alpha, INT32 beta,
+	UINT32 color);

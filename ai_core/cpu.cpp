@@ -177,6 +177,28 @@ void CreateCpuMessage(char *msg, int msglen, int eval, int move, int cnt, int fl
 }
 
 /**
+* @brief Stability Cutoff (SC).
+*
+* @param search Current position.
+* @param alpha Alpha bound.
+* @param beta Beta bound, to adjust if necessary.
+* @param score Score to return in case of a cutoff is found.
+* @return 'true' if a cutoff is found, false otherwise.
+*/
+bool search_SC_PVS(UINT64 bk, UINT64 wh, INT32 empty, 
+	volatile INT32 *alpha, volatile INT32 *beta, INT32 *score)
+{
+	if (*beta >= PVS_STABILITY_THRESHOLD[empty]) {
+			*score = (64 - 2 * get_stability(wh, bk)) * EVAL_ONE_STONE;
+		if (*score <= *alpha) {
+				return true;
+		}
+		else if (*score < *beta) *beta = *score;
+	}
+	return false;
+}
+
+/**
 * @brief Stability Cutoff (TC).
 *
 * @param search Current position.
@@ -465,9 +487,9 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 
 	g_limitDepth = emptyNum;
 	if (g_limitDepth % 2) g_limitDepth--;
-	if (g_limitDepth > 22)
+	if (g_limitDepth > 24)
 	{
-		g_limitDepth = 22;
+		g_limitDepth = 24;
 	}
 	if (g_limitDepth >= 12)
 	{
@@ -670,7 +692,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 			if (empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
 			{
 				create_quad_parity(quad_parity, ~(wh | bk));
-				bestscore = -AlphaBetaSearchExact(wh, bk, ~(wh | bk), empty, quad_parity, 
+				bestscore = -AlphaBetaSearchExact(wh, bk, ~(wh | bk), empty, quad_parity,
 					color ^ 1, -upper, -lower, 1);
 			}
 			else
@@ -714,14 +736,8 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 
 		if (moveCount > 1)
 		{
-			if (empty >= EMPTIES_MID_ORDER_TO_END_ORDER){
-				/* 中盤用のオーダリング */
-				SortMoveListMiddle(movelist, bk, wh, hash, empty, empty, alpha, beta, color);
-			}
-			else if (empty >= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
-			{
-				SortMoveListEnd(movelist, bk, wh);
-			}
+			// 手の並べ替え
+			SortMoveListEnd(movelist, bk, wh, hash, empty, alpha, beta, color);
 		}
 
 		/* 置換表で参照出来た手から先に着手するためにソート */
@@ -740,7 +756,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 		if (empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
 		{
 			create_quad_parity(quad_parity, ~(move_b | move_w));
-			bestscore = -AlphaBetaSearchExact(move_w, move_b, ~(move_b | move_w), 
+			bestscore = -AlphaBetaSearchExact(move_w, move_b, ~(move_b | move_w),
 				empty - 1, quad_parity, color ^ 1, -upper, -lower, 0);
 		}
 		else
@@ -837,7 +853,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 	return bestscore;
 }
 
-INT32 SearchEmpty_1(UINT64 bk, UINT64 wh, UINT64 blank)
+INT32 SearchEmpty_1(UINT64 bk, UINT64 wh, UINT64 blank, INT32 alpha)
 {
 	INT32 pos = CountBit((~blank) & (blank - 1));
 	UINT64 rev = GetRev[pos](bk, wh);
@@ -895,7 +911,170 @@ INT32 SearchEmpty_1(UINT64 bk, UINT64 wh, UINT64 blank)
 	return n_disc;
 }
 
-INT32 AlphaBetaSearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, 
+INT32 parity_search_exact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
+	UINT32 parity, UINT32 color, INT32 alpha, INT32 beta, UINT32 passed)
+{
+	/* アボート処理 */
+	if (g_AbortFlag)
+	{
+		return ABORT;
+	}
+
+	g_countNode++;
+
+	INT32 best;
+	// stability cutoff
+	if (search_SC_NWS(bk, wh, empty, alpha, &best)) return best;
+
+	if (empty == 1)
+	{
+		return SearchEmpty_1(bk, wh, blank, alpha);
+	}
+
+	INT32 pos_list[4];
+	if (empty == 3){
+			UINT64 temp_moves = blank;
+			int x1 = CountBit((~temp_moves) & (temp_moves - 1));
+			temp_moves ^= (1ULL << x1);
+			int x2 = CountBit((~temp_moves) & (temp_moves - 1));
+			temp_moves ^= (1ULL << x2);
+			int x3 = CountBit((~temp_moves) & (temp_moves - 1));
+
+			if (!(parity & board_parity_bit[x1])) {
+				if (parity & board_parity_bit[x2]) { // case 1(x2) 2(x1 x3)
+					int tmp = x1; x1 = x2; x2 = tmp;
+				}
+				else { // case 1(x3) 2(x1 x2)
+					int tmp = x1; x1 = x3; x3 = x2; x2 = tmp;
+				}
+			}
+			pos_list[0] = x1;
+			pos_list[1] = x2;
+			pos_list[2] = x3;
+	}
+	else if (empty == 4){
+		UINT64 temp_moves = blank;
+		int x1 = CountBit((~temp_moves) & (temp_moves - 1));
+		temp_moves ^= (1ULL << x1);
+		int x2 = CountBit((~temp_moves) & (temp_moves - 1));
+		temp_moves ^= (1ULL << x2);
+		int x3 = CountBit((~temp_moves) & (temp_moves - 1));
+		temp_moves ^= (1ULL << x3);
+		int x4 = CountBit((~temp_moves) & (temp_moves - 1));
+		// parity...move sort
+		//    4 - 1 3 - 2 2 - 1 1 2 - 1 1 1 1
+		// Only the 1 1 2 case needs move sorting.
+		if (!(parity & board_parity_bit[x1])) {
+			if (parity & board_parity_bit[x2]) {
+				if (parity & board_parity_bit[x3]) { // case 1(x2) 1(x3) 2(x1 x4)
+					int tmp = x1; x1 = x2; x2 = x3; x3 = tmp;
+				}
+				else { // case 1(x2) 1(x4) 2(x1 x3)
+					int tmp = x1; x1 = x2; x2 = x4; x4 = x3; x3 = tmp;
+				}
+			}
+			else if (parity & board_parity_bit[x3]) { // case 1(x3) 1(x4) 2(x1 x2)
+				int tmp = x1; x1 = x3; x3 = tmp; tmp = x2; x2 = x4; x4 = tmp;
+			}
+		}
+		else {
+			if (!(parity & board_parity_bit[x2])) {
+				if (parity & board_parity_bit[x3]) { // case 1(x1) 1(x3) 2(x2 x4)
+					int tmp = x2; x2 = x3; x3 = tmp;
+				}
+				else { // case 1(x1) 1(x4) 2(x2 x3)
+					int tmp = x2; x2 = x4; x4 = x3; x3 = tmp;
+				}
+			}
+		}
+		pos_list[0] = x1;
+		pos_list[1] = x2;
+		pos_list[2] = x3;
+		pos_list[3] = x4;
+	}
+	else // empty = 2
+	{
+		UINT64 temp_moves = blank;
+		int x1 = CountBit((~temp_moves) & (temp_moves - 1));
+		temp_moves ^= (1ULL << x1);
+		int x2 = CountBit((~temp_moves) & (temp_moves - 1));
+		pos_list[0] = x1;
+		pos_list[1] = x2;
+	}
+
+	UINT64 pos_bit, rev;
+	INT32 eval;
+	INT32 cnt;
+	INT32 pos;
+
+	cnt = 0;
+	best = -INF_SCORE;
+	// sorted parity
+	while (cnt < empty)
+	{
+		pos = pos_list[cnt];
+		pos_bit = 1ULL << pos;
+		rev = GetRev[pos](bk, wh);
+
+		if (rev)
+		{
+			eval = -parity_search_exact(wh ^ rev, bk ^ (pos_bit | rev),
+				blank ^ pos_bit, empty - 1, parity ^ board_parity_bit[pos], 
+				color ^ 1, -beta, -alpha, 0);
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > best)
+			{
+				best = eval;
+				alpha = max(alpha, eval);
+			}
+		}
+		cnt++;
+	}
+
+	if (best == -INF_SCORE)
+	{
+		// 打てなかった
+		if (passed)
+		{
+			// game end...
+			if (bk == 0)
+			{
+				best = -64;
+			}
+			else if (wh == 0)
+			{
+				best = 64;
+			}
+			else
+			{
+				best = CountBit(bk) - CountBit(wh);
+				// 空きマスは勝った方に加算する
+				if (best > 0)
+				{
+					best += empty;
+				}
+				else if (best < 0)
+				{
+					best -= empty;
+				}
+			}
+		}
+		else
+		{
+			best = -parity_search_exact(wh, bk, blank, empty, parity,
+				color ^ 1, -beta, -alpha, 1);
+		}
+	}
+
+	return best;
+}
+
+INT32 AlphaBetaSearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	UINT32 *quad_parity, UINT32 color, INT32 alpha, INT32 beta, UINT32 passed)
 {
 	/* アボート処理 */
@@ -906,12 +1085,6 @@ INT32 AlphaBetaSearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 
 	g_countNode++;
 
-	if (empty == 1)
-	{
-		return SearchEmpty_1(bk, wh, blank);
-	}
-
-
 	INT32 max;                    //現在の最高評価値
 	INT32 eval;                   //評価値の保存
 	INT32 pos;
@@ -920,6 +1093,17 @@ INT32 AlphaBetaSearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 
 	// stability cutoff
 	if (search_SC_NWS(bk, wh, empty, alpha, &max)) return max;
+
+	if (empty <= 4)
+	{
+		UINT32 parity = 
+			(quad_parity[3] << 3) | 
+			(quad_parity[2] << 2) | 
+			(quad_parity[1] << 1) | 
+			quad_parity[0];
+
+		return parity_search_exact(bk, wh, blank, empty, parity, color, alpha, beta, passed);
+	}
 
 	max = -INF_SCORE;
 
@@ -934,7 +1118,7 @@ INT32 AlphaBetaSearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			while (moves)
 			{
 				/*
-				　ここに来るのは６マス以下の空きなので、CreateMovesを呼ぶより
+			　	 ここに来るのは６マス以下の空きなので、CreateMovesを呼ぶより
 				 反転データ取得と合法手を空きマスから直接チェックしたほうが圧倒的に速い
 				 */
 				pos = CountBit((~moves) & (moves - 1));
@@ -977,7 +1161,7 @@ INT32 AlphaBetaSearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			while (moves)
 			{
 				/*
-				　ここに来るのは６マス以下の空きなので、CreateMovesを呼ぶより
+			　	 ここに来るのは６マス以下の空きなので、CreateMovesを呼ぶより
 				 反転データ取得と合法手を空きマスから直接チェックしたほうが圧倒的に速い
 				 */
 				pos = CountBit((~moves) & (moves - 1));
@@ -1008,7 +1192,6 @@ INT32 AlphaBetaSearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			}
 		}
 	}
-	
 
 	if (max == -INF_SCORE)
 	{
@@ -1040,7 +1223,7 @@ INT32 AlphaBetaSearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 		}
 		else
 		{
-			max = -AlphaBetaSearchExact(wh, bk, blank, empty, quad_parity, 
+			max = -AlphaBetaSearchExact(wh, bk, blank, empty, quad_parity,
 				color ^ 1, -beta, -alpha, 1);
 			// restore parity
 			create_quad_parity(quad_parity, blank);
@@ -1208,14 +1391,8 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 
 		if (moveCount > 1)
 		{
-			if (empty > EMPTIES_MID_ORDER_TO_END_ORDER){
-				/* 中盤用のオーダリング */
-				SortMoveListMiddle(movelist, bk, wh, hash, empty, empty, alpha, beta, color);
-			}
-			else if (empty >= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
-			{
-				SortMoveListEnd(movelist, bk, wh);
-			}
+			// 手の並べ替え
+			SortMoveListEnd(movelist, bk, wh, hash, empty, alpha, beta, color);
 		}
 
 		/* 置換表で参照出来た手から先に着手するためにソート */
@@ -1234,7 +1411,7 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 		if (empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
 		{
 			create_quad_parity(quad_parity, ~(move_w | move_b));
-			bestscore = -AlphaBetaSearchWinLoss(move_w, move_b, ~(move_b | move_w), 
+			bestscore = -AlphaBetaSearchWinLoss(move_w, move_b, ~(move_b | move_w),
 				empty - 1, quad_parity, color ^ 1, -upper, -lower, 0);
 		}
 		else
@@ -1407,7 +1584,7 @@ INT32 SearchEmptyWinLoss_1(UINT64 bk, UINT64 wh, UINT64 blank)
 *         pass_cnt  : 今までのパスの数(２カウントで終了とみなす)
 * Return: 着手可能位置のビット列
 ****************************************************************************/
-INT32 AlphaBetaSearchWinLoss(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, 
+INT32 AlphaBetaSearchWinLoss(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	UINT32 *quad_parity, UINT32 color, INT32 alpha, INT32 beta, UINT32 passed)
 {
 	/* アボート処理 */
@@ -1541,7 +1718,7 @@ INT32 AlphaBetaSearchWinLoss(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 		}
 		else
 		{
-			max = -AlphaBetaSearchWinLoss(wh, bk, blank, empty, quad_parity, 
+			max = -AlphaBetaSearchWinLoss(wh, bk, blank, empty, quad_parity,
 				color ^ 1, -beta, -alpha, 1);
 			// restore parity
 			create_quad_parity(quad_parity, blank);
@@ -1587,6 +1764,9 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	bestmove = NOMOVE;
 	lower = alpha;
 	upper = beta;
+
+	// stability cutoff
+	if (search_SC_PVS(bk, wh, empty, &alpha, &beta, &score)) return score;
 
 	/************************************************************
 	*
@@ -1810,6 +1990,10 @@ INT32 AlphaBetaSearch(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 col
 		return Evaluation(g_board, bk, wh, color, 59 - empty);
 	}
 
+	int eval;
+	// stability cutoff
+	if (search_SC_PVS(bk, wh, empty, &alpha, &beta, &eval)) return eval;
+
 #if 1
 	if (depth >= MPC_MIN_DEPTH)
 	{
@@ -1841,7 +2025,6 @@ INT32 AlphaBetaSearch(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 col
 #endif
 	int move_cnt;
 	int max;                    //現在の最高評価値
-	int eval;                   //評価値の保存
 	UINT64 rev;
 	UINT64 moves;             //合法手のリストアップ
 
