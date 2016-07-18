@@ -48,7 +48,7 @@ UINT64 quad_parity_bitmask[] =
 	0x000000000F0F0F0FULL,
 	0x00000000F0F0F0F0ULL,
 	0x0F0F0F0F00000000ULL,
-	0xF0F0F0F000000000ULL,
+	0xF0F0F0F000000000ULL
 };
 
 /** threshold values to try stability cutoff during NWS search */
@@ -160,10 +160,10 @@ static const unsigned long long H1_H8[256] = {
 * @param old_O previous opponent edge discs.
 * @param stable 8-bit bitboard with stable edge squares.
 */
-static int find_edge_stable(const int old_P, const int old_O, int stable)
+static int find_edge_stable(const long long old_P, const long long old_O, int stable)
 {
-	register int P, O, x, y;
-	const int E = ~(old_P | old_O); // empties
+	register long long P, O, x, y;
+	const long long E = ~(old_P | old_O); // empties
 
 	stable &= old_P; // mask stable squares with remaining player squares.
 	if (!stable || E == 0) return stable;

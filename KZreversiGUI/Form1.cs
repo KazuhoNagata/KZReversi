@@ -91,7 +91,7 @@ namespace KZreversi
 
         public int m_event;
 
-        public IntPtr cpuMessageDelegatePtr;
+        private IntPtr cpuMessageDelegatePtr;
 
         public Form1()
         {
@@ -665,6 +665,7 @@ namespace KZreversi
                     m_cpuFlagProperty = false;
                     m_passCount = 0;
                     m_sw.Stop();
+                    SetControlEnable(true);
                     // 結果表示
                     PrintResult();
                     // 画面描画
@@ -687,6 +688,7 @@ namespace KZreversi
                 boardclass.move(cppWrapper.ConvertMoveBit(m_cpuMoveProperty));
                 // CPUが打ったのでプレイヤー変更
                 ChangePlayer();
+                SetControlEnable(true);
                 // 画面再描画
                 panel1.Refresh();
             }
@@ -707,8 +709,10 @@ namespace KZreversi
             // 人間がパスだった場合は通知して再度ゲームスレッドにリクエスト送信
             if (nowPlayer.playerInfo == Player.PLAYER_HUMAN && cppWrapper.GetEnumMove(boardclass) == 0)
             {
+                m_sw.Stop();
                 MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
+                m_sw.Start();
 
                 m_passCount++;
                 if (m_passCount == 2)
@@ -717,6 +721,7 @@ namespace KZreversi
                     m_mode = ON_NOTHING;
                     m_cpuFlagProperty = false;
                     m_passCount = 0;
+                    SetControlEnable(true);
                     // 結果表示
                     PrintResult();
                     // 画面描画
@@ -741,6 +746,7 @@ namespace KZreversi
             // ここに来るのは次のプレイヤーが人間でかつ手を打てる状態
             m_cpuFlagProperty = false;
             m_passCount = 0;
+            SetControlEnable(true);
             // 画面再描画
             panel1.Refresh();
 
@@ -808,7 +814,8 @@ namespace KZreversi
         {
             // 画面再描画
             panel1.Refresh();
-
+            // UIを中断ボタン以外無効化
+            SetControlEnable(false);
             // ゲームスレッドにCPU処理リクエスト送信
             GameThread gmt = new GameThread();
             object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
@@ -1007,6 +1014,23 @@ namespace KZreversi
             }
         }
 
+
+        private void 置換表を使うToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (Table_ToolStripMenuItem.Checked)
+            {
+                cpuClass[0].SetTableFlag(false);
+                cpuClass[1].SetTableFlag(false);
+                Table_ToolStripMenuItem.Checked = false;
+            }
+            else
+            {
+                cpuClass[0].SetTableFlag(true);
+                cpuClass[1].SetTableFlag(true);
+                Table_ToolStripMenuItem.Checked = true;
+            }
+        }
+
         private void bookを使用ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (BOOKFLAG_ToolStripMenuItem.Checked)
@@ -1026,7 +1050,8 @@ namespace KZreversi
         private void fFO40ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#40(black to move) (WinLoss:[a2:WIN] Exact:[a2:+38])
-            boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
+           // boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
+            boardclass.InitBoard(COLOR_BLACK, 0x3e04085a28203878UL, 0x397725171f0400UL);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
@@ -1180,7 +1205,7 @@ namespace KZreversi
         private void fFO54ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#54(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
-            boardclass.InitBoard(COLOR_BLACK, 277938752194568, 3536224466208);
+            boardclass.InitBoard(COLOR_BLACK, 26457201720894, 289431515079835648);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
@@ -1261,5 +1286,23 @@ namespace KZreversi
             cpuClass[1].SetCasheSize(casheSize * 1024 * 16);
             stripItem.Checked = true;
         }
+
+
+        void SetControlEnable(bool flag)
+        {
+            button1.Enabled = flag;
+            button2.Enabled = flag;
+            button3.Enabled = flag;
+            button4.Enabled = flag;
+            button5.Enabled = flag;
+            button7.Enabled = flag;
+            comboBox1.Enabled = flag;
+            comboBox2.Enabled = flag;
+
+            menuStrip1.Enabled = flag;
+
+        }
+
+
     }
 }

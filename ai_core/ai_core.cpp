@@ -106,7 +106,6 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 	}
 
 	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-
 	// íËêŒÇ…äYìñÇµÇ»Ç¢ã«ñ ÇÃèÍçá
 	if (move == MOVE_NONE)
 	{
@@ -122,7 +121,8 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 			move = GetMoveFromAI(wh, bk, emptyNum, cpuConfig);
 		}
 	}
-	else{
+	else
+	{
 		g_book_done = TRUE;
 	}
 

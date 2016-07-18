@@ -316,17 +316,15 @@ void SortMoveListMiddle(
 	MoveList *movelist,
 	UINT64 bk, UINT64 wh,
 	HashTable *hash,
-	INT32 depth,
 	UINT32 empty,
 	INT32 alpha, INT32 beta,
 	UINT32 color)
 {
+#if 1
 	MoveList *iter;
 	INT32 score;
-	UINT32 cnt = 0;
-	UINT32 move_cnt;
-	UINT64 move_b, move_w;
-	UINT64 n_moves_wh;
+	UINT32 move_cnt, cnt = 0;
+	UINT64 n_moves_wh, move_b, move_w;
 
 	INT32 searched = g_empty - empty;
 	if (searched < 6 && g_limitDepth >= 14)
@@ -377,6 +375,11 @@ void SortMoveListMiddle(
 		/* 敵の得点の少ない順にソート */
 		sort_movelist_score_ascending(movelist);
 	}
+
+#else
+	SortMoveListEnd(movelist, bk, wh, hash, empty, alpha, beta, color);
+#endif
+
 }
 
 #endif
@@ -405,7 +408,7 @@ void SortMoveListEnd(
 	UINT64 blank, n_moves_wh;
 	UINT64 move_b, move_w;
 	UINT32 key, move_cnt;
-	UINT32 parity;
+	//UINT32 parity;
 	INT32 sort_depth = 6 - (g_empty - empty);
 
 	for (iter = movelist->next; iter != NULL; iter = iter->next)
@@ -432,7 +435,7 @@ void SortMoveListEnd(
 		// 着手可能数を計算
 		n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
 		// 相手の着手可能数
-		iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081)) * (1 << 15);
+		iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081ULL)) * (1 << 15);
 		// 自分の４隅における安定度
 		iter->move.score -= get_edge_stability(move_w, move_b) * (1 << 11);
 		// 相手の潜在的着手可能数(開放度理論)

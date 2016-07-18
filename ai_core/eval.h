@@ -97,7 +97,7 @@ extern UINT64 h6;			/* h6 */
 extern UINT64 h7;			/* h7 */
 extern UINT64 h8;			/* h8 */
 
-extern double eval_sum;
+extern float eval_sum;
 
 INT32 Evaluation(UINT8 *board, UINT64 b_board, UINT64 w_board, UINT32 color, UINT32 stage);
 BOOL LoadData(void);

@@ -551,6 +551,7 @@ void StTreeFromLine(BooksNode *head, char *line, int eval)
 		if (head_child == NULL)
 		{
 			BooksNode *node = (BooksNode *)malloc(sizeof(BooksNode));
+			if (node == NULL) return;
 			node->move = (short)move;
 			if (depth % 4)
 			{
@@ -597,7 +598,7 @@ void StTreeFromLine(BooksNode *head, char *line, int eval)
 void StructionBookTree(BooksNode *head, char *filename)
 {
 	char *decode_sep, *line_data, *eval_str;
-	char *next_str, *next_line;
+	char *next_str = NULL, *next_line = NULL;
 	UCHAR* decodeData;
 	INT32 decodeDataLen;
 

@@ -26,7 +26,6 @@ void SortMoveListMiddle(
 	MoveList *movelist,
 	UINT64 bk, UINT64 wh,
 	HashTable *hash,
-	INT32 depth,
 	UINT32 empty,
 	INT32 alpha, INT32 beta,
 	UINT32 color);

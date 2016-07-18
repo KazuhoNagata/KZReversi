@@ -129,14 +129,14 @@ namespace KZreversi
             // Form1のプロパティにノード数を設定(初期値)
             ((Form1)formobj).Invoke(((Form1)formobj).nodeCountDelegate, new object[] { nodeCount });
 
-            while (m_onAi)
+            do
             {
                 // CPU処理が終了するまで更新する
                 nodeCount = cp.GetCountNode();
                 // Form1のプロパティにノード数を設定
                 ((Form1)formobj).Invoke(((Form1)formobj).nodeCountDelegate, new object[] { nodeCount });
                 Thread.Sleep(30);
-            }
+            } while (m_onAi);
         }
 
         private CpuConfig SetCpuConfig(CpuClass cpuClass)

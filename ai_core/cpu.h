@@ -49,6 +49,7 @@ typedef struct
 	int deviation;
 }MPCINFO;
 
+extern BOOL g_tableFlag;
 extern char g_cordinates_table[64][4];
 extern INT32 g_limitDepth;
 extern INT32 g_empty;

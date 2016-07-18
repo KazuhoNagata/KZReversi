@@ -190,7 +190,7 @@ namespace KZreversi
     static class NativeMethods
     {
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
-        [SuppressUnmanagedCodeSecurityAttribute()]
+        //[SuppressUnmanagedCodeSecurityAttribute()]
         public extern static bool KZ_LibInit();
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]

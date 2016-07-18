@@ -69,7 +69,7 @@
             this.詳細結果の表示ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bestlineの表示ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.思考過程を表示ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.置換表を使うToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.Table_ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MPC_ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CasheToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mBToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -231,7 +231,7 @@
             this.黒から始めるToolStripMenuItem,
             this.白から始めるToolStripMenuItem});
             this.ゲーム開始ToolStripMenuItem.Name = "ゲーム開始ToolStripMenuItem";
-            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.ゲーム開始ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.ゲーム開始ToolStripMenuItem.Text = "ゲーム開始";
             // 
             // 新規ゲームToolStripMenuItem
@@ -373,7 +373,7 @@
             this.BOOKFLAG_ToolStripMenuItem.Checked = true;
             this.BOOKFLAG_ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.BOOKFLAG_ToolStripMenuItem.Name = "BOOKFLAG_ToolStripMenuItem";
-            this.BOOKFLAG_ToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
+            this.BOOKFLAG_ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.BOOKFLAG_ToolStripMenuItem.Text = "bookを使用";
             this.BOOKFLAG_ToolStripMenuItem.Click += new System.EventHandler(this.bookを使用ToolStripMenuItem_Click);
             // 
@@ -386,7 +386,7 @@
             this.変化大ToolStripMenuItem,
             this.ランダムToolStripMenuItem});
             this.bookの変化度ToolStripMenuItem.Name = "bookの変化度ToolStripMenuItem";
-            this.bookの変化度ToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
+            this.bookの変化度ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.bookの変化度ToolStripMenuItem.Text = "bookの変化度";
             // 
             // 変化なしToolStripMenuItem
@@ -427,10 +427,10 @@
             this.詳細結果の表示ToolStripMenuItem,
             this.bestlineの表示ToolStripMenuItem,
             this.思考過程を表示ToolStripMenuItem,
-            this.置換表を使うToolStripMenuItem,
+            this.Table_ToolStripMenuItem,
             this.MPC_ToolStripMenuItem});
             this.aI設定ToolStripMenuItem.Name = "aI設定ToolStripMenuItem";
-            this.aI設定ToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
+            this.aI設定ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.aI設定ToolStripMenuItem.Text = "AI設定";
             // 
             // 詳細結果の表示ToolStripMenuItem
@@ -453,13 +453,14 @@
             this.思考過程を表示ToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.思考過程を表示ToolStripMenuItem.Text = "思考過程を表示";
             // 
-            // 置換表を使うToolStripMenuItem
+            // Table_ToolStripMenuItem
             // 
-            this.置換表を使うToolStripMenuItem.Checked = true;
-            this.置換表を使うToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.置換表を使うToolStripMenuItem.Name = "置換表を使うToolStripMenuItem";
-            this.置換表を使うToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
-            this.置換表を使うToolStripMenuItem.Text = "置換表を使用";
+            this.Table_ToolStripMenuItem.Checked = true;
+            this.Table_ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.Table_ToolStripMenuItem.Name = "Table_ToolStripMenuItem";
+            this.Table_ToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.Table_ToolStripMenuItem.Text = "置換表を使用";
+            this.Table_ToolStripMenuItem.Click += new System.EventHandler(this.置換表を使うToolStripMenuItem_Click);
             // 
             // MPC_ToolStripMenuItem
             // 
@@ -481,7 +482,7 @@
             this.mBToolStripMenuItem5,
             this.mBToolStripMenuItem6});
             this.CasheToolStripMenuItem.Name = "CasheToolStripMenuItem";
-            this.CasheToolStripMenuItem.Size = new System.Drawing.Size(147, 22);
+            this.CasheToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.CasheToolStripMenuItem.Text = "キャッシュサイズ";
             // 
             // mBToolStripMenuItem
@@ -557,7 +558,7 @@
             this.lEEVL7ToolStripMenuItem,
             this.lEVEL8ToolStripMenuItem});
             this.ヒントToolStripMenuItem.Name = "ヒントToolStripMenuItem";
-            this.ヒントToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.ヒントToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.ヒントToolStripMenuItem.Text = "ヒント表示";
             // 
             // 表示なしToolStripMenuItem
@@ -640,7 +641,7 @@
             this.fFO58ToolStripMenuItem,
             this.fFO59ToolStripMenuItem});
             this.fFOテストToolStripMenuItem.Name = "fFOテストToolStripMenuItem";
-            this.fFOテストToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.fFOテストToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.fFOテストToolStripMenuItem.Text = "FFOテスト";
             // 
             // fFO40ToolStripMenuItem
@@ -1095,7 +1096,7 @@
         private System.Windows.Forms.ToolStripMenuItem lEVEL1ToolStripMenuItem3;
         private System.Windows.Forms.ToolStripMenuItem lEVEL1ToolStripMenuItem4;
         private System.Windows.Forms.ToolStripMenuItem lEVEL6ToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem 置換表を使うToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem Table_ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem MPC_ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem kZreversiについてToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 度回転ToolStripMenuItem;

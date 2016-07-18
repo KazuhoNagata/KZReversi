@@ -119,21 +119,21 @@ float constant_data[2][60];
 
 int pow_table[10] = { 1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683 };
 
-double key_hori_ver1[4];
-double key_hori_ver2[4];
-double key_hori_ver3[4];
-double key_dia_ver1[2];
-double key_dia_ver2[4];
-double key_dia_ver3[4];
-double key_dia_ver4[4];
-double key_edge[4];
-double key_corner5_2[8];
-double key_corner3_3[4];
-double key_triangle[4];
-double key_mobility;
-double key_parity;
-double key_constant;
-double eval_sum;
+float key_hori_ver1[4];
+float key_hori_ver2[4];
+float key_hori_ver3[4];
+float key_dia_ver1[2];
+float key_dia_ver2[4];
+float key_dia_ver3[4];
+float key_dia_ver4[4];
+float key_edge[4];
+float key_corner5_2[8];
+float key_corner3_3[4];
+float key_triangle[4];
+float key_mobility;
+float key_parity;
+float key_constant;
+float eval_sum;
 
 UINT64 a1 = 1ULL;					/* a1 */
 UINT64 a2 = (1ULL << 1);			/* a2 */
@@ -222,10 +222,10 @@ UINT8 posEval[64] =
 
 INT32 g_evaluation;
 
-double check_h_ver1(UINT8 *board)
+float check_h_ver1(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	/* a2 b2 c2 d2 e2 f2 g2 h2 */
 	/* a7 b7 c7 d7 e7 f7 g7 h7 */
@@ -284,10 +284,10 @@ double check_h_ver1(UINT8 *board)
 	return eval;
 }
 
-double check_h_ver2(UINT8 *board)
+float check_h_ver2(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	/* a3 b3 c3 d3 e3 f3 g3 h3 */
 	/* a6 b6 c6 d6 e6 f6 g6 h6 */
@@ -346,10 +346,10 @@ double check_h_ver2(UINT8 *board)
 
 }
 
-double check_h_ver3(UINT8 *board)
+float check_h_ver3(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	/* a4 b4 c4 d4 e4 f4 g4 h4 */
 	/* a5 b5 c5 d5 e5 f5 g5 h5 */
@@ -408,10 +408,10 @@ double check_h_ver3(UINT8 *board)
 
 }
 
-double check_dia_ver1(UINT8 *board)
+float check_dia_ver1(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	/* a1 b2 c3 d4 e5 f6 g7 h8 */
 	/* h1 g2 f3 e4 d5 c6 b7 a8  */
@@ -443,10 +443,10 @@ double check_dia_ver1(UINT8 *board)
 	return eval;
 }
 
-double check_dia_ver2(UINT8 *board)
+float check_dia_ver2(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	/* a2 b3 c4 d5 e6 f7 g8 */
 	/* b1 c2 d3 e4 f5 g6 h7 */
@@ -500,10 +500,10 @@ double check_dia_ver2(UINT8 *board)
 	return eval;
 }
 
-double check_dia_ver3(UINT8 *board)
+float check_dia_ver3(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	key = board[A3];
 	key += 3 * board[B4];
@@ -548,10 +548,10 @@ double check_dia_ver3(UINT8 *board)
 	return eval;
 }
 
-double check_dia_ver4(UINT8 *board)
+float check_dia_ver4(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	key = board[A4];
 	key += 3 * board[B5];
@@ -592,10 +592,10 @@ double check_dia_ver4(UINT8 *board)
 	return eval;
 }
 
-double check_edge(UINT8 *board)
+float check_edge(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	key = board[A1];
 	key += 3 * board[A2];
@@ -656,10 +656,10 @@ double check_edge(UINT8 *board)
 	return eval;
 }
 
-double check_corner3_3(UINT8 *board)
+float check_corner3_3(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	key = board[A1];
 	key += 3 * board[A2];
@@ -716,10 +716,10 @@ double check_corner3_3(UINT8 *board)
 	return eval;
 }
 
-double check_corner5_2(UINT8 *board)
+float check_corner5_2(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	key = board[A1];
 	key += 3 * board[B1];
@@ -836,10 +836,10 @@ double check_corner5_2(UINT8 *board)
 	return eval;
 }
 
-double check_triangle(UINT8 *board)
+float check_triangle(UINT8 *board)
 {
 	int key;
-	double eval;
+	float eval;
 
 	key = board[A1];
 	key += 3 * board[A2];
@@ -900,7 +900,7 @@ double check_triangle(UINT8 *board)
 	return eval;
 }
 
-double check_parity(UINT64 blank, UINT32 color)
+float check_parity(UINT64 blank, UINT32 color)
 {
 	int p;
 
@@ -925,9 +925,8 @@ double check_mobility(UINT64 b_board, UINT64 w_board)
 
 INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 {
-	double eval;
+	float eval;
 
-	//color = 0;
 	/* 現在の色とステージでポインタを指定 */
 	hori_ver1 = hori_ver1_data[color][stage];
 	hori_ver2 = hori_ver2_data[color][stage];
@@ -961,12 +960,12 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	eval_sum = eval;
 	eval *= EVAL_ONE_STONE;
 
-	if (eval <= -640000) eval = -640000 + 1;
-	else if (eval >= 640000) eval = 640000 - 1;
-
 	return (INT32)eval;
 
 }
+
+
+
 
 int opponent_feature(int l, int d)
 {
@@ -978,12 +977,16 @@ int opponent_feature(int l, int d)
 	return f;
 }
 
+
+
+
+#if 1
 BOOL OpenEvalData(char *filename)
 {
 	int stage = 0;
 	int i, evalSize;
 	UCHAR *buf;
-	char *line, *ctr;
+	char *line, *ctr = NULL;
 	float *p_table, *p_table_op;
 
 	buf = DecodeEvalData(&evalSize, filename);
@@ -1127,7 +1130,7 @@ BOOL OpenEvalData(char *filename)
 			p_table_op[i] = p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
-		
+
 		/* constant */
 		//constant_data[0][stage] = (float)atof(line);
 		//line = strtok_s(NULL, "\n", &ctr);
@@ -1139,6 +1142,8 @@ BOOL OpenEvalData(char *filename)
 
 	return TRUE;
 }
+
+#endif
 
 BOOL LoadData()
 {

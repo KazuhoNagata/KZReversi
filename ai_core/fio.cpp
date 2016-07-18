@@ -212,11 +212,13 @@ UCHAR *DecodeBookData(INT32 *decodeDataLen_p, char *filename)
 	int readSize, decodeDataLen;
 	FILE *fp;
 
-	if (fopen_s(&fp, filename, "rb") != 0){
+	if (fopen_s(&fp, filename, "rb") != 0 || fp == NULL){
 		return NULL;
 	}
 
 	UCHAR *data = (UCHAR *)malloc(BOOK_DATA_SIZE);
+
+	if (data == NULL) return NULL;
 
 	// open books
 	readSize = fread(data, sizeof(UCHAR), 2 * sizeof(int) + 2, fp);
@@ -263,12 +265,18 @@ UCHAR *DecodeBookData(INT32 *decodeDataLen_p, char *filename)
 UCHAR *DecodeEvalData(INT32 *decodeDataLen_p, char *filename)
 {
 	int i, readSize, decodeDataLen, decodeDataLenSum;
-	UCHAR *data = (UCHAR *)malloc(EVAL_DATA_SIZE);
-	UCHAR *decodeData = (UCHAR *)malloc(EVAL_DECODE_DATA_SIZE * 60);
+	UCHAR *data;
+	UCHAR *decodeData;
 	FILE *fp;
 	TreeNode nodes[43];
 
-	if (fopen_s(&fp, filename, "rb") != 0){
+	data = (UCHAR *)malloc(EVAL_DATA_SIZE);
+	if (data == NULL) return NULL;
+
+	decodeData = (UCHAR *)malloc(EVAL_DECODE_DATA_SIZE * 61);
+	if (decodeData == NULL) return NULL;
+
+	if (fopen_s(&fp, filename, "rb") != 0 || fp == NULL){
 		free(data);
 		free(decodeData);
 		return NULL;
@@ -317,7 +325,7 @@ BOOL OpenMpcInfoData(char *filename){
 
 	FILE *fp;
 
-	if (fopen_s(&fp, filename, "r")){
+	if (fopen_s(&fp, filename, "r") || fp == NULL){
 		return FALSE;
 	}
 
@@ -327,6 +335,7 @@ BOOL OpenMpcInfoData(char *filename){
 		fscanf_s(fp, "%d", &(mpcInfo[j].depth));
 		fscanf_s(fp, "%d", &(mpcInfo[j].offset));
 		fscanf_s(fp, "%d", &(mpcInfo[j].deviation));
+		//mpcInfo[j].deviation *= 1.2; // threshould
 	}
 
 	fclose(fp);
