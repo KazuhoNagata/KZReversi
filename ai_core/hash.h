@@ -21,6 +21,7 @@ typedef struct HashInfo {
 	INT8 bestmove;       /*!< best move */
 	INT8 empty;      /*!< depth of the analysis ( = board->n_empties) */
 	INT8 locked;
+	INT8 selectivity;
 } HashInfo;
 
 /*! HashEntry: an entry, with two items, of the hash table */
@@ -53,6 +54,9 @@ void HashUpdate(
 	INT32 empty,
 	INT8 move,
 	INT32 inf_score);
+
+void InitHashBoard();
+UINT32 GenerateHashValue(UINT64 bk, UINT64 wh, UINT32 color);
 
 void FixTableToMiddle(HashTable *hash);
 void FixTableToWinLoss(HashTable *hash);

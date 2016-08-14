@@ -22,6 +22,7 @@ UINT32 MoveOrderingMiddle(INT8 *pos_list, UINT64 b_board, UINT64 w_board,
 
 void SortMoveListTableMoveFirst(MoveList *movelist, int move);
 void SortFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh);
+void SortPotentionalFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh, UINT64 blank);
 void SortMoveListMiddle(
 	MoveList *movelist,
 	UINT64 bk, UINT64 wh,

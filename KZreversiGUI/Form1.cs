@@ -27,6 +27,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
@@ -66,8 +67,6 @@ namespace KZreversi
 
         private uint nowColor = COLOR_BLACK;
         private Player nowPlayer;
-        //private int nowTurn;
-
         private Player[] playerArray;
 
         private int m_passCount;
@@ -85,6 +84,7 @@ namespace KZreversi
         public SetMoveProperty delegateObj;
         public SetNodeCountProperty nodeCountDelegate;
         public SetCpuMessageProperty cpuMessageDelegate;
+        public SetCpuMessageProperty setPVLineDelegate;
 
         Font m_ft = new Font("MS UI Gothic", 14);
         Font m_ft2 = new Font("MS UI Gothic", 8);
@@ -92,6 +92,7 @@ namespace KZreversi
         public int m_event;
 
         private IntPtr cpuMessageDelegatePtr;
+        private IntPtr setPVLineDelegatePtr;
 
         public Form1()
         {
@@ -104,6 +105,7 @@ namespace KZreversi
             delegateObj = new SetMoveProperty(setMove);
             nodeCountDelegate = new SetNodeCountProperty(setNodeCount);
             cpuMessageDelegate = new SetCpuMessageProperty(setCpuMessage);
+            setPVLineDelegate = new SetCpuMessageProperty(setPVLine);
 
             boardclass.InitBoard(COLOR_BLACK);
 
@@ -329,6 +331,12 @@ namespace KZreversi
             cpuMessageDelegatePtr = Marshal.GetFunctionPointerForDelegate(cpuMessageDelegate);
             // C側に関数ポインタを登録
             cppWrapper.EntryFunction(cpuMessageDelegatePtr);
+            gcHandle.Free();
+
+            gcHandle = GCHandle.Alloc(setPVLineDelegate);
+            setPVLineDelegatePtr = Marshal.GetFunctionPointerForDelegate(setPVLineDelegate);
+            cppWrapper.EntryFunction(setPVLineDelegatePtr);
+            gcHandle.Free();
 
             // デフォルトのCPU設定
             for (int i = 0; i < cpuClass.Length; i++)
@@ -341,13 +349,14 @@ namespace KZreversi
                 {
                     cpuClass[i].SetColor(BoardClass.WHITE);
                 }
-
-                cpuClass[i].SetCasheSize(1 << 22); // 256MB default
+                
+                // size(MB)--> size * 1024 * 1024 / sizeof(hash_entry) = size * 1024 * 16
+                cpuClass[i].SetCasheSize(128 * 1024 * 16); // 128MB default
                 cpuClass[i].SetSearchDepth(6);
                 cpuClass[i].SetWinLossDepth(14);
                 cpuClass[i].SetExactDepth(12);
                 cpuClass[i].SetBookFlag(true);
-                cpuClass[i].SetBookVariability(1);
+                cpuClass[i].SetBookVariability(3);
                 cpuClass[i].SetMpcFlag(true);
                 cpuClass[i].SetTableFlag(true);
             }
@@ -549,7 +558,7 @@ namespace KZreversi
 
         private void setNodeCount(ulong nodeCount)
         {
-            StringBuilder sb = new StringBuilder(128);
+            StringBuilder sb = new StringBuilder(256);
             string temp;
 
             // 探索済みノード数
@@ -589,10 +598,20 @@ namespace KZreversi
             toolStripStatusLabel1.Text = sb.ToString();
         }
 
-
         private void setCpuMessage(string cpuMessage)
         {
-            toolStripStatusLabel3.Text = cpuMessage;
+            lock (toolStripStatusLabel3.Text)
+            {
+                toolStripStatusLabel3.Text = cpuMessage;
+            }
+        }
+
+        private void setPVLine(string cpuMessage)
+        {
+            lock (toolStripStatusLabel4.Text)
+            {
+                toolStripStatusLabel4.Text = cpuMessage;
+            }
         }
 
         private ulong _m_cpuMove;
@@ -647,6 +666,7 @@ namespace KZreversi
 
         public void PropertyChangedCpuMove(object sender, PropertyChangedEventArgs e)
         {
+            bool bootRet;
             // CPUの算出した評価値を取得
             int eval = cppWrapper.GetLastEvaluation();
             // 評価値の表示
@@ -685,19 +705,25 @@ namespace KZreversi
                 // CPUが打てたのでパスカウントをリセット
                 m_passCount = 0;
                 // 盤面情報更新
-                boardclass.move(cppWrapper.ConvertMoveBit(m_cpuMoveProperty));
+                bootRet = boardclass.move(cppWrapper.ConvertMoveBit(m_cpuMoveProperty));
+                if (bootRet == false)
+                {
+                    MessageBox.Show("内部エラーが発生しました", "エラー",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
                 // CPUが打ったのでプレイヤー変更
                 ChangePlayer();
                 SetControlEnable(true);
-                // 画面再描画
-                panel1.Refresh();
             }
-
 
             GameThread gmt;
             // プレイヤー変更後もCPUなら再度ゲームスレッドにリクエスト送信(双方がCPUの場合)
-            if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+            if (m_mode == ON_GAME && nowPlayer.playerInfo == Player.PLAYER_CPU)
             {
+                // 画面再描画(前のCPUの手を画面に反映しておく)
+                panel1.Refresh();
+
                 gmt = new GameThread();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
                 gmt.m_recvcmdProperty = args;
@@ -709,6 +735,9 @@ namespace KZreversi
             // 人間がパスだった場合は通知して再度ゲームスレッドにリクエスト送信
             if (nowPlayer.playerInfo == Player.PLAYER_HUMAN && cppWrapper.GetEnumMove(boardclass) == 0)
             {
+                // 画面再描画(前のCPUの手を画面に反映しておく)
+                panel1.Refresh();
+
                 m_sw.Stop();
                 MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1051,7 +1080,7 @@ namespace KZreversi
         {
             //FFO#40(black to move) (WinLoss:[a2:WIN] Exact:[a2:+38])
            // boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
-            boardclass.InitBoard(COLOR_BLACK, 0x3e04085a28203878UL, 0x397725171f0400UL);
+            boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
@@ -1300,6 +1329,52 @@ namespace KZreversi
             comboBox2.Enabled = flag;
 
             menuStrip1.Enabled = flag;
+
+        }
+
+        private void 手番変更ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            boardclass.ChangeColor();
+            SetPlayerInfo();
+            ChangePlayer();
+
+            if (boardclass.GetRecentTurn() == 0)
+            {
+                boardclass.InitBoard(nowColor, boardclass.GetBlack(), boardclass.GetWhite());
+            }
+        }
+
+        private void 置換表のメモリを解放ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            cppWrapper.ReleaseHash();
+        }
+
+        private void OnChangeBookToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int size = changeBookToolStripMenuItem.DropDownItems.Count;
+            ToolStripMenuItem stripItem = ((ToolStripMenuItem)sender);
+
+            // チェック全解除
+            for (int i = 0; i < size; i++)
+            {
+                ((ToolStripMenuItem)changeBookToolStripMenuItem.DropDownItems[i]).Checked = false;
+            }
+            stripItem.Checked = true;
+
+            uint idx = (uint)changeBookToolStripMenuItem.DropDownItems.IndexOf(stripItem);
+
+            cpuClass[0].SetBookVariability(idx);
+            cpuClass[1].SetBookVariability(idx);
+
+        }
+
+        private void HintToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int size = hintToolStripMenuItem.DropDownItems.Count;
+            ToolStripMenuItem stripItem = ((ToolStripMenuItem)sender);
+
+
+
 
         }
 

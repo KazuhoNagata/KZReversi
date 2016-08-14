@@ -12,6 +12,8 @@
 #include "eval.h"
 #include "board.h"
 #include "fio.h"
+#include "cpu.h"
+
 
 /* 各座標 */
 #define A1 0			/* A1 */
@@ -98,7 +100,7 @@ float *edge;
 float *corner5_2;
 float *corner3_3;
 float *triangle;
-float *mobility;
+//float *mobility;
 float *parity;
 
 /* 評価パターンテーブル(おおもと) */
@@ -113,9 +115,9 @@ float edge_data[2][60][INDEX_NUM * 9];
 float corner5_2_data[2][60][INDEX_NUM * 9];
 float corner3_3_data[2][60][INDEX_NUM * 3];
 float triangle_data[2][60][INDEX_NUM * 9];
-float mobility_data[2][60][MOBILITY_NUM];
+//float mobility_data[2][60][MOBILITY_NUM];
 float parity_data[2][60][PARITY_NUM];
-float constant_data[2][60];
+//float constant_data[2][60];
 
 int pow_table[10] = { 1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683 };
 
@@ -130,9 +132,9 @@ float key_edge[4];
 float key_corner5_2[8];
 float key_corner3_3[4];
 float key_triangle[4];
-float key_mobility;
+//float key_mobility;
 float key_parity;
-float key_constant;
+//float key_constant;
 float eval_sum;
 
 UINT64 a1 = 1ULL;					/* a1 */
@@ -221,6 +223,14 @@ UINT8 posEval[64] =
 };
 
 INT32 g_evaluation;
+
+/* function empty 0 or end leave empty */
+INT32(*GetEndScore[])(UINT64 bk, UINT64 wh, INT32 empty) = {
+	GetWinLossScore,
+	GetExactScore
+};
+
+
 
 float check_h_ver1(UINT8 *board)
 {
@@ -428,14 +438,14 @@ float check_dia_ver1(UINT8 *board)
 	eval = dia_ver1[key];
 	key_dia_ver1[0] = dia_ver1[key];
 
-	key = board[A8];
-	key += 3 * board[B7];
-	key += 9 * board[C6];
-	key += 27 * board[D5];
-	key += 81 * board[E4];
-	key += 243 * board[F3];
-	key += 729 * board[G2];
-	key += 2187 * board[H1];
+	key = board[H1];
+	key += 3 * board[G2];
+	key += 9 * board[F3];
+	key += 27 * board[E4];
+	key += 81 * board[D5];
+	key += 243 * board[C6];
+	key += 729 * board[B7];
+	key += 2187 * board[A8];
 
 	eval += dia_ver1[key];
 	key_dia_ver1[1] = dia_ver1[key];
@@ -475,24 +485,24 @@ float check_dia_ver2(UINT8 *board)
 	eval += dia_ver2[key];
 	key_dia_ver2[1] = dia_ver2[key];
 
-	key = board[B8];
-	key += 3 * board[C7];
-	key += 9 * board[D6];
+	key = board[H2];
+	key += 3 * board[G3];
+	key += 9 * board[F4];
 	key += 27 * board[E5];
-	key += 81 * board[F4];
-	key += 243 * board[G3];
-	key += 729 * board[H2];
+	key += 81 * board[D6];
+	key += 243 * board[C7];
+	key += 729 * board[B8];
 
 	eval += dia_ver2[key];
 	key_dia_ver2[2] = dia_ver2[key];
 
-	key = board[A7];
-	key += 3 * board[B6];
-	key += 9 * board[C5];
+	key = board[G1];
+	key += 3 * board[F2];
+	key += 9 * board[E3];
 	key += 27 * board[D4];
-	key += 81 * board[E3];
-	key += 243 * board[F2];
-	key += 729 * board[G1];
+	key += 81 * board[C5];
+	key += 243 * board[B6];
+	key += 729 * board[A7];
 
 	eval += dia_ver2[key];
 	key_dia_ver2[3] = dia_ver2[key];
@@ -525,22 +535,22 @@ float check_dia_ver3(UINT8 *board)
 	eval += dia_ver3[key];
 	key_dia_ver3[1] = dia_ver3[key];
 
-	key = board[C8];
-	key += 3 * board[D7];
-	key += 9 * board[E6];
-	key += 27 * board[F5];
-	key += 81 * board[G4];
-	key += 243 * board[H3];
+	key = board[H3];
+	key += 3 * board[G4];
+	key += 9 * board[F5];
+	key += 27 * board[E6];
+	key += 81 * board[D7];
+	key += 243 * board[C8];
 
 	eval += dia_ver3[key];
 	key_dia_ver3[2] = dia_ver3[key];
 
-	key = board[A6];
-	key += 3 * board[B5];
-	key += 9 * board[C4];
-	key += 27 * board[D3];
-	key += 81 * board[E2];
-	key += 243 * board[F1];
+	key = board[F1];
+	key += 3 * board[E2];
+	key += 9 * board[D3];
+	key += 27 * board[C4];
+	key += 81 * board[B5];
+	key += 243 * board[A6];
 
 	eval += dia_ver3[key];
 	key_dia_ver3[3] = dia_ver3[key];
@@ -571,20 +581,20 @@ float check_dia_ver4(UINT8 *board)
 	eval += dia_ver4[key];
 	key_dia_ver4[1] = dia_ver4[key];
 
-	key = board[D8];
-	key += 3 * board[E7];
+	key = board[H4];
+	key += 3 * board[G5];
 	key += 9 * board[F6];
-	key += 27 * board[G5];
-	key += 81 * board[H4];
+	key += 27 * board[E7];
+	key += 81 * board[D8];
 
 	eval += dia_ver4[key];
 	key_dia_ver4[2] = dia_ver4[key];
 
-	key = board[A5];
-	key += 3 * board[B4];
+	key = board[E1];
+	key += 3 * board[D2];
 	key += 9 * board[C3];
-	key += 27 * board[D2];
-	key += 81 * board[E1];
+	key += 27 * board[B4];
+	key += 81 * board[A5];
 
 	eval += dia_ver4[key];
 	key_dia_ver4[3] = dia_ver4[key];
@@ -912,6 +922,7 @@ float check_parity(UINT64 blank, UINT32 color)
 	return parity[p];
 }
 
+#if 0
 double check_mobility(UINT64 b_board, UINT64 w_board)
 {
 	UINT32 mob1;
@@ -921,6 +932,84 @@ double check_mobility(UINT64 b_board, UINT64 w_board)
 	key_mobility = mob1 * mobility[0];
 
 	return key_mobility;
+}
+
+#endif
+
+/**
+* @brief Get the final score.
+*
+* Get the final score, when no move can be made.
+*
+* @param board Board.
+* @param n_empties Number of empty squares remaining on the board.
+* @return The final score, as a disc difference.
+*/
+INT32 GetExactScore(UINT64 bk, UINT64 wh, INT32 empty)
+{
+	const int n_discs_p = CountBit(bk);
+	const int n_discs_o = 64 - empty - n_discs_p;
+
+#ifdef LOSSGAME
+	int score = n_discs_o - n_discs_p;
+#else
+	int score = n_discs_p - n_discs_o;
+#endif
+	if (score < 0) score -= empty;
+	else if (score > 0) score += empty;
+
+	return score;
+}
+
+
+/**
+* @brief Get the final score.
+*
+* Get the final score, when no move can be made.
+*
+* @param board Board.
+* @param n_empties Number of empty squares remaining on the board.
+* @return The final score, as a disc difference.
+*/
+INT32 GetWinLossScore(UINT64 bk, UINT64 wh, INT32 empty)
+{
+	int score;
+	const int n_discs_p = CountBit(bk);
+	const int n_discs_o = 64 - empty - n_discs_p;
+
+#ifdef LOSSGAME
+	if (n_discs_p < n_discs_o)
+	{
+		score = WIN;
+	}
+	else if (n_discs_p > n_discs_o)
+	{
+		score = LOSS;
+	}
+	else
+	{
+		score = DRAW;
+	}
+
+	return score;
+#else
+
+	if (n_discs_p > n_discs_o)
+	{
+		score = WIN;
+	}
+	else if (n_discs_p < n_discs_o)
+	{
+		score = LOSS;
+	}
+	else
+	{
+		score = DRAW;
+	}
+
+	return score;
+#endif
+
 }
 
 INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
@@ -939,7 +1028,6 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	corner5_2 = corner5_2_data[color][stage];
 	corner3_3 = corner3_3_data[color][stage];
 	triangle = triangle_data[color][stage];
-	mobility = mobility_data[color][stage];
 	parity = parity_data[color][stage];
 
 	eval = check_h_ver1(board);
@@ -960,7 +1048,11 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	eval_sum = eval;
 	eval *= EVAL_ONE_STONE;
 
+#ifdef LOSSGAME
+	return -(INT32)eval;
+#else
 	return (INT32)eval;
+#endif
 
 }
 
@@ -984,10 +1076,11 @@ int opponent_feature(int l, int d)
 BOOL OpenEvalData(char *filename)
 {
 	int stage = 0;
-	int i, evalSize;
+	int i;
 	UCHAR *buf;
 	char *line, *ctr = NULL;
 	float *p_table, *p_table_op;
+	INT64 evalSize;
 
 	buf = DecodeEvalData(&evalSize, filename);
 

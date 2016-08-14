@@ -58,15 +58,24 @@ UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32
 		srand((UINT32)time(NULL));
 		// ˆêŽè–Ú‚Ì’…Žè‚Í‚Ç‚±‚É’…Žè‚µ‚Ä‚à“¯‚¶‚È‚Ì‚Åƒ‰ƒ“ƒ_ƒ€‚Æ‚·‚é
 		int cnt;
-		INT64 enumMove = CreateMoves(bk, wh, (UINT32 *)&cnt);
+		INT64 moves;
+		if (color == BLACK)
+		{
+			moves = CreateMoves(bk, wh, (UINT32 *)&cnt);
+		}
+		else
+		{
+			moves = CreateMoves(wh, bk, (UINT32 *)&cnt);
+		}
+
 		int rnd = rand() % cnt;
 
 		while (rnd)
 		{
-			enumMove &= enumMove - 1;
+			moves &= moves - 1;
 			rnd--;
 		}
-		move = CountBit((enumMove & (-enumMove)) - 1);
+		move = CountBit((moves & (-moves)) - 1);
 	}
 	else
 	{
@@ -532,7 +541,7 @@ void StTreeFromLine(BooksNode *head, char *line, int eval)
 	UINT64 bk = BK_FIRST;
 	UINT64 wh = WH_FIRST;
 	UINT64 rev;
-	int line_len = strlen(line);
+	INT64 line_len = strlen(line);
 	BooksNode *head_child;
 
 	while (depth < line_len)
@@ -600,7 +609,7 @@ void StructionBookTree(BooksNode *head, char *filename)
 	char *decode_sep, *line_data, *eval_str;
 	char *next_str = NULL, *next_line = NULL;
 	UCHAR* decodeData;
-	INT32 decodeDataLen;
+	INT64 decodeDataLen;
 
 	decodeData = DecodeBookData(&decodeDataLen, filename);
 	if (decodeDataLen == -1)

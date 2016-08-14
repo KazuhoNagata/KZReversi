@@ -72,6 +72,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)$(TargetName)\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -79,6 +80,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)$(TargetName)\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -104,9 +106,12 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(SolutionDir)$(SolutionName)\bin\$(Configuration)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <StackReserveSize>8388608</StackReserveSize>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "D:\Repos\KZReversi\ai_core\x64\Debug\ai_core.dll" "D:\Repos\KZReversi\KZreversiGUI\bin\x64\Debug\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -135,7 +140,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <Optimization>Full</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;AI_CORE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -146,14 +151,19 @@
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <StackReserveSize>8388608</StackReserveSize>
+      <StackReserveSize>12582912</StackReserveSize>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "D:\Repos\KZReversi\ai_core\x64\Release\ai_core.dll" "D:\Repos\KZReversi\KZreversiGUI\bin\x64\Release\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -164,10 +174,13 @@
     <ClInclude Include="book.h" />
     <ClInclude Include="count_last_flip_carry_64.h" />
     <ClInclude Include="cpu.h" />
+    <ClInclude Include="empty.h" />
+    <ClInclude Include="endgame.h" />
     <ClInclude Include="eval.h" />
     <ClInclude Include="fio.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="move.h" />
+    <ClInclude Include="mt.h" />
     <ClInclude Include="ordering.h" />
     <ClInclude Include="rev.h" />
     <ClInclude Include="stdafx.h" />
@@ -194,10 +207,13 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="empty.cpp" />
+    <ClCompile Include="endgame.cpp" />
     <ClCompile Include="eval.cpp" />
     <ClCompile Include="fio.cpp" />
     <ClCompile Include="hash.cpp" />
     <ClCompile Include="move.cpp" />
+    <ClCompile Include="mt.cpp" />
     <ClCompile Include="ordering.cpp" />
     <ClCompile Include="rev.cpp" />
     <ClCompile Include="stdafx.cpp">

@@ -176,7 +176,7 @@ int encode(UCHAR *encodeData, CodeInfo *codeInfo, UCHAR *data, int dataLen) {
 }
 #endif
 
-int decode(UCHAR *decodeData, int maxLen, UCHAR *data, int dataLen, TreeNode *nodes, int root)
+INT64 decode(UCHAR *decodeData, INT64 maxLen, UCHAR *data, INT64 dataLen, TreeNode *nodes, int root)
 {
 	int nodeIndex = root;
 	int cnt = 0, byteCounter = 0;
@@ -207,9 +207,9 @@ int decode(UCHAR *decodeData, int maxLen, UCHAR *data, int dataLen, TreeNode *no
 
 }
 
-UCHAR *DecodeBookData(INT32 *decodeDataLen_p, char *filename)
+UCHAR *DecodeBookData(INT64 *decodeDataLen_p, char *filename)
 {
-	int readSize, decodeDataLen;
+	INT64 readSize, decodeDataLen;
 	FILE *fp;
 
 	if (fopen_s(&fp, filename, "rb") != 0 || fp == NULL){
@@ -262,9 +262,10 @@ UCHAR *DecodeBookData(INT32 *decodeDataLen_p, char *filename)
 
 }
 
-UCHAR *DecodeEvalData(INT32 *decodeDataLen_p, char *filename)
+UCHAR *DecodeEvalData(INT64 *decodeDataLen_p, char *filename)
 {
-	int i, readSize, decodeDataLen, decodeDataLenSum;
+	int i;
+	INT64 readSize, decodeDataLen, decodeDataLenSum;
 	UCHAR *data;
 	UCHAR *decodeData;
 	FILE *fp;
@@ -313,6 +314,7 @@ UCHAR *DecodeEvalData(INT32 *decodeDataLen_p, char *filename)
 		i++;
 	}
 
+	fclose(fp);
 	free(data);
 
 	*decodeDataLen_p = decodeDataLenSum;
@@ -335,7 +337,7 @@ BOOL OpenMpcInfoData(char *filename){
 		fscanf_s(fp, "%d", &(mpcInfo[j].depth));
 		fscanf_s(fp, "%d", &(mpcInfo[j].offset));
 		fscanf_s(fp, "%d", &(mpcInfo[j].deviation));
-		//mpcInfo[j].deviation *= 1.2; // threshould
+		//mpcInfo[j].deviation *= 1.4; // threshould
 	}
 
 	fclose(fp);

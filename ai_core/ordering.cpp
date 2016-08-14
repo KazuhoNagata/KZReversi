@@ -310,6 +310,25 @@ void SortFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh)
 	sort_movelist_score_ascending(movelist);
 }
 
+void SortPotentionalFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh, UINT64 blank)
+{
+	MoveList *iter;
+	INT32 score;
+	UINT64 move_b, move_w;
+
+	for (iter = movelist->next; iter != NULL; iter = iter->next)
+	{
+		score = 0;
+		move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
+		move_w = wh ^ (iter->move.rev);
+		/* 敵の着手可能数を取得 */
+		score += CountBit(GetPotentialMoves(move_w, move_b, blank ^ (1ULL << iter->move.pos)));
+		iter->move.score = score;
+	}
+	/* 敵の得点の少ない順にソート */
+	sort_movelist_score_ascending(movelist);
+}
+
 #if 1
 /* 序盤中盤用 move ordering */
 void SortMoveListMiddle(
@@ -334,7 +353,7 @@ void SortMoveListMiddle(
 			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 			move_w = wh ^ (iter->move.rev);
 
-			score = -OrderingAlphaBeta(move_w, move_b, 6 - searched, empty - 1, color ^ 1,
+			score = -AB_SearchNoPV(move_w, move_b, 6 - searched, empty - 1, color ^ 1,
 				-NEGAMAX, -NEGAMIN, 0);
 			iter->move.score = score;
 		}
@@ -416,7 +435,7 @@ void SortMoveListEnd(
 		iter->move.score = 0;
 		move_b = bk ^ ((1ULL << iter->move.pos) | iter->move.rev);
 		move_w = wh ^ iter->move.rev;
-		key = KEY_HASH_MACRO(move_w, move_b);
+		key = KEY_HASH_MACRO(move_w, move_b, color ^ 1);
 
 		// 相手を全滅させる手か
 		if (move_w == 0) {
@@ -442,14 +461,16 @@ void SortMoveListEnd(
 		iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b, blank))) * (1 << 5);
 
 		// 浅い探索による評価値
+#if 1
 		if (sort_depth > 0)
 		{
 			INT32 temp_eval;
 			if (HashGet(hash, key, move_w, move_b)) iter->move.score += (1 << 15); // 着手した後の局面が置換表に登録されていたら加算
-			temp_eval = -OrderingAlphaBeta(move_w, move_b, sort_depth, empty - 1, color ^ 1,
+			temp_eval = -AB_SearchNoPV(move_w, move_b, sort_depth, empty - 1, color ^ 1,
 				NEGAMIN, NEGAMAX, 0);
 			iter->move.score += (temp_eval) * (1 << 2);
 		}
+#endif
 	}
 
 	/* 得点の高い順にソート */

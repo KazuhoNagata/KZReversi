@@ -10,6 +10,7 @@
 #include "book.h"
 #include "eval.h"
 #include "hash.h"
+#include "mt.h"
 #include "bit64.h"
 #include "cpu.h"
 #include "rev.h"
@@ -17,6 +18,8 @@
 #define KZ_EXPORT extern "C" __declspec(dllexport)
 
 BOOL m_BookFlag;
+
+int g_func_count = 0;
 
 /***************************************************************************
 * Name  : KZ_LibInit
@@ -46,6 +49,9 @@ KZ_EXPORT BOOL KZ_LibInit()
 	}
 
 	edge_stability_init();
+
+	//init_genrand((unsigned long)time(NULL));
+	//InitHashBoard();
 
 	return result;
 }
@@ -87,7 +93,8 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 	// カウントリセット(カウントリセットは以降の処理との順番入れ替え×)
 	g_countNode = 0;
 	// CPUメッセージ初期化
-	g_set_message_funcptr("");
+	g_set_message_funcptr[0](" ");
+	g_set_message_funcptr[1](" ");
 
 	emptyNum = CountBit(~(bk | wh));
 	turn = 60 - emptyNum;
@@ -188,7 +195,8 @@ KZ_EXPORT UINT32 KZ_CountBit(UINT64 bit)
 ****************************************************************************/
 KZ_EXPORT void KZ_EntryFunction(SetMessageToGUI ptr)
 {
-	g_set_message_funcptr = ptr;
+	g_set_message_funcptr[g_func_count] = ptr;
+	g_func_count++;
 }
 
 /***************************************************************************

@@ -10,9 +10,12 @@
 #include "cpu.h"
 #include "hash.h"
 #include "eval.h"
+#include "mt.h"
 
 int freeFlag = TRUE;
 
+UINT64 g_hashBoard[2][64];
+UINT64 g_colorHash[2];
 
 /*
 * ハッシュテーブルを解放する。
@@ -199,4 +202,34 @@ void FixTableToExact(HashTable *hash)
 		hash->entry[i].deepest.empty = 59;
 		hash->entry[i].newest.empty = 59;
 	}
+}
+
+void InitHashBoard()
+{
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 64; j++)
+		{
+			g_hashBoard[i][j] = (((UINT64)genrand_int32()) << 32) | genrand_int32();
+		}
+	}
+
+	g_colorHash[0] = (((UINT64)genrand_int32()) << 32) | genrand_int32();
+	g_colorHash[1] = (((UINT64)genrand_int32()) << 32) | genrand_int32();
+}
+
+UINT32 GenerateHashValue(UINT64 bk, UINT64 wh, UINT32 color)
+{
+	UINT64 hashValue = 0;
+
+	for (int j = 0; j < 64; j++)
+	{
+		hashValue ^= g_hashBoard[0][j] * ((bk & (1ULL << j)) >> j);
+		hashValue ^= g_hashBoard[1][j] * ((wh & (1ULL << j)) >> j);
+	}
+
+	hashValue ^= g_colorHash[color];
+
+	return (UINT32)(hashValue % g_casheSize);
+
 }
