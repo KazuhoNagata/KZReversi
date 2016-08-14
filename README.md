@@ -1,6 +1,39 @@
 # KZReversi
 KZReversiのC#版。CPUのAI関連を全てDLL化した。
 
+●終盤探索速度について(2016/8/14現在)
+
+有名な以下のベンチマークを使用しました。
+http://www.radagast.se/othello/ffotest.html
+
+環境:CPU Intel(R) Core(TM) i5-6500 CPU @ 3.20GHz
+
+FFO#40 ( Exact:(a2:+38) 1.04sec node: 10.26[Mn] )
+FFO#41 ( Exact:(h4: +0) 3.22sec node: 37.93[Mn] )
+FFO#42 ( Exact:(g2: +6) 4.01sec node: 55.72[Mn] )
+FFO#43 ( Exact:(G3:-12) 13.10sec node: 125.5[Mn] )
+FFO#44 ( Exact:(D2:-14) 3.22sec node: 30.26[Mn] )
+
+FFO#45 ( Exact:(b2: +6)  58.63sec node: 789.30[Mn] )
+FFO#46 ( Exact:(b3: -8)  10.27sec node: 123.50[Mn] )
+FFO#47 ( Exact:(G2: +4)   4.60sec node:  58.96[Mn] )
+FFO#48 ( Exact:(F6:+28)  36.09sec node: 426.40[Mn] )
+FFO#49 ( Exact:(e1:+16)  50.33sec node: 584.82[Mn] )
+FFO#50 ( Exact:(d8:+10) 354.14sec node:   2.91[Gn] )
+
+FFO#51 ( Exact:(E2:+6)   59.20sec node: 732.80[Mn] )
+FFO#52 ( Exact:(a3:+0)  142.79sec node:   3.15[Gn] )
+FFO#53 ( Exact:(d8:-2)  656.87sec node:  19.16[Gn] )
+FFO#54 ( Exact:(c7:-2) 1718.65sec node:  24.51[Gn] )
+FFO#55 ( Exact:(G6:+0) 5588.48sec node:  80.07[Gn] )
+
+FFO#56 ( Exact:(H5:+2)   314.27sec node:   3.72[Gn] )
+FFO#57 ( Exact:(a6:-10) 1045.01sec node:  12.54[Gn] )
+FFO#58 ( Exact:(g1:+4)   973.58sec node:  12.65[Gn] )
+FFO#59 ( Exact:(g8:+64)    0.25sec node: 938.18[Kn] )
+
+※小文字は黒番、大文字は白番
+
 2016/08/14<br>
 変更点：<br>
 ・64bitに移行、64bitOSの普及率を考えて32bitOSでは非対応にした<br>
