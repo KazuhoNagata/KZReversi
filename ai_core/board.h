@@ -4,7 +4,6 @@
 * Date  : 2016/02/01
 ****************************************************************************/
 
-#include "stdafx.h"
 
 #pragma once
 
@@ -26,11 +25,11 @@ typedef struct
 	UINT8 parity;   // 4x4‚Ì‹ôŠï
 }EmptyPosition;
 
-struct EmptyList
+typedef struct _EmptyList
 {
 	EmptyPosition empty;
-	EmptyList *next;
-};
+	struct _EmptyList *next;
+} EmptyList;
 
 extern UCHAR g_board[64];
 

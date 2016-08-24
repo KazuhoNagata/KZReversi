@@ -12,14 +12,19 @@
 #define PREPARE_LOCKED 3
 #define LOCKED 2
 
+// middle, endgame attribute
+#define HASH_ATTR_MIDDLE 0
+#define HASH_ATTR_WLD    1
+#define HASH_ATTR_EXACT  2
+
 /*! Hash : item stored in the hash table */
 typedef struct HashInfo {
 	UINT64 bk;
 	UINT64 wh;
 	INT32 lower;        /*!< lower bound of the position score */
 	INT32 upper;        /*!< upper bound of the position score */
-	INT8 bestmove;       /*!< best move */
-	INT8 empty;      /*!< depth of the analysis ( = board->n_empties) */
+	INT8 bestmove;      /*!< best move */
+	INT8 depth;         /*!< depth of the analysis*/
 	INT8 locked;
 	INT8 selectivity;
 } HashInfo;
@@ -32,6 +37,7 @@ typedef struct HashEntry {
 
 /*! HashTable : hash table */
 typedef struct HashTable {
+	INT8 attribute;
 	HashEntry *entry; 
 	INT32 size; 
 } HashTable;
@@ -52,7 +58,8 @@ void HashUpdate(
 	INT32 beta,
 	INT32 score,
 	INT32 empty,
-	INT8 move,
+	INT32 move,
+	INT32 selectivity,
 	INT32 inf_score);
 
 void InitHashBoard();

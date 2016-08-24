@@ -68,55 +68,55 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="ai_core.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ai_core.cpp">
+    <ClCompile Include="bit64.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="dllmain.cpp">
+    <ClCompile Include="board.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="bit64.cpp">
+    <ClCompile Include="book.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="board.cpp">
+    <ClCompile Include="count_last_flip_carry_64.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="book.cpp">
+    <ClCompile Include="cpu.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="cpu.cpp">
+    <ClCompile Include="dllmain.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="eval.cpp">
+    <ClCompile Include="empty.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="hash.cpp">
+    <ClCompile Include="endgame.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="move.cpp">
+    <ClCompile Include="eval.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ordering.cpp">
+    <ClCompile Include="fio.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="rev.cpp">
+    <ClCompile Include="hash.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="fio.cpp">
+    <ClCompile Include="move.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="count_last_flip_carry_32.cpp">
+    <ClCompile Include="mt.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="mt.cpp">
+    <ClCompile Include="ordering.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="empty.cpp">
+    <ClCompile Include="rev.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="endgame.cpp">
+    <ClCompile Include="stdafx.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

@@ -12,11 +12,11 @@
 #include "count_last_flip_carry_64.h"
 
 
-INT32 SearchEmpty_1(UINT64 bk, UINT64 wh, INT32 pos, PVLINE *pline);
-INT32 SearchEmptyWLD_1(UINT64 bk, UINT64 wh, INT32 pos, PVLINE *pline);
+INT32 SearchEmpty_1(UINT64 bk, UINT64 wh, INT32 pos, INT32 beta, PVLINE *pline);
+INT32 SearchEmptyWLD_1(UINT64 bk, UINT64 wh, INT32 pos, INT32 beta, PVLINE *pline);
 
 /* function empty 1 */
-INT32(*GetEmpty1Score[])(UINT64, UINT64, INT32, PVLINE*) = {
+INT32(*GetEmpty1Score[])(UINT64, UINT64, INT32, INT32, PVLINE*) = {
 	SearchEmptyWLD_1,
 	SearchEmpty_1
 };
@@ -32,15 +32,8 @@ INT32(*GetEmpty1Score[])(UINT64, UINT64, INT32, PVLINE*) = {
 * @param x      Last empty square to play.
 * @return       The final opponent score, as a disc difference.
 */
-INT32 SearchEmpty_1(UINT64 bk, UINT64 wh, INT32 pos, PVLINE *pline)
+INT32 SearchEmpty_1(UINT64 bk, UINT64 wh, INT32 pos, INT32 beta, PVLINE *pline)
 {
-	/* アボート処理 */
-	if (g_AbortFlag)
-	{
-		return ABORT;
-	}
-
-	//g_countNode++;
 
 	INT32 score = 2 * CountBit(bk);
 	INT32 n_flips = count_last_flip[pos](bk);
@@ -86,16 +79,8 @@ INT32 SearchEmpty_1(UINT64 bk, UINT64 wh, INT32 pos, PVLINE *pline)
 * @param x      Last empty square to play.
 * @return       The final opponent score, as a disc difference.
 */
-INT32 SearchEmptyWLD_1(UINT64 bk, UINT64 wh, INT32 pos, PVLINE *pline)
+INT32 SearchEmptyWLD_1(UINT64 bk, UINT64 wh, INT32 pos, INT32 beta, PVLINE *pline)
 {
-	/* アボート処理 */
-	if (g_AbortFlag)
-	{
-		return ABORT;
-	}
-
-	//g_countNode++;
-
 	INT32 score = 2 * CountBit(bk);
 	INT32 n_flips = count_last_flip[pos](bk);
 
@@ -140,13 +125,6 @@ INT32 SearchEmptyWLD_1(UINT64 bk, UINT64 wh, INT32 pos, PVLINE *pline)
 INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 	INT32 alpha, INT32 beta, INT32 passed, PVLINE *pline)
 {
-
-	/* アボート処理 */
-	if (g_AbortFlag)
-	{
-		return ABORT;
-	}
-
 	g_countNode++;
 
 	INT32 eval, best;
@@ -158,7 +136,7 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 	rev = GetRev[x1](bk, wh);
 	if (rev)
 	{
-		best = -GetEmpty1Score[g_solveMethod](wh ^ rev, bk ^ (pos_bit | rev), x2, &line);
+		best = -GetEmpty1Score[g_solveMethod](wh ^ rev, bk ^ (pos_bit | rev), x2, -alpha, &line);
 		if (best >= beta) return best;
 		if (best > alpha)
 		{
@@ -168,13 +146,13 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 			pline->cmove = line.cmove + 1;
 		}
 	}
-	else best = -INF_SCORE;
+	else best = -g_infscore;
 
 	pos_bit = 1ULL << x2;
 	rev = GetRev[x2](bk, wh);
 	if (rev)
 	{
-		eval = -GetEmpty1Score[g_solveMethod](wh ^ rev, bk ^ (pos_bit | rev), x1, &line);
+		eval = -GetEmpty1Score[g_solveMethod](wh ^ rev, bk ^ (pos_bit | rev), x1, -alpha, &line);
 		if (eval >= beta) return eval;
 		else if (eval > best)
 		{
@@ -190,7 +168,7 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 	}
 
 	// no move
-	if (best == -INF_SCORE)
+	if (best == -g_infscore)
 	{
 		if (passed)
 		{
@@ -212,12 +190,6 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 	INT32 alpha, INT32 beta, INT32 passed, PVLINE *pline)
 {
-	/* アボート処理 */
-	if (g_AbortFlag)
-	{
-		return ABORT;
-	}
-
 	g_countNode++;
 
 	// 3 empties parity
@@ -256,7 +228,7 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 			pline->cmove = line.cmove + 1;
 		}
 	}
-	else best = -INF_SCORE;
+	else best = -g_infscore;
 
 	pos_bit = 1ULL << x2;
 	rev = GetRev[x2](bk, wh);
@@ -297,7 +269,7 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 	}
 
 	// no move
-	if (best == -INF_SCORE)
+	if (best == -g_infscore)
 	{
 		if (passed)
 		{
@@ -320,18 +292,19 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	UINT32 parity, INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline)
 {
-	/* アボート処理 */
-	if (g_AbortFlag)
-	{
-		return ABORT;
-	}
-
 	g_countNode++;
 
 	INT32 best;
 	// stability cutoff
-	if (search_SC_NWS(bk, wh, empty, alpha, &best))return best;
-
+	if (search_SC_NWS(bk, wh, empty, alpha, &best))
+	{
+		if (g_solveMethod == SOLVE_WLD)
+		{
+			if (best > DRAW) best = WIN;
+			else if (best < DRAW) best = LOSS;
+		}
+		return best;
+	}
 	// 4 empties parity
 	UINT64 temp_moves = blank;
 	int x1 = CountBit((~temp_moves) & (temp_moves - 1));
@@ -388,7 +361,7 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			pline->cmove = line.cmove + 1;
 		}
 	}
-	else best = -INF_SCORE;
+	else best = -g_infscore;
 
 	pos_bit = 1ULL << x2;
 	rev = GetRev[x2](bk, wh);
@@ -451,7 +424,7 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	}
 
 	// no move
-	if (best == -INF_SCORE)
+	if (best == -g_infscore)
 	{
 		if (passed)
 		{
@@ -472,17 +445,19 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	UINT32 parity, INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline)
 {
-	/* アボート処理 */
-	if (g_AbortFlag)
-	{
-		return ABORT;
-	}
-
 	g_countNode++;
 
 	INT32 best;
 	// stability cutoff
-	if (search_SC_NWS(bk, wh, empty, alpha, &best)) return best;
+	if (search_SC_NWS(bk, wh, empty, alpha, &best))
+	{
+		if (g_solveMethod == SOLVE_WLD)
+		{
+			if (best > DRAW) best = WIN;
+			else if (best < DRAW) best = LOSS;
+		}
+		return best;
+	}
 
 	// 4 empties parity
 	UINT64 temp_moves = blank;
@@ -687,7 +662,7 @@ INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			pline->cmove = line.cmove + 1;
 		}
 	}
-	else best = -INF_SCORE;
+	else best = -g_infscore;
 
 	pos_bit = 1ULL << x2;
 	rev = GetRev[x2](bk, wh);
@@ -770,7 +745,7 @@ INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	}
 
 	// no move
-	if (best == -INF_SCORE)
+	if (best == -g_infscore)
 	{
 		if (passed)
 		{

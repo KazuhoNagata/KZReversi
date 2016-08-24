@@ -323,21 +323,20 @@ UCHAR *DecodeEvalData(INT64 *decodeDataLen_p, char *filename)
 
 }
 
-BOOL OpenMpcInfoData(char *filename){
-
+BOOL OpenMpcInfoData(MPCINFO *p_info, INT32 info_len, char *filename){
+	
 	FILE *fp;
 
 	if (fopen_s(&fp, filename, "r") || fp == NULL){
 		return FALSE;
 	}
 
-	memset(mpcInfo, 0, sizeof(mpcInfo));
+	memset(p_info, 0, info_len);
 
-	for (int j = 0; j < 22; j++){
-		fscanf_s(fp, "%d", &(mpcInfo[j].depth));
-		fscanf_s(fp, "%d", &(mpcInfo[j].offset));
-		fscanf_s(fp, "%d", &(mpcInfo[j].deviation));
-		//mpcInfo[j].deviation *= 1.4; // threshould
+	for (int j = 0; j < info_len; j++){
+		fscanf_s(fp, "%d", &(p_info[j].depth));
+		fscanf_s(fp, "%d", &(p_info[j].offset));
+		fscanf_s(fp, "%d", &(p_info[j].deviation));
 	}
 
 	fclose(fp);

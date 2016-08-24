@@ -15,7 +15,7 @@
 #include "cpu.h"
 #include "rev.h"
 
-#define KZ_EXPORT extern "C" __declspec(dllexport)
+#define KZ_EXPORT __declspec(dllexport)
 
 BOOL m_BookFlag;
 
@@ -40,12 +40,12 @@ KZ_EXPORT BOOL KZ_LibInit()
 	}
 
 	/* pos番号-->指し手文字列変換テーブル */
-	char cordinate[4];
+	char cordinate[6];
 	/* 指し手の座標表記変換用 */
 	for (int i = 0; i < 64; i++)
 	{
-		sprintf_s(cordinate, "%c%d", i / 8 + 'a', (i % 8) + 1);
-		strcpy_s(g_cordinates_table[i], 4, cordinate);
+		sprintf_s(cordinate, 4, "%c%d", (i / 8) + 'a', (i % 8) + 1);
+		strcpy_s(g_cordinates_table[i], sizeof(g_cordinates_table[i]), cordinate);
 	}
 
 	edge_stability_init();

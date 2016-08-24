@@ -187,13 +187,13 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ai_core.cpp" />
-    <ClCompile Include="bit64.cpp" />
-    <ClCompile Include="board.cpp" />
-    <ClCompile Include="book.cpp" />
-    <ClCompile Include="count_last_flip_carry_32.cpp" />
-    <ClCompile Include="cpu.cpp" />
-    <ClCompile Include="dllmain.cpp">
+    <ClCompile Include="ai_core.c" />
+    <ClCompile Include="bit64.c" />
+    <ClCompile Include="board.c" />
+    <ClCompile Include="book.c" />
+    <ClCompile Include="count_last_flip_carry_64.c" />
+    <ClCompile Include="cpu.c" />
+    <ClCompile Include="dllmain.c">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -207,16 +207,16 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="empty.cpp" />
-    <ClCompile Include="endgame.cpp" />
-    <ClCompile Include="eval.cpp" />
-    <ClCompile Include="fio.cpp" />
-    <ClCompile Include="hash.cpp" />
-    <ClCompile Include="move.cpp" />
-    <ClCompile Include="mt.cpp" />
-    <ClCompile Include="ordering.cpp" />
-    <ClCompile Include="rev.cpp" />
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="empty.c" />
+    <ClCompile Include="endgame.c" />
+    <ClCompile Include="eval.c" />
+    <ClCompile Include="fio.c" />
+    <ClCompile Include="hash.c" />
+    <ClCompile Include="move.c" />
+    <ClCompile Include="mt.c" />
+    <ClCompile Include="ordering.c" />
+    <ClCompile Include="rev.c" />
+    <ClCompile Include="stdafx.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

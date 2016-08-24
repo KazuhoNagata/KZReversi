@@ -80,19 +80,22 @@ namespace KZreversi
         public delegate void SetMoveProperty(ulong moves);
         public delegate void SetNodeCountProperty(ulong nodeCount);
         public delegate void SetCpuMessageProperty(string cpuMsg);
+        public delegate void SetMPCInfoProperty(string mpcMsg);
 
         public SetMoveProperty delegateObj;
         public SetNodeCountProperty nodeCountDelegate;
         public SetCpuMessageProperty cpuMessageDelegate;
         public SetCpuMessageProperty setPVLineDelegate;
+        public SetCpuMessageProperty setMPCInfoDelegate;
 
-        Font m_ft = new Font("MS UI Gothic", 14);
+        Font m_ft = new Font("MS UI Gothic", 9);
         Font m_ft2 = new Font("MS UI Gothic", 8);
 
         public int m_event;
 
         private IntPtr cpuMessageDelegatePtr;
         private IntPtr setPVLineDelegatePtr;
+        private IntPtr setMPCInfoDelegatePtr;
 
         public Form1()
         {
@@ -106,6 +109,7 @@ namespace KZreversi
             nodeCountDelegate = new SetNodeCountProperty(setNodeCount);
             cpuMessageDelegate = new SetCpuMessageProperty(setCpuMessage);
             setPVLineDelegate = new SetCpuMessageProperty(setPVLine);
+            setMPCInfoDelegate = new SetCpuMessageProperty(setMPCInfo);
 
             boardclass.InitBoard(COLOR_BLACK);
 
@@ -333,9 +337,16 @@ namespace KZreversi
             cppWrapper.EntryFunction(cpuMessageDelegatePtr);
             gcHandle.Free();
 
+            // CPU情報表示用
             gcHandle = GCHandle.Alloc(setPVLineDelegate);
             setPVLineDelegatePtr = Marshal.GetFunctionPointerForDelegate(setPVLineDelegate);
             cppWrapper.EntryFunction(setPVLineDelegatePtr);
+            gcHandle.Free();
+
+            // MPC進捗状況表示用
+            gcHandle = GCHandle.Alloc(setMPCInfoDelegate);
+            setMPCInfoDelegatePtr = Marshal.GetFunctionPointerForDelegate(setMPCInfoDelegate);
+            cppWrapper.EntryFunction(setMPCInfoDelegatePtr);
             gcHandle.Free();
 
             // デフォルトのCPU設定
@@ -356,7 +367,7 @@ namespace KZreversi
                 cpuClass[i].SetWinLossDepth(14);
                 cpuClass[i].SetExactDepth(12);
                 cpuClass[i].SetBookFlag(true);
-                cpuClass[i].SetBookVariability(3);
+                cpuClass[i].SetBookVariability(2);
                 cpuClass[i].SetMpcFlag(true);
                 cpuClass[i].SetTableFlag(true);
             }
@@ -411,9 +422,9 @@ namespace KZreversi
                     while (temp > 0)
                     {
                         pos = cppWrapper.ConvertMoveBit(temp);
-                        e.Graphics.DrawString("◆", m_ft, Brushes.Red,
-                            (pos / BOARD_SIZE) * 60 + 20,
-                            (pos % BOARD_SIZE) * 60 + 20);
+                        e.Graphics.DrawString("◆", m_ft, Brushes.Blue,
+                            (pos / BOARD_SIZE) * 60 + 23,
+                            (pos % BOARD_SIZE) * 60 + 25);
                         temp ^= (1UL << pos);
                     }
                 }
@@ -614,6 +625,14 @@ namespace KZreversi
             }
         }
 
+        private void setMPCInfo(string mpcMessage)
+        {
+            lock (toolStripStatusLabel2.Text)
+            {
+                toolStripStatusLabel2.Text = mpcMessage;
+            }
+        }
+
         private ulong _m_cpuMove;
         public ulong m_cpuMoveProperty
         {
@@ -787,7 +806,7 @@ namespace KZreversi
 
             int empty = cppWrapper.CountBit(~(boardclass.GetBlack() | boardclass.GetWhite()));
 
-            if (empty < cpu.GetExactDepth())
+            if (empty <= cpu.GetExactDepth())
             {
                 if (eval >= 0)
                 {
@@ -796,7 +815,7 @@ namespace KZreversi
 
                 evalSb.Append(eval);
             }
-            else if (empty < cpu.GetWinLossDepth())
+            else if (empty <= cpu.GetWinLossDepth())
             {
                 if (eval > 0)
                 {
@@ -1079,7 +1098,7 @@ namespace KZreversi
         private void fFO40ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#40(black to move) (WinLoss:[a2:WIN] Exact:[a2:+38])
-           // boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
+            //boardclass.InitBoard(COLOR_BLACK, 904310735139406910, 1166500664209061888);
             boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;

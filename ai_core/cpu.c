@@ -31,21 +31,38 @@ INT32 g_solveMethod;
 INT32 g_empty;
 INT32 g_limitDepth;
 UINT64 g_casheSize;
+BOOL g_refresh_hash_flag = TRUE;
 
 // CPU AIî•ñ
 BOOL g_AbortFlag;
 UINT64 g_countNode;
 UINT32 g_move;
+INT32 g_infscore;
 
 HashTable *g_hash = NULL;
 
 MPCINFO mpcInfo[22];
+MPCINFO mpcInfo_end[26];
 double MPC_CUT_VAL;
+double MPC_END_CUT_VAL;
+INT32 g_mpc_level;
+
+// endgame mpc info
+const double cutval_table[8] =
+{
+	0.25, 0.50, 0.75, 1.00, 1.50, 2.00, 2.40, 3.00
+};
+
+const int cutval_table_percent[8 + 1] =
+{
+	20, 38, 54, 68, 86, 95, 98, 99, 100
+};
+const INT32 g_max_cut_table_size = 8;
 
 char g_cordinates_table[64][4];
 char g_AiMsg[128];
 char g_PVLineMsg[256];
-SetMessageToGUI g_set_message_funcptr[2];
+SetMessageToGUI g_set_message_funcptr[3];
 
 INT32 g_pvline[60];
 INT32 g_pvline_len;
@@ -61,7 +78,7 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color);
 INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color);
 
 INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
-	HashTable *hash, INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline);
+	HashTable *hash, INT32 alpha, INT32 beta, UINT32 passed, INT32 *selectivity, PVLINE *pline);
 
 /***************************************************************************
 * Name  : CreateCpuMessage
@@ -102,7 +119,7 @@ void CreateCpuMessage(char *msg, int msglen, int eval, int move, int cnt, int fl
 				eval / (double)EVAL_ONE_STONE, cnt);
 		}
 	}
-	else if (flag == ON_WINLOSS)
+	else if (flag == ON_WLD)
 	{
 		if (cnt == -1)
 		{
@@ -140,7 +157,7 @@ void CreateCpuMessage(char *msg, int msglen, int eval, int move, int cnt, int fl
 	{
 		if (cnt == -2)
 		{
-			sprintf_s(msg, msglen, "guess... move %s [ %+d`%+d ]", g_cordinates_table[move], eval - 8, eval + 8);
+			sprintf_s(msg, msglen, "guess... move %s [ %+d`%+d ]", g_cordinates_table[move], eval - 1, eval + 1);
 		}
 		else if (cnt == -1)
 		{
@@ -226,7 +243,7 @@ void CreatePVLineStr(PVLINE *pline, INT32 empty, INT32 score)
 
 
 
-void CreatePVLineStr(INT32 *pline, INT32 empty, INT32 score)
+void CreatePVLineStrAscii(INT32 *pline, INT32 empty, INT32 score)
 {
 	char *strptr = g_PVLineMsg;
 	int bufsize = sizeof(g_PVLineMsg);
@@ -265,6 +282,21 @@ void CreatePVLineStr(INT32 *pline, INT32 empty, INT32 score)
 }
 
 
+INT32 GetMoveFromHash(UINT64 bk, UINT64 wh, INT32 key)
+{
+	INT32 move;
+	if (g_hash->entry[key].deepest.bk == bk && g_hash->entry[key].deepest.wh == wh)
+	{
+		move = g_hash->entry[key].deepest.bestmove;
+	}
+	else
+	{
+		move = g_hash->entry[key].newest.bestmove;
+	}
+
+	return move;
+}
+
 
 BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos)
 {
@@ -292,32 +324,36 @@ BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos)
 
 void StorePVLineToBoard(UINT64 bk, UINT64 wh, INT32 color, PVLINE *pline)
 {
+	INT32 error = 0;
 	BOOL ret;
 	g_pvline_len = pline->cmove;
+
+	UINT64 bk_l = bk, wh_l = wh;
 
 	for (int i = 0; i < g_pvline_len; i++)
 	{
 		g_pvline[i] = pline->argmove[i];
 		if (color == BLACK)
 		{
-			g_pvline_board[BLACK][i] = bk;
-			g_pvline_board[WHITE][i] = wh;
-			ret = boardMoves(&bk, &wh, 1ULL << g_pvline[i], g_pvline[i]);
+			g_pvline_board[BLACK][i] = bk_l;
+			g_pvline_board[WHITE][i] = wh_l;
+			ret = boardMoves(&bk_l, &wh_l, 1ULL << g_pvline[i], g_pvline[i]);
 			color ^= 1;
 		}
 		else
 		{
-			g_pvline_board[BLACK][i] = wh;
-			g_pvline_board[WHITE][i] = bk;
-			ret = boardMoves(&wh, &bk, 1ULL << g_pvline[i], g_pvline[i]);
+			g_pvline_board[BLACK][i] = wh_l;
+			g_pvline_board[WHITE][i] = bk_l;
+			ret = boardMoves(&wh_l, &bk_l, 1ULL << g_pvline[i], g_pvline[i]);
 			color ^= 1;
 		}
 
 		if (ret == FALSE)
 		{
 			i--; // ‚â‚è’¼‚µ
+			error++;
+			if (error == 2) break; // FFO#48 is entered this block...may be bug...?
 		}
-
 	}
 }
 
@@ -330,17 +366,17 @@ void StorePVLineToBoard(UINT64 bk, UINT64 wh, INT32 color, PVLINE *pline)
 * @param score Score to return in case of a cutoff is found.
 * @return 'true' if a cutoff is found, false otherwise.
 */
-bool search_SC_PVS(UINT64 bk, UINT64 wh, INT32 empty,
+BOOL search_SC_PVS(UINT64 bk, UINT64 wh, INT32 empty,
 	volatile INT32 *alpha, volatile INT32 *beta, INT32 *score)
 {
 	if (*beta >= PVS_STABILITY_THRESHOLD[empty]) {
 		*score = (64 - 2 * get_stability(wh, bk)) * EVAL_ONE_STONE;
 		if (*score <= *alpha) {
-			return true;
+			return TRUE;
 		}
 		else if (*score < *beta) *beta = *score;
 	}
-	return false;
+	return FALSE;
 }
 
 
@@ -404,11 +440,13 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	if (emptyNum <= cpuConfig->exactDepth)
 	{
 		g_limitDepth = emptyNum;
+		g_infscore = INF_SCORE;
 		g_evaluation = SearchExact(bk, wh, emptyNum, cpuConfig->color);
 	}
 	else if (emptyNum <= cpuConfig->winLossDepth)
 	{
 		g_limitDepth = emptyNum;
+		g_infscore = WIN + 1;
 		g_evaluation = SearchWinLoss(bk, wh, emptyNum, cpuConfig->color);
 	}
 	else
@@ -421,7 +459,7 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	// ’uŠ·•\‚©‚ç’…è‚ğæ“¾
 	if (g_tableFlag)
 	{
-		move = 1ULL << (g_hash->entry[key].deepest.bestmove);
+		move = 1ULL << GetMoveFromHash(bk, wh, key);
 	}
 	else
 	{
@@ -447,6 +485,7 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	INT32 eval = 0;
 	INT32 eval_b = 0;
 	INT32 limit = g_limitDepth;
+	INT32 selectivity;
 	UINT32 key = KEY_HASH_MACRO(bk, wh, color);
 	INT32 move;
 	PVLINE line;
@@ -460,17 +499,22 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	g_empty = emptyNum;
 	g_solveMethod = SOLVE_MIDDLE;
 
-	HashClear(g_hash);
+	if (g_hash->attribute != HASH_ATTR_MIDDLE)
+	{
+		HashClear(g_hash);
+		g_hash->attribute = HASH_ATTR_MIDDLE;
+	}
 	// ”½•œ[‰»[‚³—Dæ’Tõ
 	for (int count = 2; count <= limit; count += 2)
 	{
 		// PV ‚ğ‰Šú‰»
 		memset(g_pvline, -1, sizeof(g_pvline));
 		g_pvline_len = 0;
+		selectivity = g_max_cut_table_size; // init max threshold
 
 		eval_b = eval;
 		g_limitDepth = count;
-		eval = PVS_SearchDeep(bk, wh, count, emptyNum, color, g_hash, alpha, beta, NO_PASS, &line);
+		eval = PVS_SearchDeep(bk, wh, count, emptyNum, color, g_hash, alpha, beta, NO_PASS, &selectivity, &line);
 
 		if (eval == ABORT)
 		{
@@ -480,14 +524,16 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		// İ’è‚µ‚½‘‹‚æ‚è•]‰¿’l‚ª’á‚¢‚©H
 		if (eval <= alpha)
 		{
+			selectivity = g_max_cut_table_size;
 			// ’á‚¢‚È‚çƒ¿‚ğ‰ºŒÀ‚ÉÄİ’è‚µ‚ÄŒŸõ
-			eval = PVS_SearchDeep(bk, wh, count, emptyNum, color, g_hash, NEGAMIN, NEGAMAX, NO_PASS, &line);
+			eval = PVS_SearchDeep(bk, wh, count, emptyNum, color, g_hash, NEGAMIN, NEGAMAX, NO_PASS, &selectivity, &line);
 		}
 		// İ’è‚µ‚½‘‹‚æ‚è•]‰¿’l‚ª‚‚¢‚©H
 		else if (eval >= beta)
 		{
+			selectivity = g_max_cut_table_size;
 			// ‚‚¢‚È‚çƒÀ‚ğãŒÀ‚ÉÄİ’è‚µ‚ÄŒŸõ
-			eval = PVS_SearchDeep(bk, wh, count, emptyNum, color, g_hash, NEGAMIN, NEGAMAX, NO_PASS, &line);
+			eval = PVS_SearchDeep(bk, wh, count, emptyNum, color, g_hash, NEGAMIN, NEGAMAX, NO_PASS, &selectivity, &line);
 		}
 
 		// ‘‹‚Ì•‚ğ}8‚É‚µ‚ÄŒŸõ (ƒ¿,ƒÀ) ---> (eval - 8, eval + 8)
@@ -520,32 +566,38 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 ****************************************************************************/
 INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 {
-	INT32 alpha = -INF_SCORE;
-	INT32 beta = INF_SCORE;
+	INT32 alpha = -g_infscore;
+	INT32 beta = g_infscore;
 	INT32 eval = 0;
 	INT32 eval_b = 0;
 	UINT32 key = KEY_HASH_MACRO(bk, wh, color);
 	INT32 aVal;
 	INT32 bVal;
-	INT32 move;
+	INT32 move = NOMOVE, move_b;
 
+
+#if 0
+	// ‘Šè‚ªPV’Ê‚è‚Ìè‚ğ’…è‚µ‚½ê‡‚ÍPVLINE‚©‚çè‚ğQÆ
 	INT32 pv_depth = g_pvline_len - emptyNum;
-	// PV’Ê‚è‚Ìè‚ğ’…è‚µ‚½ê‡‚ÍPVLINE‚©‚çè‚ğQÆ
 	if (pv_depth > 0 &&
 		g_pvline_board[BLACK][pv_depth] == bk &&
 		g_pvline_board[WHITE][pv_depth] == wh)
 	{
-		g_hash->entry[key].deepest.bestmove = g_pvline[pv_depth];
 
-		// CPU‚Éƒ‰ƒCƒ“î•ñ‚ğ’Ê’m
-		CreatePVLineStr(&g_pvline[pv_depth], emptyNum, g_evaluation);
+		if (g_hash->entry[key].deepest.bk == bk && g_hash->entry[key].deepest.wh == wh)
+			g_hash->entry[key].deepest.bestmove = g_pvline[pv_depth];
+		else g_hash->entry[key].newest.bestmove = g_pvline[pv_depth];
+
+		// UI‚ÉPVƒ‰ƒCƒ“î•ñ‚ğ’Ê’m
+		CreatePVLineStrAscii(&g_pvline[pv_depth], emptyNum, g_evaluation);
 		g_set_message_funcptr[1](g_PVLineMsg);
 
 		return g_evaluation;
 	}
+#endif
 
-#if 1
-	g_limitDepth = emptyNum;
+#if 0
+	g_limitDepth = emptyNum - 4;
 
 	if (g_limitDepth % 2) g_limitDepth--;
 	if (g_limitDepth > 24)
@@ -560,10 +612,6 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 
 		eval /= EVAL_ONE_STONE;
 		eval -= eval % 2;
-
-		// –¾‚ç‚©‚É·‚ª‚ ‚éê‡‚Í‘S–Åè‚ÌŒŸõ
-		if (eval + 8 > 48) eval = 56;
-		if (eval - 8 < -48) eval = -56;
 
 		aVal = eval - 8;
 		bVal = eval + 8;
@@ -581,6 +629,14 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		bVal = INF_SCORE;
 	}
 
+#else
+	if (g_empty >= 12 && g_hash->attribute != HASH_ATTR_EXACT)
+	{
+		HashClear(g_hash);
+		g_hash->attribute = HASH_ATTR_EXACT;
+	}
+	aVal = -g_infscore;
+	bVal = g_infscore;
 #endif
 
 	// PV ‚ğ‰Šú‰»
@@ -588,15 +644,95 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	g_pvline_len = 0;
 
 	PVLINE line;
+	INT32 selectivity;
+
+	// ƒOƒ[ƒoƒ‹•Ï”‰Šú‰»
 	g_solveMethod = SOLVE_EXACT;
+	g_limitDepth = emptyNum;
 	g_empty = emptyNum;
-	// PVSÎ·’Tõ
-	eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, aVal, bVal, NO_PASS, &line);
+#if 1
+	if (g_empty >= 12)
+	{
+		// I”ÕMPC’Tõ(0.25ƒĞ`3.0ƒĞ)
+		for (INT32 lv = 0; lv < g_max_cut_table_size + 1; lv++)
+		{
+			selectivity = lv;
+			g_mpc_level = lv;
+			// Abort‚Ì‚½‚ß‚É’¼‘O‚Ì•]‰¿Œ‹‰Ê‚ğ•Û‘¶
+			eval_b = eval;
+			move_b = move;
+
+			MPC_END_CUT_VAL = cutval_table[g_mpc_level];
+
+			// PVSÎ·’Tõ
+			eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, aVal, bVal, NO_PASS, &selectivity, &line);
+
+			// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
+			if (g_AbortFlag == TRUE)
+			{
+				sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.", line.cmove);
+				g_set_message_funcptr[0](g_AiMsg);
+				g_hash->entry[key].deepest.bestmove = move_b;
+				return eval_b;
+			}
+
+			eval_b = eval;
+			if (eval <= aVal)
+			{
+				selectivity = lv;
+				// ƒ¿’l‚ğ‰º‰ñ‚Á‚½‚Ì‚ÅÄ’Tõ
+				eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, -g_infscore, eval + 2,
+					NO_PASS, &selectivity, &line);
+
+			}
+			else if (eval >= bVal)
+			{
+				selectivity = lv;
+				// ƒÀ’l‚ğã‰ñ‚Á‚½‚Ì‚ÅÄ’Tõ
+				eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, eval - 2, g_infscore,
+					NO_PASS, &selectivity, &line);
+			}
+
+			// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
+			if (g_AbortFlag == TRUE)
+			{
+				sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.", line.cmove);
+				g_set_message_funcptr[0](g_AiMsg);
+				g_hash->entry[key].deepest.bestmove = move_b;
+				return eval_b;
+			}
+
+			// eval‚Ì’l‚ÅŒˆ‚ß‘Å‚¿•]‰¿‚µ‚Ä‚İ‚é
+			aVal = eval - 2;
+			bVal = eval + 2;
+
+			// ’uŠ·•\‚©‚çÅ‘Pè‚ğæ“¾
+			move = GetMoveFromHash(bk, wh, key);
+
+			sprintf_s(g_AiMsg, sizeof(g_AiMsg), "[%s] : %+d @ %d%%", g_cordinates_table[move], eval, cutval_table_percent[lv]);
+			g_set_message_funcptr[2](g_AiMsg);
+
+			CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval, move, -2, ON_EXACT);
+			g_set_message_funcptr[0](g_AiMsg);
+		}
+	}
+	else
+	{
+		// init max threshold
+		selectivity = g_max_cut_table_size;
+		// PVSÎ·’Tõ
+		eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, -g_infscore, g_infscore, NO_PASS, &selectivity, &line);
+	}
+#else
+	selectivity = g_max_cut_table_size;
+	g_mpc_level = g_max_cut_table_size;
+	eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, aVal, bVal, NO_PASS, &selectivity, &line);
 	// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
 	if (eval == ABORT)
 	{
 		return eval_b;
 	}
+#endif
 
 	if (eval == 64)
 	{
@@ -607,37 +743,22 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		return -64;
 	}
 
-	eval_b = eval;
-
-	if (eval <= aVal)
-	{
-		move = g_hash->entry[key].deepest.bestmove;
-		sprintf_s(g_AiMsg, "guess move %s <= %+d", g_cordinates_table[move], eval);
-		g_set_message_funcptr[0](g_AiMsg);
-		// ƒ¿’l‚ğ‰º‰ñ‚Á‚½‚Ì‚ÅÄ’Tõ
-		eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, -INF_SCORE, eval + 2, NO_PASS, &line);
-
-	}
-	else if (eval >= bVal)
-	{
-		move = g_hash->entry[key].deepest.bestmove;
-		sprintf_s(g_AiMsg, "guess move %s >= %+d", g_cordinates_table[move], eval);
-		g_set_message_funcptr[0](g_AiMsg);
-		// ƒÀ’l‚ğã‰ñ‚Á‚½‚Ì‚ÅÄ’Tõ
-		eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, eval - 2, INF_SCORE, NO_PASS, &line);
-
-	}
-
 	// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
-	if (eval == ABORT)
+	if (g_AbortFlag == TRUE)
 	{
+		sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.", line.cmove);
+		g_set_message_funcptr[0](g_AiMsg);
+		g_hash->entry[key].deepest.bestmove = move_b;
 		return eval_b;
 	}
 	else
 	{
+		sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Solved.", line.cmove);
+		g_set_message_funcptr[0](g_AiMsg);
 		// PVLINE‹Ç–Ê‚ğ•Û‘¶
 		StorePVLineToBoard(bk, wh, color, &line);
 	}
+
 
 	return eval;
 }
@@ -656,52 +777,100 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	INT32 eval = 0;
 	INT32 eval_b = 0;
 	UINT32 key = KEY_HASH_MACRO(bk, wh, color);
+	INT32 move = NOMOVE, move_b;
 
-	g_limitDepth = emptyNum;
+#if 1
+	g_limitDepth = emptyNum - 8;
+
 	if (g_limitDepth % 2) g_limitDepth--;
 	if (g_limitDepth > 24)
 	{
 		g_limitDepth = 24;
 	}
+
 	if (g_limitDepth >= 12)
 	{
-		// –‘O’Tõ
+		// –‘OŸ”s’Tõ
 		eval = SearchMiddle(bk, wh, emptyNum, color);
-		// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
-		if (g_AbortFlag)
-		{
-			return eval;
-		}
 
-		eval_b = eval;
+		eval /= EVAL_ONE_STONE;
+		eval -= eval % 2;
+
+		CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval, g_hash->entry[key].deepest.bestmove, -2, ON_WLD);
+		g_set_message_funcptr[0](g_AiMsg);
 
 		// ’uŠ·•\‚ğÎ·’Tõ—p‚É‰Šú‰»
 		FixTableToWinLoss(g_hash);
 	}
-
-
-	// PV ‚ğ‰Šú‰»
-	memset(g_pvline, -1, sizeof(g_pvline));
-	g_pvline_len = 0;
-
-	PVLINE line;
-	g_solveMethod = SOLVE_WLD;
-	g_empty = emptyNum;
-	// PVSÎ·’Tõ
-	eval = PVS_SearchDeepWinLoss(bk, wh, emptyNum, color, g_hash, LOSS, WIN, NO_PASS, &line);
-	// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
-	if (eval == ABORT)
+	else
 	{
-		return eval_b;
+		if (g_hash->attribute != HASH_ATTR_WLD)
+		{
+			HashClear(g_hash);
+			g_hash->attribute = HASH_ATTR_WLD;
+		}
 	}
 
-	eval_b = eval;
+#else
+	HashClear(g_hash);
+#endif
 
+	PVLINE line;
+	INT32 selectivity;
+	char *wld_str[] = {"LOSS", "DRAW", "WIN"};
+
+	// ƒOƒ[ƒoƒ‹•Ï”‰Šú‰»
+	g_solveMethod = SOLVE_WLD;
+	g_limitDepth = emptyNum;
+	g_empty = emptyNum;
+
+	// PVƒ‰ƒCƒ“•\¦–³Œø
+	g_set_message_funcptr[1]("");
+
+	// I”ÕMPC’Tõ(0.25ƒĞ`3.0ƒĞ)
+	for (INT32 lv = 0; lv < g_max_cut_table_size + 1; lv++)
+	{
+		selectivity = lv;
+		g_mpc_level = lv;
+		// Abort‚Ì‚½‚ß‚É’¼‘O‚Ì•]‰¿Œ‹‰Ê‚ğ•Û‘¶
+		eval_b = eval;
+		move_b = move;
+
+		MPC_END_CUT_VAL = cutval_table[g_mpc_level];
+
+		// PVSÎ·’Tõ
+		eval = PVS_SearchDeepWinLoss(bk, wh, emptyNum, color, g_hash, LOSS, WIN, NO_PASS, &selectivity, &line);
+
+		// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
+		if (g_AbortFlag == TRUE)
+		{
+			sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.", line.cmove);
+			g_set_message_funcptr[0](g_AiMsg);
+			g_hash->entry[key].deepest.bestmove = move_b;
+			return eval_b;
+		}
+
+		// ’uŠ·•\‚©‚çÅ‘Pè‚ğæ“¾
+		move = GetMoveFromHash(bk, wh, key);
+
+		sprintf_s(g_AiMsg, sizeof(g_AiMsg), "[%s] : %s @ %d%%", g_cordinates_table[move], wld_str[eval + 1], cutval_table_percent[lv]);
+		g_set_message_funcptr[2](g_AiMsg);
+
+		CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval, move, -1, ON_WLD);
+		g_set_message_funcptr[0](g_AiMsg);
+	}
 
 	// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
-	if (eval == ABORT)
+	if (g_AbortFlag == TRUE)
 	{
+		sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.", line.cmove);
+		g_set_message_funcptr[0](g_AiMsg);
 		return eval_b;
+	}
+	else
+	{
+		sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Solved.", line.cmove);
+		g_set_message_funcptr[0](g_AiMsg);
 	}
 
 	return eval;
@@ -724,7 +893,7 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 * Return: ’…è‰Â”\ˆÊ’u‚Ìƒrƒbƒg—ñ
 ****************************************************************************/
 INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
-	HashTable *hash, INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline)
+	HashTable *hash, INT32 alpha, INT32 beta, UINT32 passed, INT32 *p_selectivity, PVLINE *pline)
 {
 
 	/* ƒAƒ{[ƒgˆ— */
@@ -741,7 +910,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 
 	g_countNode++;
 
-	int score, bestscore, lower, upper, bestmove;
+	INT32 score, bestscore, lower, upper, bestmove;
 	UINT32 key;
 	MoveList movelist[34], *iter;
 	Move *move;
@@ -767,18 +936,34 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 		hashInfo = HashGet(hash, key, bk, wh);
 		if (hashInfo != NULL)
 		{
-			if (hashInfo->empty < empty)
+			if (hashInfo->depth >= depth && hashInfo->selectivity >= g_mpc_level)
 			{
-#if 1
-				if (upper > hashInfo->upper) {
-					upper = hashInfo->upper;
-					if (upper <= lower) return upper;
+				int hash_upper;
+				hash_upper = hashInfo->upper;
+				if (hash_upper <= lower)
+				{
+					// transposition table cutoff
+					*p_selectivity = hashInfo->selectivity;
+					return hash_upper;
 				}
-				if (lower < hashInfo->lower) {
-					lower = hashInfo->lower;
-					if (lower >= upper) return lower;
+				int hash_lower;
+				hash_lower = hashInfo->lower;
+				if (hash_lower >= upper)
+				{
+					// transposition table cutoff
+					*p_selectivity = hashInfo->selectivity;
+					return hash_lower;
 				}
-#endif
+				if (hash_lower == hash_upper)
+				{
+					// transposition table cutoff
+					*p_selectivity = hashInfo->selectivity;
+					return hash_lower;
+				}
+
+				// change window width
+				lower = max(lower, hash_lower);
+				upper = min(upper, hash_upper);
 			}
 			bestmove = hashInfo->bestmove;
 		}
@@ -792,29 +977,36 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 #if 1
 	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 20)
 	{
+		INT32 mpc_level;
 		if (empty <= 24)
 		{
-			MPC_CUT_VAL = 1.4;
+			MPC_CUT_VAL = 1.5;
+			mpc_level = 4;
 		}
 		else
 		{
 			MPC_CUT_VAL = 1.0;
+			mpc_level = 3;
 		}
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
 		INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
 		if (value < NEGAMIN + 1) value = NEGAMIN + 1;
-		INT32 eval = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed, pline);
-		if (eval < value)
+		score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed,  pline);
+		if (score < value)
 		{
+			HashUpdate(hash, key, bk, wh, alpha, beta, alpha, empty, NOMOVE, g_mpc_level, NEGAMAX);
+			*p_selectivity = mpc_level; // store selectivity
 			return alpha;
 		}
 
 		value = (INT32)(beta + (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
 		if (value > NEGAMAX - 1) value = NEGAMAX - 1;
-		eval = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, pline);
-		if (eval > value)
+		score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, pline);
+		if (score > value)
 		{
+			HashUpdate(hash, key, bk, wh, alpha, beta, beta, empty, NOMOVE, g_mpc_level, NEGAMAX);
+			*p_selectivity = mpc_level; // store selectivity
 			return beta;
 		}
 	}
@@ -822,7 +1014,8 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 
 	UINT32 moveCount;
 	UINT64 moves = CreateMoves(bk, wh, &moveCount);
-	bool pv_flag = true;
+	BOOL pv_flag = TRUE;
+	INT32 selectivity = g_max_cut_table_size; // init max thresould
 
 	// ’…è‚Ìflip-bit‚ğ‹‚ß‚Ämove\‘¢‘Ì‚É•Û‘¶
 	StoreMovelist(movelist, bk, wh, moves);
@@ -848,7 +1041,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 			pline->cmove = 0;
 		}
 		else {
-			bestscore = -PVS_SearchDeep(wh, bk, depth, empty, color ^ 1, hash, -upper, -lower, 1, pline);
+			bestscore = -PVS_SearchDeep(wh, bk, depth, empty, color ^ 1, hash, -upper, -lower, 1, p_selectivity, pline);
 			bestmove = PASS;
 		}
 	}
@@ -885,21 +1078,20 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 			if (pv_flag)
 			{
 				score = -PVS_SearchDeep(wh ^ move->rev, bk ^ ((1ULL << move->pos) | move->rev),
-					depth - 1, empty - 1, color ^ 1, hash, -upper, -lower, 0, &line);
+					depth - 1, empty - 1, color ^ 1, hash, -upper, -lower, 0, &selectivity, &line);
 			}
 			else
 			{
 				score = -PVS_SearchDeep(wh^move->rev, bk ^ ((1ULL << move->pos) | move->rev),
-					depth - 1, empty - 1, color ^ 1, hash, -lower - 1, -lower, 0, &line);
+					depth - 1, empty - 1, color ^ 1, hash, -lower - 1, -lower, 0, &selectivity, &line);
 				if (lower < score && score < upper)
 					score = -PVS_SearchDeep(wh ^ move->rev, bk ^ ((1ULL << move->pos) | move->rev),
-					depth - 1, empty - 1, color ^ 1, hash, -upper, -lower, 0, &line);
+					depth - 1, empty - 1, color ^ 1, hash, -upper, -lower, 0, &selectivity, &line);
 			}
 
 			if (score >= beta)
 			{
 				bestscore = score;
-				bestmove = move->pos;
 				if (depth == g_limitDepth) g_move = bestmove;
 				break;
 			}
@@ -911,7 +1103,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 				if (bestscore > lower)
 				{
 					lower = bestscore;
-					pv_flag = false;
+					pv_flag = FALSE;
 					if (line.cmove < 0 || line.cmove > 59)
 					{
 						line.cmove = 0;
@@ -930,7 +1122,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	}
 
 	/* ’uŠ·•\‚É“o˜^ */
-	HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, empty, bestmove, NEGAMAX);
+	HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, depth, bestmove, g_mpc_level, NEGAMAX);
 
 	return bestscore;
 
@@ -970,11 +1162,11 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 	{
 		if (empty <= 24)
 		{
-			MPC_CUT_VAL = 1.4;
+			MPC_CUT_VAL = cutval_table[4];
 		}
 		else
 		{
-			MPC_CUT_VAL = 1.0;
+			MPC_CUT_VAL = cutval_table[3];
 		}
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
@@ -995,7 +1187,6 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 		}
 	}
 #endif
-
 
 	int move_cnt;
 	int max;                    //Œ»İ‚ÌÅ‚•]‰¿’l

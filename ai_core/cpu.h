@@ -12,14 +12,14 @@
 
 //#define LOSSGAME
 
-#define KEY_HASH_MACRO(b, w, c) (UINT32)((b ^ ((w - c) >> 1ULL)) % (g_casheSize - 1))
+#define KEY_HASH_MACRO(b, w, c) (UINT32)((b ^ ((w) >> 1ULL)) % (g_casheSize - 1))
 //#define KEY_HASH_MACRO(b, w, c) GenerateHashValue(b, w, c);
 
 #define ILLIGAL_ARGUMENT 0x80000001
 #define MOVE_PASS 0x0
 
 #define ON_MIDDLE 0
-#define ON_WINLOSS 1
+#define ON_WLD 1
 #define ON_EXACT 2
 
 #define SOLVE_WLD   0
@@ -27,13 +27,16 @@
 #define SOLVE_MIDDLE 2
 
 #define EMPTIES_MID_ORDER_TO_END_ORDER 12
-#define EMPTIES_DEEP_TO_SHALLOW_SEARCH 8
+#define EMPTIES_DEEP_TO_SHALLOW_SEARCH 10
+#define END_DEPTH_DEEP_TO_SHALLOW_SEARCH 19
 #define DEPTH_DEEP_TO_SHALLOW_SEARCH 5
 
 #define NO_PASS 0
 #define ABORT 0x80000000
 
 #define MPC_MIN_DEPTH 3
+#define MPC_END_MIN_DEPTH 6
+#define MPC_END_MAX_DEPTH 30
 
 typedef struct
 {
@@ -51,7 +54,6 @@ typedef struct
 
 
 typedef void(__stdcall *SetMessageToGUI)(char *);
-extern SetMessageToGUI g_set_message_funcptr[2];
 
 /* MPC */
 typedef struct
@@ -76,7 +78,14 @@ extern char g_cordinates_table[64][4];
 extern INT32 g_limitDepth;
 extern INT32 g_empty;
 extern UINT64 g_casheSize;
+extern INT32 g_infscore;
 extern MPCINFO mpcInfo[22];
+extern MPCINFO mpcInfo_end[26];
+extern double MPC_CUT_VAL;
+extern double MPC_END_CUT_VAL;
+extern INT32 g_mpc_level;
+const extern double cutval_table[8];
+extern const INT32 g_max_cut_table_size;
 extern UINT64 g_countNode;
 extern HashTable *g_hash;
 
@@ -87,7 +96,7 @@ extern BOOL g_AbortFlag;
 extern UINT64 g_countNode;
 extern char g_AiMsg[128];
 extern char g_PVLineMsg[256];
-extern SetMessageToGUI g_set_message_funcptr[2];
+extern SetMessageToGUI g_set_message_funcptr[3];
 
 /***************************************************************************
 * Name  : GetMoveFromAI

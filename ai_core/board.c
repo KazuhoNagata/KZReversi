@@ -3,7 +3,6 @@
 * Brief : ”Õ–ÊŠÖ˜A‚Ìˆ—‚ğs‚¤
 * Date  : 2016/02/01
 ****************************************************************************/
-
 #include "stdafx.h"
 #include "board.h"
 #include "eval.h"
@@ -351,7 +350,7 @@ void create_empty_list(EmptyList *start, UINT64 blank)
 * @return a bitboard with (some of) player's stable discs.
 *
 */
-static inline unsigned long long get_stable_edge(const unsigned long long P, const unsigned long long O)
+static unsigned long long get_stable_edge(const unsigned long long P, const unsigned long long O)
 {
 	// compute the exact stable edges (from precomputed tables)
 	return edge_stability[P & 0xff][O & 0xff]
@@ -382,7 +381,7 @@ int get_edge_stability(const unsigned long long P, const unsigned long long O)
 * @param dir tested direction
 * @return a bitboard with full lines along the tested direction.
 */
-static inline unsigned long long get_full_lines(const unsigned long long line, const int dir)
+static unsigned long long get_full_lines(const unsigned long long line, const int dir)
 {
 	// sequential algorithm
 	// 6 << + 6 >> + 12 & + 5 |

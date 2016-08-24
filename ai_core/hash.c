@@ -10,6 +10,7 @@
 #include "cpu.h"
 #include "hash.h"
 #include "eval.h"
+#include "move.h"
 #include "mt.h"
 
 int freeFlag = TRUE;
@@ -100,6 +101,8 @@ HashInfo *HashGet(HashTable *hash, int key, UINT64 bk, UINT64 wh)
 
 }
 
+
+
 void HashUpdate(
 	HashTable* hash_table,
 	UINT32 key,
@@ -108,62 +111,131 @@ void HashUpdate(
 	INT32 alpha,
 	INT32 beta,
 	INT32 score,
-	INT32 empty,
-	INT8 move,
+	INT32 depth,
+	INT32 move,
+	INT32 selectivity,
 	INT32 inf_score)
 {
 	HashEntry *hash_entry;
 	HashInfo *deepest, *newest;
 
 	if (!g_tableFlag || hash_table == NULL) return;
-
-	// ハッシュエントリのアドレス
 	hash_entry = &(hash_table->entry[key]);
 	deepest = &(hash_entry->deepest);
 	newest = &(hash_entry->newest);
 
-	/* deepestエントリの更新を試みる */
-	if (deepest->bk == bk && deepest->wh == wh)
+	if (score >= beta)
 	{
-		if (score < beta && score < deepest->upper)
-			deepest->upper = score;
-		if (score > alpha && score > deepest->lower)
+		// [score, +INF]
+		// try to update first hash
+		if (deepest->bk == bk && deepest->wh == wh && deepest->selectivity <= selectivity)
+		{
+			deepest->bestmove = move;
+			deepest->depth = depth;
 			deepest->lower = score;
-		deepest->bestmove = move;
-		/* newestエントリの更新を試みる */
-	}
-	else if (newest->bk == bk && newest->wh == wh)
-	{
-		if (score < beta && score < newest->upper)
-			newest->upper = score;
-		if (score > alpha && score > newest->lower)
+			deepest->upper = inf_score;
+			deepest->selectivity = selectivity;
+		}
+		// try to update next hash
+		else if (newest->bk == bk && newest->wh == wh && newest->selectivity <= selectivity)
+		{
+			newest->bestmove = move;
+			newest->depth = depth;
 			newest->lower = score;
-		newest->bestmove = move;
-		/* それ以外の場合でdeepestエントリの更新を試みる */
+			newest->upper = inf_score;
+			newest->selectivity = selectivity;
+		}
+		// try to entry first hash
+		else if (deepest->selectivity <= selectivity)
+		{
+			// deepest already entried?
+			if (deepest->bk != 0 || deepest->wh != 0)
+			{
+				deepest = newest;
+			}
+			deepest->bk = bk;
+			deepest->wh = wh;
+			deepest->bestmove = move;
+			deepest->depth = depth;
+			deepest->lower = score;
+			deepest->upper = inf_score;
+			deepest->selectivity = selectivity;
+		}
 	}
-	else if (deepest->empty < empty)
+	else if (score > alpha)
 	{
-		if (newest->empty < deepest->empty) *newest = *deepest;
-		deepest->bk = bk;
-		deepest->wh = wh;
-		deepest->empty = empty;
-		deepest->lower = -inf_score;
-		deepest->upper = inf_score;
-		if (score < beta) deepest->upper = score;
-		if (score > alpha) deepest->lower = score;
-		deepest->bestmove = move;
-		/* それ以外の場合でnewestエントリを更新する */
+		// [score, score]
+		if (deepest->bk == bk && deepest->wh == wh && deepest->selectivity <= selectivity)
+		{
+			deepest->bestmove = move;
+			deepest->depth = depth;
+			deepest->lower = score;
+			deepest->upper = score;
+			deepest->selectivity = selectivity;
+		}
+		// try to update next hash
+		else if (newest->bk == bk && newest->wh == wh && newest->selectivity <= selectivity)
+		{
+			newest->bestmove = move;
+			newest->depth = depth;
+			newest->lower = score;
+			newest->upper = score;
+			newest->selectivity = selectivity;
+		}
+		// try to entry first hash
+		else if (deepest->selectivity <= selectivity)
+		{
+			// deepest already entried?
+			if (deepest->bk != 0 || deepest->wh != 0)
+			{
+				deepest = newest;
+			}
+			deepest->bk = bk;
+			deepest->wh = wh;
+			deepest->bestmove = move;
+			deepest->depth = depth;
+			deepest->lower = score;
+			deepest->upper = score;
+			deepest->selectivity = selectivity;
+		}
 	}
-	else if (newest->empty < empty)
+	else
 	{
-		newest->bk = bk;
-		newest->wh = wh;
-		newest->empty = empty;
-		newest->lower = -inf_score;
-		newest->upper = inf_score;
-		if (score < beta) newest->upper = score;
-		if (score > alpha) newest->lower = score;
-		newest->bestmove = move;
+		// [-INF, score]
+		if (deepest->bk == bk && deepest->wh == wh && deepest->selectivity <= selectivity)
+		{
+			deepest->bestmove = move;
+			deepest->depth = depth;
+			deepest->lower = -inf_score;
+			deepest->upper = score;
+			deepest->selectivity = selectivity;
+		}
+		// try to update next hash
+		else if (newest->bk == bk && newest->wh == wh && newest->selectivity <= selectivity)
+		{
+			newest->bestmove = move;
+			newest->depth = depth;
+			newest->lower = -inf_score;
+			newest->upper = score;
+			newest->selectivity = selectivity;
+		}
+		// try to entry first hash
+		else if (deepest->selectivity <= selectivity)
+		{
+			// deepest already entried?
+			if (deepest->bk != 0 || deepest->wh != 0)
+			{
+				// try to entry second hash
+				deepest = newest;
+			}
+			deepest->bk = bk;
+			deepest->wh = wh;
+			deepest->bestmove = move;
+			deepest->depth = depth;
+			deepest->lower = -inf_score;
+			deepest->upper = score;
+			deepest->selectivity = selectivity;
+		}
 	}
 }
 
@@ -175,6 +247,8 @@ void FixTableToMiddle(HashTable *hash)
 		hash->entry[i].newest.lower = NEGAMIN;
 		hash->entry[i].deepest.upper = NEGAMAX;
 		hash->entry[i].newest.upper = NEGAMAX;
+		hash->entry[i].deepest.selectivity = 0;
+		hash->entry[i].newest.selectivity = 0;
 	}
 
 }
@@ -183,10 +257,12 @@ void FixTableToWinLoss(HashTable *hash)
 {
 	for (int i = 0; i < hash->size; i++)
 	{
-		hash->entry[i].deepest.lower = -INF_SCORE;
-		hash->entry[i].newest.lower = -INF_SCORE;
-		hash->entry[i].deepest.upper = INF_SCORE;
-		hash->entry[i].newest.upper = INF_SCORE;
+		hash->entry[i].deepest.lower = -(WIN + 1);
+		hash->entry[i].newest.lower = -(WIN + 1);
+		hash->entry[i].deepest.upper = (WIN + 1);
+		hash->entry[i].newest.upper = (WIN + 1);
+		hash->entry[i].deepest.selectivity = 0;
+		hash->entry[i].newest.selectivity = 0;
 	}
 }
 
@@ -199,8 +275,10 @@ void FixTableToExact(HashTable *hash)
 		hash->entry[i].newest.lower = -INF_SCORE;
 		hash->entry[i].deepest.upper = INF_SCORE;
 		hash->entry[i].newest.upper = INF_SCORE;
-		hash->entry[i].deepest.empty = 59;
-		hash->entry[i].newest.empty = 59;
+		hash->entry[i].deepest.depth = -1;
+		hash->entry[i].newest.depth = -1;
+		hash->entry[i].deepest.selectivity = 0;
+		hash->entry[i].newest.selectivity = 0;
 	}
 }
 

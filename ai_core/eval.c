@@ -1256,8 +1256,14 @@ BOOL LoadData()
 		return result;
 	}
 
-	///* MPCテーブルの読み込み */
-	result = OpenMpcInfoData("src\\mpc.dat");
+	/* MPCテーブルの読み込み */
+	result = OpenMpcInfoData(mpcInfo, 20, "src\\mpc.dat");
+	if (result == FALSE)
+	{
+		return result;
+	}
+
+	result = OpenMpcInfoData(mpcInfo_end, 25, "src\\mpc_end.dat");
 
 	return result;
 }
