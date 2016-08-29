@@ -30,3 +30,5 @@ void StoreMovelist(MoveList *list, UINT64 bk, UINT64 wh, UINT64 moves);
 
 UINT64 GetPotentialMoves(UINT64 P, UINT64 O, UINT64 blank);
 UINT64 GetFirstRandomMove(UINT64 move);
+
+BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos);

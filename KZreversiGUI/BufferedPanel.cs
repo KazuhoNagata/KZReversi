@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -13,7 +14,7 @@ namespace KZreversi
         public BufferedPanel()
         {
             this.DoubleBuffered = true;
-
+            SetStyle(ControlStyles.SupportsTransparentBackColor, true);
         }
 
     }

@@ -72,7 +72,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 	if (g_empty > 12 &&  empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
 	{
 		UINT64 blank = ~(bk | wh);
-		UINT32 quad_parity[4];
+		INT32 quad_parity[4];
 		//create_quad_parity(quad_parity, blank);
 		return AB_SearchExact(bk, wh, blank, empty,
 			color, alpha, beta, passed, quad_parity, p_selectivity, pline);
@@ -83,6 +83,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 	{
 		// up to max threshold
 		*p_selectivity = g_mpc_level;
+		pline->cmove = 0;
 		return score;
 	}
 
@@ -130,8 +131,8 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 				}
 
 				// change window width
-				lower = max(lower, hash_lower);
-				upper = min(upper, hash_upper);
+				//lower = max(lower, hash_lower);
+				//upper = min(upper, hash_upper);
 			}
 
 			bestmove = hashInfo->bestmove;
@@ -277,7 +278,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 					pline->argmove[0] = bestmove;
 					memcpy(pline->argmove + 1, line.argmove, line.cmove);
 					pline->cmove = line.cmove + 1;
-					if (g_empty - empty <= 6 && g_mpc_level >= 4)
+					if (g_empty - empty <= 4 && g_mpc_level >= 4)
 					{
 						CreatePVLineStr(pline, empty, bestscore * (1 - (2 * ((g_empty - empty) % 2))));
 						g_set_message_funcptr[1](g_PVLineMsg);
@@ -453,6 +454,7 @@ INT32 AB_SearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 col
 	if (search_SC_NWS(bk, wh, empty, alpha, &max))
 	{
 		*p_selectivity = g_mpc_level;
+		pline->cmove = 0;
 		return max;
 	}
 
@@ -856,7 +858,7 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 }
 
 /***************************************************************************
-* Name  : AlphaBetaSearchWinLoss
+* Name  : AB_SearchWinLoss
 * Brief : PV Search を行い、評価値を基に最善手を取得
 * Args  : bk        : 黒のビット列
 *         wh        : 白のビット列

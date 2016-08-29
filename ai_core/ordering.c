@@ -241,7 +241,7 @@ void SortMoveListMiddle(
 		/* 自分の得点の多い順にソート */
 		sort_movelist_score_descending(movelist);
 	}
-	else if (g_empty - empty == 6){
+	else if (g_empty - empty == 6 && g_limitDepth >= 14){
 		for (iter = movelist->next; iter != NULL; iter = iter->next)
 		{
 			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);

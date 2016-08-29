@@ -111,3 +111,28 @@ UINT64 GetPotentialMoves(UINT64 P, UINT64 O, UINT64 blank)
 		| GetSomePotentialMoves(O & 0x007E7E7E7E7E7E00ull, 9))
 		& blank; // mask with empties
 }
+
+
+
+BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos)
+{
+
+	if ((*bk & move) || (*wh & move))
+	{
+		return FALSE;
+	}
+
+	UINT64 rev = GetRev[pos](*bk, *wh);
+
+	if (rev == 0)
+	{
+		return FALSE;
+	}
+
+	*bk ^= (rev | move);
+	*wh ^= rev;
+
+	return TRUE;
+
+}
+

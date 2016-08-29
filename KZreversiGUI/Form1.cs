@@ -30,6 +30,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace KZreversi
@@ -42,8 +43,8 @@ namespace KZreversi
         public CppWrapper cppWrapper;
         public bool loadResult;
 
-        private Image bkImg;
-        private Image whImg;
+        private Bitmap bkImg;
+        private Bitmap whImg;
 
         private BoardClass boardclass;
         private CpuClass[] cpuClass;
@@ -97,6 +98,12 @@ namespace KZreversi
         private IntPtr setPVLineDelegatePtr;
         private IntPtr setMPCInfoDelegatePtr;
 
+        private float m_scale;
+        private float m_mass_size;
+        private float m_fix_x = 0, m_fix_y = 0;
+        private float m_board_width, m_board_height;
+        private const float border_rate = (float)(290.0 / 2450.0);
+
         public Form1()
         {
             boardclass = new BoardClass();
@@ -127,6 +134,7 @@ namespace KZreversi
             label3.Visible = true;
             label4.Visible = false;
 
+            // 探索時間表示用
             m_sw = new Stopwatch();
         }
 
@@ -301,19 +309,42 @@ namespace KZreversi
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            bkImg = imageList1.Images[0];
-            whImg = imageList1.Images[1];
+            bkImg = new Bitmap(KZreversi.Properties.Resources.othello_bk);
+            whImg = new Bitmap(KZreversi.Properties.Resources.othello_wh);
+
+            Bitmap panel1_bitmap = new Bitmap(KZreversi.Properties.Resources.othello_board);
+
+            // 盤面背景のセット
+            panel_back = new BufferedPanel();
+            panel_back.Width = 534;
+            panel_back.Height = 534;
+            panel_back.Location = new Point(0, 0);
+            panel_back.BackgroundImage = new Bitmap(KZreversi.Properties.Resources.wood_pattern);
+            panel_back.BackgroundImageLayout = ImageLayout.Stretch;
+            panel_back.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+            this.Controls.Add(panel_back);
 
             // 盤面のセット
             panel1 = new BufferedPanel();
             panel1.Width = 480;
             panel1.Height = 480;
-            panel1.Location = new Point(18, 37);
-            panel1.BackgroundImage = new Bitmap(KZreversi.Properties.Resources.boardPicture);
+            panel1.Location = new Point(26, 30);
+            panel1.BackColor = Color.Transparent;
+            panel1.BackgroundImage = panel1_bitmap;
+            panel1.BackgroundImageLayout = ImageLayout.Zoom;
             panel1.Paint += panel1_Paint;
             panel1.Click += panel1_Click;
             panel1.DoubleClick += panel1_Click;
-            this.Controls.Add(panel1);
+            panel1.Resize += panel1_Resize;
+            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+            // 盤面背景の子として登録
+            panel_back.Controls.Add(panel1);
+
+            m_board_width = panel1.Width - (panel1.Width * border_rate);
+            m_board_height = panel1.Height - (panel1.Height * border_rate);
+
+            // 石の画像のスケーリング
+            resize_stone(panel1);
 
             LoadForm lf = new LoadForm();
             lf.ShowDialog(this);
@@ -360,7 +391,7 @@ namespace KZreversi
                 {
                     cpuClass[i].SetColor(BoardClass.WHITE);
                 }
-                
+
                 // size(MB)--> size * 1024 * 1024 / sizeof(hash_entry) = size * 1024 * 16
                 cpuClass[i].SetCasheSize(128 * 1024 * 16); // 128MB default
                 cpuClass[i].SetSearchDepth(6);
@@ -373,6 +404,39 @@ namespace KZreversi
             }
         }
 
+        void resize_stone(Panel panel) 
+        {
+            //label5.Text = "x=" + panel.Width + "y=" + panel.Height;
+            float board_x, board_y;
+            // 縦横の小さい方に合わせる
+            if (panel.Width < panel.Height)
+            {
+                // margin考慮
+                board_x = panel.Width - (panel1.Width * border_rate);
+                board_y = panel.Height - (panel1.Width * border_rate);
+                m_scale = board_x / (m_board_width + 16);
+                m_mass_size = board_x / BOARD_SIZE;
+                m_fix_x = (float)30.5 * m_scale;
+                m_fix_y = (board_y - board_x) / 2 + ((float)30.5 * m_scale);
+            }
+            else
+            {
+                board_x = panel.Width - (panel1.Height * border_rate);
+                board_y = panel.Height - (panel1.Height * border_rate);
+                m_scale = board_y / (m_board_height + 16);
+                m_mass_size = board_y / BOARD_SIZE;
+                m_fix_x = (board_x - board_y) / 2 + ((float)30.5 * m_scale);
+                m_fix_y = (float)30.5 * m_scale;
+            }
+        }
+
+        // 盤面のリサイズ処理
+        void panel1_Resize(object sender, EventArgs e)
+        {
+            resize_stone((Panel)sender);
+
+        }
+
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
             int pos;
@@ -383,22 +447,26 @@ namespace KZreversi
             temp = boardclass.GetBlack();
             while (temp > 0)
             {
+                float stone_width = m_board_width / BOARD_SIZE;
+                float stone_height = m_board_height / BOARD_SIZE;
                 pos = cppWrapper.ConvertMoveBit(temp);
                 e.Graphics.DrawImage(bkImg,
-                    (pos / BOARD_SIZE) * 60 + 1,
-                    (pos % BOARD_SIZE) * 60 + 1,
-                    bkImg.Width, bkImg.Height);
+                    (pos / BOARD_SIZE) * m_mass_size + m_fix_x,
+                    (pos % BOARD_SIZE) * m_mass_size + m_fix_y,
+                    stone_width * m_scale, stone_height * m_scale);
                 temp ^= (1UL << (int)pos);
             }
 
             temp = boardclass.GetWhite();
             while (temp > 0)
             {
+                float stone_width = m_board_width / BOARD_SIZE;
+                float stone_height = m_board_height / BOARD_SIZE;
                 pos = cppWrapper.ConvertMoveBit(temp);
                 e.Graphics.DrawImage(whImg,
-                    (pos / BOARD_SIZE) * 60 + 1,
-                    (pos % BOARD_SIZE) * 60 + 1,
-                    whImg.Width, whImg.Height);
+                    (pos / BOARD_SIZE) * m_mass_size + m_fix_x,
+                    (pos % BOARD_SIZE) * m_mass_size + m_fix_y,
+                    stone_width * m_scale, stone_height * m_scale);
                 temp ^= (1UL << (int)pos);
             }
 
@@ -407,8 +475,8 @@ namespace KZreversi
             if (pos >= 0)
             {
                 e.Graphics.DrawString("●", m_ft2, Brushes.OrangeRed,
-                (pos / BOARD_SIZE) * 60 + 25,
-                (pos % BOARD_SIZE) * 60 + 26);
+                (pos / BOARD_SIZE) * m_mass_size + ((float)21 * m_scale) + m_fix_x,
+                (pos % BOARD_SIZE) * m_mass_size + ((float)23 * m_scale) + m_fix_y);
             }
 
             // ゲーム中の場合かつプレイヤーの手番の場合、着手可能場所を表示
@@ -422,9 +490,9 @@ namespace KZreversi
                     while (temp > 0)
                     {
                         pos = cppWrapper.ConvertMoveBit(temp);
-                        e.Graphics.DrawString("◆", m_ft, Brushes.Blue,
-                            (pos / BOARD_SIZE) * 60 + 23,
-                            (pos % BOARD_SIZE) * 60 + 25);
+                        e.Graphics.DrawString("×", m_ft, Brushes.DarkOrange,
+                            (pos / BOARD_SIZE) * m_mass_size + (19 * m_scale) + m_fix_x,
+                            (pos % BOARD_SIZE) * m_mass_size + (21 * m_scale) + m_fix_y);
                         temp ^= (1UL << pos);
                     }
                 }
@@ -450,8 +518,8 @@ namespace KZreversi
 
                     // 押された瞬間の座標を取得
                     pos = mouseEvent.Location;
-                    num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
-
+                    num = (int)(((double)pos.X - m_fix_x) / m_mass_size) * BOARD_SIZE;
+                    num += (int)(((double)pos.Y - m_fix_y) / m_mass_size);
                     // 着手出来るかチェック
                     if ((nowPlayer.moves & (1UL << num)) != 0)
                     {
@@ -648,6 +716,7 @@ namespace KZreversi
         }
 
         private bool _m_cpuFlag;
+        private BufferedPanel panel_back;
         public bool m_cpuFlagProperty
         {
             get
@@ -1098,7 +1167,7 @@ namespace KZreversi
         private void fFO40ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#40(black to move) (WinLoss:[a2:WIN] Exact:[a2:+38])
-            //boardclass.InitBoard(COLOR_BLACK, 904310735139406910, 1166500664209061888);
+            //boardclass.InitBoard(COLOR_BLACK, 0x6042795c404000, 0xff9fbc8080000000);
             boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;

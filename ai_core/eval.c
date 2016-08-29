@@ -1257,7 +1257,7 @@ BOOL LoadData()
 	}
 
 	/* MPCƒe[ƒuƒ‹‚Ì“Ç‚İ‚İ */
-	result = OpenMpcInfoData(mpcInfo, 20, "src\\mpc.dat");
+	result = OpenMpcInfoData(mpcInfo, 22, "src\\mpc.dat");
 	if (result == FALSE)
 	{
 		return result;
