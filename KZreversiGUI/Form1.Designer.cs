@@ -580,7 +580,7 @@
             this.Hint7ToolStripMenuItem,
             this.Hint8ToolStripMenuItem});
             this.hintToolStripMenuItem.Name = "hintToolStripMenuItem";
-            this.hintToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.hintToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.hintToolStripMenuItem.Text = "ヒント表示";
             // 
             // 表示なしToolStripMenuItem
@@ -588,62 +588,62 @@
             this.表示なしToolStripMenuItem.Checked = true;
             this.表示なしToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.表示なしToolStripMenuItem.Name = "表示なしToolStripMenuItem";
-            this.表示なしToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.表示なしToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.表示なしToolStripMenuItem.Text = "表示なし";
             // 
             // Hint1ToolStripMenuItem
             // 
             this.Hint1ToolStripMenuItem.Name = "Hint1ToolStripMenuItem";
-            this.Hint1ToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.Hint1ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.Hint1ToolStripMenuItem.Text = "LEVEL1";
             this.Hint1ToolStripMenuItem.Click += new System.EventHandler(this.HintToolStripMenuItem_Click);
             // 
             // Hint2ToolStripMenuItem1
             // 
             this.Hint2ToolStripMenuItem1.Name = "Hint2ToolStripMenuItem1";
-            this.Hint2ToolStripMenuItem1.Size = new System.Drawing.Size(116, 22);
+            this.Hint2ToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
             this.Hint2ToolStripMenuItem1.Text = "LEVEL2";
             this.Hint2ToolStripMenuItem1.Click += new System.EventHandler(this.HintToolStripMenuItem_Click);
             // 
             // Hint3ToolStripMenuItem1
             // 
             this.Hint3ToolStripMenuItem1.Name = "Hint3ToolStripMenuItem1";
-            this.Hint3ToolStripMenuItem1.Size = new System.Drawing.Size(116, 22);
+            this.Hint3ToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
             this.Hint3ToolStripMenuItem1.Text = "LEVEL3";
             this.Hint3ToolStripMenuItem1.Click += new System.EventHandler(this.HintToolStripMenuItem_Click);
             // 
             // Hint4ToolStripMenuItem3
             // 
             this.Hint4ToolStripMenuItem3.Name = "Hint4ToolStripMenuItem3";
-            this.Hint4ToolStripMenuItem3.Size = new System.Drawing.Size(116, 22);
+            this.Hint4ToolStripMenuItem3.Size = new System.Drawing.Size(152, 22);
             this.Hint4ToolStripMenuItem3.Text = "LEVEL4";
             this.Hint4ToolStripMenuItem3.Click += new System.EventHandler(this.HintToolStripMenuItem_Click);
             // 
             // Hint5ToolStripMenuItem4
             // 
             this.Hint5ToolStripMenuItem4.Name = "Hint5ToolStripMenuItem4";
-            this.Hint5ToolStripMenuItem4.Size = new System.Drawing.Size(116, 22);
+            this.Hint5ToolStripMenuItem4.Size = new System.Drawing.Size(152, 22);
             this.Hint5ToolStripMenuItem4.Text = "LEVEL5";
             this.Hint5ToolStripMenuItem4.Click += new System.EventHandler(this.HintToolStripMenuItem_Click);
             // 
             // Hint6ToolStripMenuItem
             // 
             this.Hint6ToolStripMenuItem.Name = "Hint6ToolStripMenuItem";
-            this.Hint6ToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.Hint6ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.Hint6ToolStripMenuItem.Text = "LEVEL6";
             this.Hint6ToolStripMenuItem.Click += new System.EventHandler(this.HintToolStripMenuItem_Click);
             // 
             // Hint7ToolStripMenuItem
             // 
             this.Hint7ToolStripMenuItem.Name = "Hint7ToolStripMenuItem";
-            this.Hint7ToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.Hint7ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.Hint7ToolStripMenuItem.Text = "LEEVL7";
             this.Hint7ToolStripMenuItem.Click += new System.EventHandler(this.HintToolStripMenuItem_Click);
             // 
             // Hint8ToolStripMenuItem
             // 
             this.Hint8ToolStripMenuItem.Name = "Hint8ToolStripMenuItem";
-            this.Hint8ToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.Hint8ToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.Hint8ToolStripMenuItem.Text = "LEVEL8";
             this.Hint8ToolStripMenuItem.Click += new System.EventHandler(this.HintToolStripMenuItem_Click);
             // 
@@ -671,7 +671,7 @@
             this.fFO58ToolStripMenuItem,
             this.fFO59ToolStripMenuItem});
             this.fFOテストToolStripMenuItem.Name = "fFOテストToolStripMenuItem";
-            this.fFOテストToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.fFOテストToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.fFOテストToolStripMenuItem.Text = "FFOテスト";
             // 
             // fFO40ToolStripMenuItem
@@ -988,9 +988,11 @@
             // toolStripStatusLabel4
             // 
             this.toolStripStatusLabel4.AutoSize = false;
+            this.toolStripStatusLabel4.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripStatusLabel4.Name = "toolStripStatusLabel4";
-            this.toolStripStatusLabel4.Size = new System.Drawing.Size(884, 17);
+            this.toolStripStatusLabel4.Size = new System.Drawing.Size(853, 17);
             this.toolStripStatusLabel4.Spring = true;
+            this.toolStripStatusLabel4.ToolTipText = "CPUの思考過程を表示します。";
             // 
             // button5
             // 

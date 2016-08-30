@@ -430,7 +430,7 @@ INT32 SelectNode(int e_list[], int cnt, UINT32 change, INT32 turn)
 		{
 			/* ˆê“xŽŸ‘PŽè‚ð‘I‚ñ‚Å‚¢‚éA
 			‚Ü‚½‚ÍŽŸ‘PŽè‚ª¡‚Ì•]‰¿’l‚æ‚è2000ˆÈã’á‚¢‚Æ‚«‚Íbreak */
-			if (max_change_num[turn] || max - e_list[count] >= 2000)
+			if (max_change_num[turn] || max - e_list[count] >= 20000)
 			{
 				break;
 			}
@@ -458,24 +458,55 @@ INT32 SelectNode(int e_list[], int cnt, UINT32 change, INT32 turn)
 		int max = e_list[0];
 		for (count = 1; count < cnt; count++)
 		{
-			/* 2“xŽŸ‘PŽè‚ð‘I‚ñ‚Å‚¢‚éA
-			‚Ü‚½‚ÍŽŸ‘PŽè‚ª¡‚Ì•]‰¿’l‚æ‚è4000ˆÈã’á‚¢‚Æ‚«‚Íbreak */
-			if (max_change_num[turn] > 1 || max - e_list[count] >= 4000)
+			/* ˆê“xŽŸ‘PŽè‚ð‘I‚ñ‚Å‚¢‚éA
+			‚Ü‚½‚ÍŽŸ‘PŽè‚ª¡‚Ì•]‰¿’l‚æ‚è2000ˆÈã’á‚¢‚Æ‚«‚Íbreak */
+			if (max_change_num[turn] > 1 || max - e_list[count] >= 40000)
 			{
 				break;
 			}
 			if (e_list[count] < max)
 			{
-				if (flag > 2)
+				if (flag)
 				{
 					break;
 				}
 				flag++;
 			}
+
 		}
 		ret = rand() % count;
 		/* ŽŸ‘PŽè‚ð‘I‚ñ‚¾ */
-		if (ret != 0 && e_list[ret] != max)
+		if (e_list[ret] != max)
+		{
+			max_change_num[turn]++;
+		}
+	}
+	else if (change == CHANGE_ROUGH)
+	{
+		int count;
+		int flag = 0;
+		int max = e_list[0];
+		for (count = 1; count < cnt; count++)
+		{
+			/* ˆê“xŽŸ‘PŽè‚ð‘I‚ñ‚Å‚¢‚éA
+			‚Ü‚½‚ÍŽŸ‘PŽè‚ª¡‚Ì•]‰¿’l‚æ‚è6000ˆÈã’á‚¢‚Æ‚«‚Íbreak */
+			if (max_change_num[turn] > 2 || max - e_list[count] >= 60000)
+			{
+				break;
+			}
+			if (e_list[count] < max)
+			{
+				if (flag)
+				{
+					break;
+				}
+				flag++;
+			}
+
+		}
+		ret = rand() % count;
+		/* ŽŸ‘PŽè‚ð‘I‚ñ‚¾ */
+		if (e_list[ret] != max)
 		{
 			max_change_num[turn]++;
 		}

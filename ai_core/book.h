@@ -8,10 +8,11 @@
 
 #pragma once
 
-#define NOT_CHANGE 0
+#define NOT_CHANGE    0
 #define CHANGE_LITTLE 1
 #define CHANGE_MIDDLE 2
-#define CHANGE_RANDOM 3
+#define CHANGE_ROUGH  3
+#define CHANGE_RANDOM 4
 
 typedef struct node
 {

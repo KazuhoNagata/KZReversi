@@ -39,6 +39,7 @@ namespace KZreversi
     {
 
         private BufferedPanel panel1;
+        private BufferedPanel panel_back;
 
         public CppWrapper cppWrapper;
         public bool loadResult;
@@ -54,6 +55,7 @@ namespace KZreversi
         private const int ON_NOTHING = 0;
         private const int ON_GAME = 1;
         private const int ON_EDIT = 3;
+        private const int ON_HINT = 4;
 
         private const int TURN_HUMAN = 0;
         private const int TURN_CPU = 1;
@@ -62,6 +64,10 @@ namespace KZreversi
 
         private const int COLOR_BLACK = 0;
         private const int COLOR_WHITE = 1;
+
+        private const int INFINITY_SCORE = 2500000;
+
+        private uint[] dcTable = { 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26 };
 
         private int m_mode = ON_NOTHING;
         private bool m_abort = false;
@@ -74,23 +80,29 @@ namespace KZreversi
 
         private const ulong MOVE_PASS = 0;
 
-        private uint[] dcTable = { 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26 };
+        // ヒント表示用
+        private uint m_hintLevel;
+        private List<int[]> m_hintList;
+        private int m_hintEvalMax;
 
         private Stopwatch m_sw;
 
         public delegate void SetMoveProperty(ulong moves);
         public delegate void SetNodeCountProperty(ulong nodeCount);
+        public delegate void DoHintProperty(HintClass evalList);
         public delegate void SetCpuMessageProperty(string cpuMsg);
         public delegate void SetMPCInfoProperty(string mpcMsg);
 
         public SetMoveProperty delegateObj;
         public SetNodeCountProperty nodeCountDelegate;
+        public DoHintProperty hintDelegate;
         public SetCpuMessageProperty cpuMessageDelegate;
         public SetCpuMessageProperty setPVLineDelegate;
         public SetCpuMessageProperty setMPCInfoDelegate;
 
         Font m_ft = new Font("MS UI Gothic", 9);
         Font m_ft2 = new Font("MS UI Gothic", 8);
+        Font m_ft3 = new Font("Arial", 18, FontStyle.Bold | FontStyle.Italic);
 
         public int m_event;
 
@@ -103,6 +115,7 @@ namespace KZreversi
         private float m_fix_x = 0, m_fix_y = 0;
         private float m_board_width, m_board_height;
         private const float border_rate = (float)(290.0 / 2450.0);
+
 
         public Form1()
         {
@@ -117,6 +130,7 @@ namespace KZreversi
             cpuMessageDelegate = new SetCpuMessageProperty(setCpuMessage);
             setPVLineDelegate = new SetCpuMessageProperty(setPVLine);
             setMPCInfoDelegate = new SetCpuMessageProperty(setMPCInfo);
+            hintDelegate = new DoHintProperty(doHintProcess);
 
             boardclass.InitBoard(COLOR_BLACK);
 
@@ -136,6 +150,10 @@ namespace KZreversi
 
             // 探索時間表示用
             m_sw = new Stopwatch();
+
+            // ヒント表示用
+            m_hintList = new List<int[]>();
+            
         }
 
         private void 終了ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -160,6 +178,7 @@ namespace KZreversi
             // リソースの解放
             m_ft.Dispose();
             m_ft2.Dispose();
+            m_ft3.Dispose();
             cppWrapper.ReleaseHash();
             cppWrapper.ReleaseBook();
         }
@@ -169,6 +188,7 @@ namespace KZreversi
             if (sender == this.button7)  // ゲーム開始ボタン
             {
                 boardclass.InitBoard(COLOR_BLACK);
+                m_hintList.Clear();
                 cppWrapper.ReleaseHash();
                 nowColor = boardclass.GetNowColor();
                 SetPlayerInfo();
@@ -191,6 +211,7 @@ namespace KZreversi
                 toolStripStatusLabel3.Text = "";
                 //toolStripStatusLabel4.Text = "";
 
+                m_hintList.Clear();
                 boardclass.DeleteHistory(boardclass.GetNowTurn());
                 nowColor = boardclass.GetNowColor();
 
@@ -404,7 +425,7 @@ namespace KZreversi
             }
         }
 
-        void resize_stone(Panel panel) 
+        void resize_stone(Panel panel)
         {
             //label5.Text = "x=" + panel.Width + "y=" + panel.Height;
             float board_x, board_y;
@@ -474,9 +495,10 @@ namespace KZreversi
             pos = boardclass.GetRecentMove();
             if (pos >= 0)
             {
+                m_ft2 = new Font("MS UI Gothic", 8 * m_scale);
                 e.Graphics.DrawString("●", m_ft2, Brushes.OrangeRed,
-                (pos / BOARD_SIZE) * m_mass_size + ((float)21 * m_scale) + m_fix_x,
-                (pos % BOARD_SIZE) * m_mass_size + ((float)23 * m_scale) + m_fix_y);
+                (pos / BOARD_SIZE) * m_mass_size + (21 * m_scale) + m_fix_x,
+                (pos % BOARD_SIZE) * m_mass_size + (21 * m_scale) + m_fix_y);
             }
 
             // ゲーム中の場合かつプレイヤーの手番の場合、着手可能場所を表示
@@ -486,6 +508,7 @@ namespace KZreversi
                 nowPlayer.moves = temp;
                 if (temp != 0)
                 {
+                    m_ft = new Font("MS UI Gothic", 9 * m_scale);
                     m_passCount = 0;
                     while (temp > 0)
                     {
@@ -495,6 +518,60 @@ namespace KZreversi
                             (pos % BOARD_SIZE) * m_mass_size + (21 * m_scale) + m_fix_y);
                         temp ^= (1UL << pos);
                     }
+                }
+            }
+            else if (m_mode == ON_HINT && m_hintList.Count > 0 && m_cpuFlagProperty == false)
+            {
+                // 記憶したヒントを表示
+                int eval;
+                string sign;
+                float font_fix_x;
+                Brush brs = null;
+                m_ft3 = new Font("Arial", 18 * m_scale, FontStyle.Bold | FontStyle.Italic);
+
+                foreach (var data in m_hintList)
+                {
+                    pos = data[0];
+                    eval = data[1];
+                    if (eval >= 0) // +0 ～ +64
+                    {
+                        sign = "+";
+                        font_fix_x = 3;
+                        if (eval >= 100000) // +10 ～ +64
+                        {
+                            font_fix_x = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (eval > -10000) // -0
+                        {
+                            sign = "-";
+                            font_fix_x = 5;
+                        }
+                        else if (eval <= -100000) // -10 ～ -64
+                        {
+                            sign = "";
+                            font_fix_x = 2;
+                        }
+                        else // -1 ～ -9
+                        {
+                            sign = "";
+                            font_fix_x = 5;
+                        }
+                    }
+                    font_fix_x *= m_scale;
+                    // ループの初回が最善手なので目立つよう表示
+                    if (brs == null || eval >= m_hintEvalMax)
+                    {
+                        m_hintEvalMax = eval;
+                        brs = Brushes.LightGreen;
+                    }
+                    else brs = Brushes.DarkOrange;
+                    eval /= 10000;
+                    e.Graphics.DrawString(sign + eval, m_ft3, brs,
+                           (pos / BOARD_SIZE) * m_mass_size + (2 * m_scale) + m_fix_x + font_fix_x,
+                           (pos % BOARD_SIZE) * m_mass_size + (14 * m_scale) + m_fix_y);
                 }
             }
         }
@@ -677,9 +754,11 @@ namespace KZreversi
             toolStripStatusLabel1.Text = sb.ToString();
         }
 
+        // lock用オブジェクト
+        private static Object lockObj = new Object();
         private void setCpuMessage(string cpuMessage)
         {
-            lock (toolStripStatusLabel3.Text)
+            lock (lockObj)
             {
                 toolStripStatusLabel3.Text = cpuMessage;
             }
@@ -687,7 +766,7 @@ namespace KZreversi
 
         private void setPVLine(string cpuMessage)
         {
-            lock (toolStripStatusLabel4.Text)
+            lock (lockObj)
             {
                 toolStripStatusLabel4.Text = cpuMessage;
             }
@@ -695,7 +774,7 @@ namespace KZreversi
 
         private void setMPCInfo(string mpcMessage)
         {
-            lock (toolStripStatusLabel2.Text)
+            lock (lockObj)
             {
                 toolStripStatusLabel2.Text = mpcMessage;
             }
@@ -716,7 +795,6 @@ namespace KZreversi
         }
 
         private bool _m_cpuFlag;
-        private BufferedPanel panel_back;
         public bool m_cpuFlagProperty
         {
             get
@@ -733,6 +811,23 @@ namespace KZreversi
             }
         }
 
+        private bool _m_hintFlag;
+        public bool m_hintFlagProperty
+        {
+            get
+            {
+                return _m_hintFlag;
+            }
+            set
+            {
+                _m_hintFlag = value;
+                if (value == true)
+                {
+                    OnPropertyChanged("Hint");
+                }
+            }
+        }
+
         protected void OnPropertyChanged(string name)
         {
             PropertyChangedEventHandler handler = null;
@@ -744,6 +839,10 @@ namespace KZreversi
             else if (name == "CpuMode")
             {
                 handler = PropertyChangedCpuMode;
+            }
+            else if (name == "Hint")
+            {
+                handler = PropertyChangedHint;
             }
 
             if (handler != null)
@@ -946,6 +1045,22 @@ namespace KZreversi
             panel1.Refresh();
         }
 
+
+        public void PropertyChangedHint(object sender, PropertyChangedEventArgs e)
+        {
+            // 画面再描画
+            panel1.Refresh();
+            // UIを中断ボタン以外無効化
+            SetControlEnable(false);
+            // ゲームスレッドにヒント処理リクエストを送信
+            GameThread gmt = new GameThread();
+            object[] args = new object[] { GameThread.CMD_HINT, boardclass, cpuClass[nowColor], this, m_hintLevel };
+            gmt.m_recvcmdProperty = args;
+            // 画面再描画
+            panel1.Refresh();
+        }
+
+
         private void PrintResult()
         {
             String msg;
@@ -971,6 +1086,69 @@ namespace KZreversi
             msg = String.Format("黒{0:D}-白{1:D}で{2}です。", bkCnt, whCnt, winStr);
             MessageBox.Show(msg, "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
+        }
+
+
+
+        private void doHintProcess(HintClass hintData)
+        {
+            if (hintData != null)
+            {
+                if (hintData.GetPos() == 64)
+                {
+
+                }
+                else
+                {
+                    // ヒントデータ更新
+                    int position = hintData.GetPos();
+                    int index = findIndexFromPosition(position);
+                    if (index == -1)
+                    {
+                        // 新規データ
+                        m_hintList.Add(new int[] { position, hintData.GetEval() });
+                    }
+                    else
+                    {
+                        // 更新
+                        m_hintList[index] = new int[] { position, hintData.GetEval() };
+                    }
+                    // ソート処理
+                    m_hintList.Sort(CompareEval);
+                }
+            }
+            else
+            {
+                // 終了通知
+                m_hintFlagProperty = false;
+                SetControlEnable(true);
+            }
+            // 画面再描画
+            panel1.Refresh();
+        }
+
+        private int CompareEval(int[] x, int[] y)
+        {
+            return y[1] - x[1];
+        }
+
+
+
+
+        int findIndexFromPosition(int pos) 
+        {
+            int i = 0, index = -1;
+            foreach (var data in m_hintList) 
+            {
+                if (data[0] == pos)
+                {
+                    index = i;
+                    break;
+                }
+                i++;
+            }
+
+            return index;
         }
 
         private void comboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -1461,9 +1639,21 @@ namespace KZreversi
             int size = hintToolStripMenuItem.DropDownItems.Count;
             ToolStripMenuItem stripItem = ((ToolStripMenuItem)sender);
 
+            // チェック全解除
+            for (int i = 0; i < size; i++)
+            {
+                ((ToolStripMenuItem)hintToolStripMenuItem.DropDownItems[i]).Checked = false;
+            }
+            stripItem.Checked = true;
 
+            // レベル取得
+            m_hintLevel = (uint)hintToolStripMenuItem.DropDownItems.IndexOf(stripItem);
 
-
+            m_mode = ON_HINT;
+            m_hintEvalMax = -INFINITY_SCORE;
+            m_hintList.Clear();
+            // ヒント処理ハンドラをコール
+            m_hintFlagProperty = true;
         }
 
 
