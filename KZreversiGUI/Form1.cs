@@ -40,6 +40,7 @@ namespace KZreversi
 
         private BufferedPanel panel1;
         private BufferedPanel panel_back;
+        private BufferedPanel panel_board;
 
         public CppWrapper cppWrapper;
         public bool loadResult;
@@ -87,6 +88,10 @@ namespace KZreversi
 
         private Stopwatch m_sw;
 
+        private GCHandle m_gcHandle_setCpuMessageDelegate;
+        private GCHandle m_gcHandle_setPVLineDelegate;
+        private GCHandle m_gcHandle_setMPCInfoDelegate;
+
         public delegate void SetMoveProperty(ulong moves);
         public delegate void SetNodeCountProperty(ulong nodeCount);
         public delegate void DoHintProperty(HintClass evalList);
@@ -100,9 +105,12 @@ namespace KZreversi
         public SetCpuMessageProperty setPVLineDelegate;
         public SetCpuMessageProperty setMPCInfoDelegate;
 
-        Font m_ft = new Font("MS UI Gothic", 9);
-        Font m_ft2 = new Font("MS UI Gothic", 8);
-        Font m_ft3 = new Font("Arial", 18, FontStyle.Bold | FontStyle.Italic);
+        delegate void SetPVLineDelegate(string text);
+
+        Font m_ft;
+        Font m_ft2;
+        Font m_ft3;
+        Font m_ft4;
 
         public int m_event;
 
@@ -116,6 +124,8 @@ namespace KZreversi
         private float m_board_width, m_board_height;
         private const float border_rate = (float)(290.0 / 2450.0);
 
+        private Bitmap m_panel1_bitmap;
+        private Bitmap m_back_bitmap;
 
         public Form1()
         {
@@ -153,7 +163,7 @@ namespace KZreversi
 
             // ヒント表示用
             m_hintList = new List<int[]>();
-            
+
         }
 
         private void 終了ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -194,7 +204,7 @@ namespace KZreversi
                 SetPlayerInfo();
 
                 m_mode = ON_GAME;
-                this.panel1.Refresh();
+                //
 
                 ChangePlayer();
                 if (nowPlayer.playerInfo == Player.PLAYER_CPU)
@@ -202,6 +212,8 @@ namespace KZreversi
                     // CPUモードに移行(ハンドラコール)
                     m_cpuFlagProperty = true;
                 }
+                panel1.Invalidate(false);
+                panel1.Update();
             }
             else if (sender == this.button5) // ゲーム再開ボタン
             {
@@ -216,8 +228,6 @@ namespace KZreversi
                 nowColor = boardclass.GetNowColor();
 
                 SetPlayerInfo();
-                this.panel1.Refresh();
-
                 ChangePlayer();
 
                 if (nowPlayer.playerInfo == Player.PLAYER_CPU)
@@ -225,14 +235,21 @@ namespace KZreversi
                     // CPUモードに移行(ハンドラコール)
                     m_cpuFlagProperty = true;
                 }
-
+                else 
+                {
+                    panel1.Invalidate(false);
+                    panel1.Update();
+                }
             }
             else if (sender == this.button6) // 中断ボタン
             {
                 if (m_cpuFlagProperty == false)
                 {
                     m_mode = ON_NOTHING;
-                    this.panel1.Refresh();
+                    if (m_mode == ON_HINT) hintAbort();
+                    this.Cursor = Cursors.Default;
+                    SetControlEnable(true);
+                    panel1.Refresh();
                 }
                 else
                 {
@@ -240,14 +257,13 @@ namespace KZreversi
                     m_abort = true;
                     m_mode = ON_NOTHING;
                     cppWrapper.SendAbort();
+                    this.Cursor = Cursors.Default;
                     MessageBox.Show(
                         "AIの処理を中断しました。再開はゲーム開始ボタンを押してください。",
                         "中断",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
                 }
-
-                // this.panel1.Refresh();
             }
             else if (sender == this.button1) // 最初に戻るボタン
             {
@@ -291,6 +307,11 @@ namespace KZreversi
             }
         }
 
+        private void hintAbort()
+        {
+            throw new NotImplementedException();
+        }
+
         private void ChangePlayer()
         {
             nowColor = boardclass.GetNowColor();
@@ -332,39 +353,49 @@ namespace KZreversi
         {
             bkImg = new Bitmap(KZreversi.Properties.Resources.othello_bk);
             whImg = new Bitmap(KZreversi.Properties.Resources.othello_wh);
-
-            Bitmap panel1_bitmap = new Bitmap(KZreversi.Properties.Resources.othello_board);
+            m_back_bitmap = new Bitmap(KZreversi.Properties.Resources.wood_pattern);
+            m_panel1_bitmap = new Bitmap(KZreversi.Properties.Resources.othello_board);
 
             // 盤面背景のセット
-            panel_back = new BufferedPanel();
+            panel_back = new BufferedPanel(false);
             panel_back.Width = 534;
             panel_back.Height = 534;
             panel_back.Location = new Point(0, 0);
-            panel_back.BackgroundImage = new Bitmap(KZreversi.Properties.Resources.wood_pattern);
+            panel_back.BackgroundImage = m_back_bitmap;
             panel_back.BackgroundImageLayout = ImageLayout.Stretch;
             panel_back.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
             this.Controls.Add(panel_back);
 
             // 盤面のセット
-            panel1 = new BufferedPanel();
+            panel_board = new BufferedPanel(false);
+            panel_board.Width = 480;
+            panel_board.Height = 480;
+            panel_board.Location = new Point(26, 30);
+            panel_board.BackColor = Color.Transparent;
+            panel_board.BackgroundImage = m_panel1_bitmap;
+            panel_board.BackgroundImageLayout = ImageLayout.Zoom;
+            panel_board.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+            // 盤面背景の子として登録
+            panel_back.Controls.Add(panel_board);
+
+            // 盤面のセット
+            panel1 = new BufferedPanel(true);
             panel1.Width = 480;
             panel1.Height = 480;
-            panel1.Location = new Point(26, 30);
+            panel1.Location = new Point(0, 0);
             panel1.BackColor = Color.Transparent;
-            panel1.BackgroundImage = panel1_bitmap;
-            panel1.BackgroundImageLayout = ImageLayout.Zoom;
             panel1.Paint += panel1_Paint;
             panel1.Click += panel1_Click;
             panel1.DoubleClick += panel1_Click;
-            panel1.Resize += panel1_Resize;
+            panel1.Resize += panel_Resize;
             panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
             // 盤面背景の子として登録
-            panel_back.Controls.Add(panel1);
+            panel_board.Controls.Add(panel1);
 
             m_board_width = panel1.Width - (panel1.Width * border_rate);
             m_board_height = panel1.Height - (panel1.Height * border_rate);
 
-            // 石の画像のスケーリング
+            // 画像とフォントのスケーリング
             resize_stone(panel1);
 
             LoadForm lf = new LoadForm();
@@ -381,25 +412,26 @@ namespace KZreversi
                 this.Close();
             }
 
+            // !! ステータスバーのみC#のメモリ管理下から外すため自力解放必須 !!
             // このdelegateをGC対象外にする
-            GCHandle gcHandle = GCHandle.Alloc(cpuMessageDelegate);
+            m_gcHandle_setCpuMessageDelegate = GCHandle.Alloc(cpuMessageDelegate);
             // C++側から呼び出せるようにする
             cpuMessageDelegatePtr = Marshal.GetFunctionPointerForDelegate(cpuMessageDelegate);
             // C側に関数ポインタを登録
             cppWrapper.EntryFunction(cpuMessageDelegatePtr);
-            gcHandle.Free();
+            m_gcHandle_setCpuMessageDelegate.Free();
 
             // CPU情報表示用
-            gcHandle = GCHandle.Alloc(setPVLineDelegate);
+            m_gcHandle_setPVLineDelegate = GCHandle.Alloc(setPVLineDelegate);
             setPVLineDelegatePtr = Marshal.GetFunctionPointerForDelegate(setPVLineDelegate);
             cppWrapper.EntryFunction(setPVLineDelegatePtr);
-            gcHandle.Free();
+            m_gcHandle_setPVLineDelegate.Free();
 
             // MPC進捗状況表示用
-            gcHandle = GCHandle.Alloc(setMPCInfoDelegate);
+            m_gcHandle_setMPCInfoDelegate = GCHandle.Alloc(setMPCInfoDelegate);
             setMPCInfoDelegatePtr = Marshal.GetFunctionPointerForDelegate(setMPCInfoDelegate);
             cppWrapper.EntryFunction(setMPCInfoDelegatePtr);
-            gcHandle.Free();
+            m_gcHandle_setMPCInfoDelegate.Free();
 
             // デフォルトのCPU設定
             for (int i = 0; i < cpuClass.Length; i++)
@@ -419,13 +451,13 @@ namespace KZreversi
                 cpuClass[i].SetWinLossDepth(14);
                 cpuClass[i].SetExactDepth(12);
                 cpuClass[i].SetBookFlag(true);
-                cpuClass[i].SetBookVariability(2);
+                cpuClass[i].SetBookVariability(1);
                 cpuClass[i].SetMpcFlag(true);
                 cpuClass[i].SetTableFlag(true);
             }
         }
 
-        void resize_stone(Panel panel)
+        void resize_stone(BufferedPanel panel)
         {
             //label5.Text = "x=" + panel.Width + "y=" + panel.Height;
             float board_x, board_y;
@@ -433,8 +465,8 @@ namespace KZreversi
             if (panel.Width < panel.Height)
             {
                 // margin考慮
-                board_x = panel.Width - (panel1.Width * border_rate);
-                board_y = panel.Height - (panel1.Width * border_rate);
+                board_x = panel.Width - (panel.Width * border_rate);
+                board_y = panel.Height - (panel.Width * border_rate);
                 m_scale = board_x / (m_board_width + 16);
                 m_mass_size = board_x / BOARD_SIZE;
                 m_fix_x = (float)30.5 * m_scale;
@@ -442,52 +474,74 @@ namespace KZreversi
             }
             else
             {
-                board_x = panel.Width - (panel1.Height * border_rate);
-                board_y = panel.Height - (panel1.Height * border_rate);
+                board_x = panel.Width - (panel.Height * border_rate);
+                board_y = panel.Height - (panel.Height * border_rate);
                 m_scale = board_y / (m_board_height + 16);
                 m_mass_size = board_y / BOARD_SIZE;
                 m_fix_x = (board_x - board_y) / 2 + ((float)30.5 * m_scale);
                 m_fix_y = (float)30.5 * m_scale;
             }
+
+            if (m_scale != 0)
+            {
+                // 各描画インスタンスの座標をスケーリング
+                stone_size_x = (m_board_width / BOARD_SIZE) * m_scale;
+                stone_size_y = (m_board_height / BOARD_SIZE) * m_scale;
+                last_move_fix_x = (21 * m_scale) + m_fix_x;
+                last_move_fix_y = (21 * m_scale) + m_fix_y;
+                canmove_x = (19 * m_scale) + m_fix_x;
+                canmove_y = (21 * m_scale) + m_fix_y;
+                font_scale_x = (2 * m_scale) + m_fix_x;
+                font_scale_y = (14 * m_scale) + m_fix_y;
+
+                // フォントスケーリング
+                m_ft = new Font("MS UI Gothic", 9 * m_scale);
+                m_ft2 = new Font("MS UI Gothic", 8 * m_scale);
+                m_ft3 = new Font("Arial", 18 * m_scale, FontStyle.Bold | FontStyle.Italic);
+                m_ft4 = new Font("Arial", 15 * m_scale, FontStyle.Bold | FontStyle.Italic);
+            }
         }
 
         // 盤面のリサイズ処理
-        void panel1_Resize(object sender, EventArgs e)
+        void panel_Resize(object sender, EventArgs e)
         {
-            resize_stone((Panel)sender);
-
+            BufferedPanel pl = (BufferedPanel)sender;
+            // 石やフォントのスケーリング処理
+            resize_stone(pl);
         }
 
+        private float stone_size_x, stone_size_y;
+        private float last_move_fix_x, last_move_fix_y;
+        private float canmove_x, canmove_y;
+        private float font_scale_x, font_scale_y;
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
             int pos;
             ulong temp;
+            BufferedPanel bp = (BufferedPanel)sender;
 
+            // 盤面の石などの描画
             nowPlayer = playerArray[nowColor];
             // 盤面情報から描画
             temp = boardclass.GetBlack();
             while (temp > 0)
             {
-                float stone_width = m_board_width / BOARD_SIZE;
-                float stone_height = m_board_height / BOARD_SIZE;
                 pos = cppWrapper.ConvertMoveBit(temp);
                 e.Graphics.DrawImage(bkImg,
                     (pos / BOARD_SIZE) * m_mass_size + m_fix_x,
                     (pos % BOARD_SIZE) * m_mass_size + m_fix_y,
-                    stone_width * m_scale, stone_height * m_scale);
+                    stone_size_x, stone_size_y);
                 temp ^= (1UL << (int)pos);
             }
 
             temp = boardclass.GetWhite();
             while (temp > 0)
             {
-                float stone_width = m_board_width / BOARD_SIZE;
-                float stone_height = m_board_height / BOARD_SIZE;
                 pos = cppWrapper.ConvertMoveBit(temp);
                 e.Graphics.DrawImage(whImg,
                     (pos / BOARD_SIZE) * m_mass_size + m_fix_x,
                     (pos % BOARD_SIZE) * m_mass_size + m_fix_y,
-                    stone_width * m_scale, stone_height * m_scale);
+                    stone_size_x, stone_size_y);
                 temp ^= (1UL << (int)pos);
             }
 
@@ -495,10 +549,9 @@ namespace KZreversi
             pos = boardclass.GetRecentMove();
             if (pos >= 0)
             {
-                m_ft2 = new Font("MS UI Gothic", 8 * m_scale);
                 e.Graphics.DrawString("●", m_ft2, Brushes.OrangeRed,
-                (pos / BOARD_SIZE) * m_mass_size + (21 * m_scale) + m_fix_x,
-                (pos % BOARD_SIZE) * m_mass_size + (21 * m_scale) + m_fix_y);
+                (pos / BOARD_SIZE) * m_mass_size + last_move_fix_x,
+                (pos % BOARD_SIZE) * m_mass_size + last_move_fix_y);
             }
 
             // ゲーム中の場合かつプレイヤーの手番の場合、着手可能場所を表示
@@ -508,14 +561,13 @@ namespace KZreversi
                 nowPlayer.moves = temp;
                 if (temp != 0)
                 {
-                    m_ft = new Font("MS UI Gothic", 9 * m_scale);
                     m_passCount = 0;
                     while (temp > 0)
                     {
                         pos = cppWrapper.ConvertMoveBit(temp);
                         e.Graphics.DrawString("×", m_ft, Brushes.DarkOrange,
-                            (pos / BOARD_SIZE) * m_mass_size + (19 * m_scale) + m_fix_x,
-                            (pos % BOARD_SIZE) * m_mass_size + (21 * m_scale) + m_fix_y);
+                            (pos / BOARD_SIZE) * m_mass_size + canmove_x,
+                            (pos % BOARD_SIZE) * m_mass_size + canmove_y);
                         temp ^= (1UL << pos);
                     }
                 }
@@ -523,57 +575,171 @@ namespace KZreversi
             else if (m_mode == ON_HINT && m_hintList.Count > 0 && m_cpuFlagProperty == false)
             {
                 // 記憶したヒントを表示
-                int eval;
-                string sign;
-                float font_fix_x;
-                Brush brs = null;
-                m_ft3 = new Font("Arial", 18 * m_scale, FontStyle.Bold | FontStyle.Italic);
+                int attr, eval;
+                bool first;
+
+                if (m_hintList.Count > 1) first = true; // 探索後の表示のため
+                else first = false;
 
                 foreach (var data in m_hintList)
                 {
-                    pos = data[0];
-                    eval = data[1];
-                    if (eval >= 0) // +0 ～ +64
+                    attr = data[0];
+                    pos = data[1];
+                    eval = data[2];
+
+                    if (attr == HintClass.SOLVE_MIDDLE)
                     {
-                        sign = "+";
-                        font_fix_x = 3;
-                        if (eval >= 100000) // +10 ～ +64
-                        {
-                            font_fix_x = 0;
-                        }
+                        dispMiddleEval(e, pos, eval, first);
+                    }
+                    else if (attr == HintClass.SOLVE_WLD)
+                    {
+                        dispWldEval(e, pos, eval, first);
                     }
                     else
                     {
-                        if (eval > -10000) // -0
-                        {
-                            sign = "-";
-                            font_fix_x = 5;
-                        }
-                        else if (eval <= -100000) // -10 ～ -64
-                        {
-                            sign = "";
-                            font_fix_x = 2;
-                        }
-                        else // -1 ～ -9
-                        {
-                            sign = "";
-                            font_fix_x = 5;
-                        }
+                        dispExactEval(e, pos, eval, first);
                     }
-                    font_fix_x *= m_scale;
-                    // ループの初回が最善手なので目立つよう表示
-                    if (brs == null || eval >= m_hintEvalMax)
-                    {
-                        m_hintEvalMax = eval;
-                        brs = Brushes.LightGreen;
-                    }
-                    else brs = Brushes.DarkOrange;
-                    eval /= 10000;
-                    e.Graphics.DrawString(sign + eval, m_ft3, brs,
-                           (pos / BOARD_SIZE) * m_mass_size + (2 * m_scale) + m_fix_x + font_fix_x,
-                           (pos % BOARD_SIZE) * m_mass_size + (14 * m_scale) + m_fix_y);
+                    first = false;
                 }
             }
+            textBox1.Text = String.Format("0x{0:x}, 0x{1:x}",
+                       boardclass.GetBlack(), boardclass.GetWhite());
+        }
+
+        private void dispExactEval(PaintEventArgs e, int pos, int eval, bool first)
+        {
+            string sign;
+            float font_fix_x;
+            Brush brs;
+
+            if (eval >= 0) // +0 ～ +64
+            {
+                sign = "+";
+                font_fix_x = 3;
+                if (eval >= 10) // +10 ～ +64
+                {
+                    font_fix_x = 0;
+                }
+            }
+            else
+            {
+                if (eval > -1) // -0
+                {
+                    sign = "-";
+                    font_fix_x = 5;
+                }
+                else if (eval <= -10) // -10 ～ -64
+                {
+                    sign = "";
+                    font_fix_x = 2;
+                }
+                else // -1 ～ -9
+                {
+                    sign = "";
+                    font_fix_x = 5;
+                }
+            }
+
+            font_fix_x *= m_scale;
+            // ループの初回が最善手なので目立つよう表示
+            if (first || eval >= m_hintEvalMax)
+            {
+                m_hintEvalMax = eval;
+                brs = Brushes.LightGreen;
+            }
+            else brs = Brushes.DarkOrange;
+
+            e.Graphics.DrawString(sign + eval, m_ft3, brs,
+               (pos / BOARD_SIZE) * m_mass_size + font_scale_x + font_fix_x,
+               (pos % BOARD_SIZE) * m_mass_size + font_scale_y);
+        }
+
+        private void dispWldEval(PaintEventArgs e, int pos, int eval, bool first)
+        {
+            string wld;
+            float font_fix_x;
+            Brush brs;
+
+            if (eval > 0) // +0 ～ +1
+            {
+                wld = "WIN";
+                font_fix_x = 0;
+            }
+            else if (eval < 0)
+            {
+                wld = "LOS";
+                font_fix_x = 0;
+            }
+            else
+            {
+                wld = "DRW";
+                font_fix_x = -5;
+            }
+
+            font_fix_x *= m_scale;
+            // ループの初回が最善手なので目立つよう表示
+            if (first == true || eval >= m_hintEvalMax)
+            {
+                m_hintEvalMax = eval;
+                brs = Brushes.LightGreen;
+            }
+            else brs = Brushes.DarkOrange;
+
+            e.Graphics.DrawString(wld, m_ft4, brs,
+               (pos / BOARD_SIZE) * m_mass_size + font_scale_x + font_fix_x,
+               (pos % BOARD_SIZE) * m_mass_size + font_scale_y);
+        }
+
+        private void dispMiddleEval(PaintEventArgs e, int pos, int eval, bool first)
+        {
+            string sign;
+            float font_fix_x;
+            Brush brs;
+
+            if (eval >= 0) // +0 ～ +64
+            {
+                sign = "+";
+                font_fix_x = 3;
+                if (eval >= 100000) // +10 ～ +64
+                {
+                    font_fix_x = 0;
+                }
+            }
+            else
+            {
+                if (eval > -10000) // -0
+                {
+                    sign = "-";
+                    font_fix_x = 5;
+                }
+                else if (eval <= -100000) // -10 ～ -64
+                {
+                    sign = "";
+                    font_fix_x = 2;
+                }
+                else // -1 ～ -9
+                {
+                    sign = "";
+                    font_fix_x = 5;
+                }
+            }
+
+            font_fix_x *= m_scale;
+            // ループの初回が最善手なので目立つよう表示(LightGreen)
+            if (first == true || eval >= m_hintEvalMax)
+            {
+                m_hintEvalMax = eval;
+                brs = Brushes.LightGreen;
+            }
+            else brs = Brushes.DarkOrange;
+
+            // 評価値を正規化
+            eval /= 10000;
+
+            // 該当のマスに描画
+            e.Graphics.DrawString(sign + eval, m_ft3, brs,
+               (pos / BOARD_SIZE) * m_mass_size + font_scale_x + font_fix_x,
+               (pos % BOARD_SIZE) * m_mass_size + font_scale_y);
         }
 
         private void panel1_Click(object sender, EventArgs e)
@@ -595,8 +761,8 @@ namespace KZreversi
 
                     // 押された瞬間の座標を取得
                     pos = mouseEvent.Location;
-                    num = (int)(((double)pos.X - m_fix_x) / m_mass_size) * BOARD_SIZE;
-                    num += (int)(((double)pos.Y - m_fix_y) / m_mass_size);
+                    num = (int)(((float)pos.X - m_fix_x) / m_mass_size) * BOARD_SIZE;
+                    num += (int)(((float)pos.Y - m_fix_y) / m_mass_size);
                     // 着手出来るかチェック
                     if ((nowPlayer.moves & (1UL << num)) != 0)
                     {
@@ -605,13 +771,13 @@ namespace KZreversi
                         // プレイヤー変更
                         ChangePlayer();
                         // 画面再描画
-                        panel1.Refresh();
+                        panel1.Invalidate(false);
+                        panel1.Update();
 
                         if (nowPlayer.playerInfo == Player.PLAYER_CPU)
                         {
                             // CPUモードに移行(ハンドラコール)
                             m_cpuFlagProperty = true;
-
                             return;
                         }
 
@@ -628,9 +794,6 @@ namespace KZreversi
                                 m_passCount = 0;
                                 // 結果表示
                                 PrintResult();
-                                // 画面描画
-                                panel1.Refresh();
-
                                 return;
                             }
 
@@ -647,8 +810,6 @@ namespace KZreversi
                                 m_passCount = 0;
                                 // 結果表示
                                 PrintResult();
-                                // 画面描画
-                                panel1.Refresh();
                             }
                         }
 
@@ -660,7 +821,8 @@ namespace KZreversi
 
                     // 押された瞬間の座標を取得
                     pos = mouseEvent.Location;
-                    num = ((pos.X / 60) * BOARD_SIZE) + (pos.Y / 60);
+                    num = (int)(((float)pos.X - m_fix_x) / m_mass_size) * BOARD_SIZE;
+                    num += (int)(((float)pos.Y - m_fix_y) / m_mass_size);
                     ulong posBit = (1UL << num);
                     ulong bk = boardclass.GetBlack();
                     ulong wh = boardclass.GetWhite();
@@ -691,8 +853,14 @@ namespace KZreversi
                         boardclass.EditBoard(bk & ~posBit, wh & ~posBit);
                     }
 
+                    textBox1.Text = String.Format("bk = 0x{0:x}; wh = 0x{1:x};", 
+                        boardclass.GetBlack(), boardclass.GetWhite());
+                    textBox1.Refresh();
+
+
                     // 画面再描画
-                    panel1.Refresh();
+                    panel1.Invalidate(false);
+                    panel1.Update();
 
                     break;
                 default:
@@ -754,30 +922,25 @@ namespace KZreversi
             toolStripStatusLabel1.Text = sb.ToString();
         }
 
-        // lock用オブジェクト
-        private static Object lockObj = new Object();
         private void setCpuMessage(string cpuMessage)
         {
-            lock (lockObj)
-            {
-                toolStripStatusLabel3.Text = cpuMessage;
-            }
+
+            toolStripStatusLabel3.Text = cpuMessage;
         }
 
+        private void setlabelText(string text) 
+        {
+            label6.Text = text;    
+        }
         private void setPVLine(string cpuMessage)
         {
-            lock (lockObj)
-            {
-                toolStripStatusLabel4.Text = cpuMessage;
-            }
+            Invoke(new SetPVLineDelegate(setlabelText), cpuMessage);
+            
         }
 
         private void setMPCInfo(string mpcMessage)
         {
-            lock (lockObj)
-            {
-                toolStripStatusLabel2.Text = mpcMessage;
-            }
+            toolStripStatusLabel2.Text = mpcMessage;
         }
 
         private ulong _m_cpuMove;
@@ -834,14 +997,17 @@ namespace KZreversi
 
             if (name == "CpuMove")
             {
+                this.Cursor = Cursors.Default;
                 handler = PropertyChangedCpuMove;
             }
             else if (name == "CpuMode")
             {
+                this.Cursor = Cursors.WaitCursor;
                 handler = PropertyChangedCpuMode;
             }
             else if (name == "Hint")
             {
+                this.Cursor = Cursors.WaitCursor;
                 handler = PropertyChangedHint;
             }
 
@@ -881,8 +1047,8 @@ namespace KZreversi
                     return;
                 }
 
-                //MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報", 
-                //    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
+                   MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 // CPUがパスなのでプレイヤー変更
                 ChangePlayerReasonPass();
@@ -1028,8 +1194,6 @@ namespace KZreversi
 
         public void PropertyChangedCpuMode(object sender, PropertyChangedEventArgs e)
         {
-            // 画面再描画
-            panel1.Refresh();
             // UIを中断ボタン以外無効化
             SetControlEnable(false);
             // ゲームスレッドにCPU処理リクエスト送信
@@ -1040,24 +1204,17 @@ namespace KZreversi
 
             toolStripStatusLabel1.Text = "";
             m_sw.Restart();
-
-            // 画面再描画
-            panel1.Refresh();
         }
 
 
         public void PropertyChangedHint(object sender, PropertyChangedEventArgs e)
         {
-            // 画面再描画
-            panel1.Refresh();
             // UIを中断ボタン以外無効化
             SetControlEnable(false);
             // ゲームスレッドにヒント処理リクエストを送信
             GameThread gmt = new GameThread();
             object[] args = new object[] { GameThread.CMD_HINT, boardclass, cpuClass[nowColor], this, m_hintLevel };
             gmt.m_recvcmdProperty = args;
-            // 画面再描画
-            panel1.Refresh();
         }
 
 
@@ -1096,22 +1253,24 @@ namespace KZreversi
             {
                 if (hintData.GetPos() == 64)
                 {
-
+                    // 最大評価値を初期化
+                    m_hintEvalMax = -INFINITY_SCORE;
                 }
                 else
                 {
                     // ヒントデータ更新
+                    int attr = hintData.GetAttr();
                     int position = hintData.GetPos();
                     int index = findIndexFromPosition(position);
                     if (index == -1)
                     {
                         // 新規データ
-                        m_hintList.Add(new int[] { position, hintData.GetEval() });
+                        m_hintList.Add(new int[] { attr, position, hintData.GetEval() });
                     }
                     else
                     {
                         // 更新
-                        m_hintList[index] = new int[] { position, hintData.GetEval() };
+                        m_hintList[index] = new int[] { attr, position, hintData.GetEval() };
                     }
                     // ソート処理
                     m_hintList.Sort(CompareEval);
@@ -1120,27 +1279,28 @@ namespace KZreversi
             else
             {
                 // 終了通知
+                m_hintEvalMax = -INFINITY_SCORE;
                 m_hintFlagProperty = false;
                 SetControlEnable(true);
+                this.Cursor = Cursors.Default;
             }
+
             // 画面再描画
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private int CompareEval(int[] x, int[] y)
         {
-            return y[1] - x[1];
+            return y[2] - x[2];
         }
 
-
-
-
-        int findIndexFromPosition(int pos) 
+        int findIndexFromPosition(int pos)
         {
             int i = 0, index = -1;
-            foreach (var data in m_hintList) 
+            foreach (var data in m_hintList)
             {
-                if (data[0] == pos)
+                if (data[1] == pos)
                 {
                     index = i;
                     break;
@@ -1274,8 +1434,13 @@ namespace KZreversi
                         boardclass.EditBoard(bk & ~posBit, wh & ~posBit);
                     }
 
+                    textBox1.Text = String.Format("0x{0:x}, 0x{1:x}",
+                        boardclass.GetBlack(), boardclass.GetWhite());
+                    textBox1.Refresh();
+
                     // 画面再描画
-                    panel1.Refresh();
+                    panel1.Invalidate(false);
+                    panel1.Update();
 
                     break;
                 default:
@@ -1289,7 +1454,8 @@ namespace KZreversi
             boardclass.InitBoard(COLOR_BLACK);
             nowColor = boardclass.GetNowColor();
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void mPC探索を行うToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1345,222 +1511,261 @@ namespace KZreversi
         private void fFO40ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#40(black to move) (WinLoss:[a2:WIN] Exact:[a2:+38])
-            //boardclass.InitBoard(COLOR_BLACK, 0x6042795c404000, 0xff9fbc8080000000);
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO41ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#41(black to move) (WinLoss:(h4:DRAW) 3.46sec Exact:(h4:+0) 3.28sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 616174399789064, 39493460025648416);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO42ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#42(black to move) (WinLoss:(g2:WIN) 2.26sec Exact:(g2:+6) 3.88sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 22586176447709200, 9091853944868375556);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO43ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#43(white to move) (WinLoss:(c7:LOSS) 0.501sec Exact:(c7:-12) 8.06sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_WHITE, 38808086923902976, 13546258740034592);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO44ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#44(white to move) (WinLoss:(d2:LOSS) 0.729sec  Exact:(d2:-14) 2.09ec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_WHITE, 2494790880993312, 1010251075753548824);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO45ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#45(black to move) (WinLoss:(b2:WIN) 2.37sec Exact:(b2:+6) 38.21sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 282828816915486, 9287318235258944);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO46ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#46(black to move) (WinLoss:(b7:LOSS) 8.09sec Exact:(b3:-8) 15.63sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 4052165999611379712, 36117299622447104);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO47ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#47(white to move) (WinLoss:(g2:WIN) 2.87sec: Exact:(g2:+4) 4.70sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_WHITE, 277938752194568, 3536224466208);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO48ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#48(white to move) (WinLoss:(f6:WIN) 0.98sec: Exact:(f6:+28) 42.42sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_WHITE, 38519958422848574, 4725679339520);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO49ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#49(black to move) (WinLoss:(e1:WIN) 4.52sec: Exact:(e1:+16) 95.10sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 5765976742297600, 4253833575484);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO50ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#50(black to move) (WinLoss:(d8:WIN) 2.861sec: Exact:(d8:+10) 141.83sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 4504145659822080, 4336117619740130304);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO51ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#51(white to move) (WinLoss:(e2:WIN) 2.92sec: Exact:(e2:+6) 137.96sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_WHITE, 349834415978528, 8664011788383158280);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO52ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#52(white to move) (WinLoss:(a3:DRAW) 140.0sec: Exact:(a3:+0) 167.26sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_WHITE, 9096176176681728056, 35409824317440);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO53ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#53(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 2515768979493888, 8949795312300457984);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO54ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#54(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 26457201720894, 289431515079835648);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO55ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#55(white to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_WHITE, 4635799596172290, 289361502099486840);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO56ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#56(white to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_WHITE, 4925086697193472, 9007372734053408);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = 14;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO57ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#57(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 9060166336512000, 8943248156475301888);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO58ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#58(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 4636039783186432, 3383245044333600);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void fFO59ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //FFO#59(black to move) (WinLoss:(g8:WIN) 0.32sec: Exact:(g8:+64) 0.34sec)
+            m_mode = ON_NOTHING;
             boardclass.InitBoard(COLOR_BLACK, 17320879491911778304, 295223649004691488);
             nowColor = boardclass.GetNowColor();
             comboBox1.SelectedIndex = 14;
             comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void ConfigCasheToolStripMenuItem_Click(object sender, EventArgs e)

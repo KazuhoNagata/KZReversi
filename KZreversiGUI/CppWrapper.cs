@@ -145,6 +145,14 @@ namespace KZreversi
         }
 
         /// <summary>
+        /// 直前の処理でアボートされたかどうかを取得します
+        /// </summary>
+        /// <returns></returns>
+        public bool GetIsAbort()
+        {
+            return NativeMethods.KZ_GetIsAbort();
+        }
+        /// <summary>
         /// １が立っているビット数をカウントします
         /// </summary>
         /// <returns></returns>
@@ -224,6 +232,10 @@ namespace KZreversi
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
         public extern static int KZ_SendAbort();
+
+        [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
+        [SuppressUnmanagedCodeSecurityAttribute()]
+        public extern static bool KZ_GetIsAbort();
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]

@@ -180,6 +180,7 @@
     <None Include="Resources\othello_bk.png" />
     <None Include="Resources\othello_wh.png" />
     <None Include="Resources\wood_pattern.png" />
+    <None Include="Resources\othello_board_m.png" />
     <Content Include="reversi2.ico" />
   </ItemGroup>
   <ItemGroup>

@@ -14,6 +14,8 @@
 #define CHANGE_ROUGH  3
 #define CHANGE_RANDOM 4
 
+#define BOOK_MAX 13000000
+
 typedef struct node
 {
 	struct node *child;
@@ -21,12 +23,12 @@ typedef struct node
 	UINT64 bk;
 	UINT64 wh;
 	int eval;
-	short move;
-	short depth;
+	char move;
+	char depth;
 }BooksNode;
 
 extern BOOL g_book_done;
-extern BooksNode g_bookTree;
+extern BooksNode *g_bookTreeRoot;
 
 /***************************************************************************
 * Name  : GetMoveFromBooks

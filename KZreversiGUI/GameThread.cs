@@ -41,6 +41,10 @@ namespace KZreversi
 
         private bool m_onAi;
 
+        CppWrapper cpw;
+
+        private bool m_abort;
+
         public object[] m_recvcmdProperty
         {
             get
@@ -56,7 +60,8 @@ namespace KZreversi
 
         public GameThread()
         {
-
+            cpw = new CppWrapper();
+            m_abort = false;
         }
 
         protected void OnPropertyChanged(string name)
@@ -114,8 +119,6 @@ namespace KZreversi
             BoardClass board = (BoardClass)argsarray[1];
             CpuClass cpuClass = (CpuClass)argsarray[2];
             Form1 formobj = (Form1)argsarray[3];
-
-            CppWrapper cp = new CppWrapper();
             CpuConfig cpuConfig = SetCpuConfig(cpuClass);
 
             ulong bk = board.GetBlack();
@@ -123,7 +126,7 @@ namespace KZreversi
 
             m_onAi = true;
             // AIで着手
-            ulong moves = cp.GetCpuMove(bk, wh, cpuConfig);
+            ulong moves = cpw.GetCpuMove(bk, wh, cpuConfig);
 
             // Form1のプロパティにCPUの着手を設定
             ((Form1)formobj).Invoke(((Form1)formobj).delegateObj, new object[] { moves });
@@ -134,7 +137,6 @@ namespace KZreversi
         private void GetNodeCountFunc(object args)
         {
             object[] argsarray = (object[])args;
-            CppWrapper cp = new CppWrapper();
             Form1 formobj = (Form1)argsarray[3];
 
             ulong nodeCount = 0;
@@ -144,7 +146,7 @@ namespace KZreversi
             do
             {
                 // CPU処理が終了するまで更新する
-                nodeCount = cp.GetCountNode();
+                nodeCount = cpw.GetCountNode();
                 // Form1のプロパティにノード数を設定
                 ((Form1)formobj).Invoke(((Form1)formobj).nodeCountDelegate, new object[] { nodeCount });
                 Thread.Sleep(30);
@@ -158,66 +160,145 @@ namespace KZreversi
             CpuClass cpuClass = (CpuClass)argsarray[2];
             Form1 formobj = (Form1)argsarray[3];
             uint level = (uint)argsarray[4];
+            int ret = 0;
 
-            CppWrapper cp = new CppWrapper();
+            CppWrapper cpw = new CppWrapper();
 
             // 着手可能リスト取得
-            ulong moves = cp.GetEnumMove(board);
+            ulong moves = cpw.GetEnumMove(board);
             // 現在のＣＰＵの設定を取得
             CpuConfig cpuConfig = SetCpuConfig(cpuClass);
             // BOOK禁止
             cpuConfig.bookFlag = false;
 
-            // スレッド処理
-            int pos;
-            ulong rev;
-            ulong bk = board.GetBlack(), move_bk;
-            ulong wh = board.GetWhite(), move_wh;
+            ulong bk = board.GetBlack();
+            ulong wh = board.GetWhite();
 
             HintClass hintData = new HintClass();
 
+            // 空きマス数
+            int empty = cpw.CountBit(~(bk | wh));
 
-            // CPUを次の色に設定
+            // CPU設定
             cpuConfig.color = board.GetColor();
+            cpuConfig.winLossDepth = dcTable[level - 1];
+            cpuConfig.exactDepth = dcTable[level - 1] - 2;
 
-            // 探索
-            for (int i = 0; i < level; i++)
+            if (cpuConfig.exactDepth >= empty)
             {
-                cpuConfig.searchDepth = (uint)i * 2 + 2;
-                cpuConfig.winLossDepth = dcTable[i];
-                cpuConfig.exactDepth = dcTable[i] - 2;
-                // 着手可能マスに対してそれぞれ評価値を計算
-                for (ulong m = moves; m != 0; m ^= 1UL << pos)
+                // WLDとEXACTの前にある程度の探索を行うため0で初期化
+                cpuConfig.exactDepth = 0;
+                cpuConfig.winLossDepth = 0;
+                hintData.SetAttr(HintClass.SOLVE_MIDDLE);
+                // 反復深化探索(level - 8)
+                for (int i = 0; i < level / 2; i++)
                 {
-                    pos = cp.CountBit((~m) & (m - 1));
-                    if (cpuConfig.color == BoardClass.WHITE)
-                    {
-                        rev = cp.GetBoardChangeInfo(bk, wh, pos);
-                        move_bk = bk ^ ((1UL << pos) | rev);
-                        move_wh = wh ^ rev;
-                    }
-                    else
-                    {
-                        rev = cp.GetBoardChangeInfo(wh, bk, pos);
-                        move_wh = wh ^ ((1UL << pos) | rev);
-                        move_bk = bk ^ rev;
-
-                    }
-                    cp.GetCpuMove(move_bk, move_wh, cpuConfig);
-                    hintData.SetPos(pos);
-                    hintData.SetEval(-cp.GetLastEvaluation());
-
-                    // UIに評価値を通知
+                    cpuConfig.searchDepth = (uint)i * 2 + 2;
+                    // 着手可能マスに対してそれぞれ評価値を計算
+                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                    if (ret == -1) break;
+                    // UIに反復x回目終了を通知
+                    hintData.SetPos(64);
                     ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { hintData });
                 }
-                // UIに反復x回目終了を通知
-                hintData.SetPos(64);
-                ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { hintData });
+
+                if (ret == 0)
+                {
+                    hintData.SetAttr(HintClass.SOLVE_EXCAT);
+                    cpuConfig.exactDepth = dcTable[level - 1] - 2;
+                    // 着手可能マスに対してそれぞれ評価値を計算
+                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                }
+            }
+            else if (cpuConfig.winLossDepth >= empty)
+            {
+                cpuConfig.exactDepth = 0;
+                cpuConfig.winLossDepth = 0;
+                hintData.SetAttr(HintClass.SOLVE_MIDDLE);
+                // 反復深化探索(level - 8)
+                for (int i = 0; i < level / 2; i++)
+                {
+                    cpuConfig.searchDepth = (uint)i * 2 + 2;
+                    // 着手可能マスに対してそれぞれ評価値を計算
+                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                    if (ret == -1) break;
+                    // UIに反復x回目終了を通知
+                    hintData.SetPos(64);
+                    ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { hintData });
+                }
+                if (ret == 0)
+                {
+                    hintData.SetAttr(HintClass.SOLVE_WLD);
+                    cpuConfig.winLossDepth = dcTable[level - 1];
+                    // 着手可能マスに対してそれぞれ評価値を計算
+                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                }
+            }
+            else
+            {
+                hintData.SetAttr(HintClass.SOLVE_MIDDLE);
+                // 反復深化探索
+                for (int i = 0; i < level && i <= empty; i++)
+                {
+                    cpuConfig.searchDepth = (uint)i * 2 + 2;
+                    // 着手可能マスに対してそれぞれ評価値を計算
+                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                    if (ret == -1) break;
+                    // UIに反復x回目終了を通知
+                    hintData.SetPos(64);
+                    ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { hintData });
+                }
             }
 
             // UIに探索終了を通知
             ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { null });
         }
+
+
+
+        private int doSearch(ulong bk, ulong wh, CpuConfig cpuConfig, ulong moves, Form1 formobj, HintClass hintData)
+        {
+            int pos;
+            int ret = 0;
+            ulong move_bk, move_wh, rev;
+
+            for (ulong m = moves; m != 0; m ^= 1UL << pos)
+            {
+                pos = cpw.CountBit((~m) & (m - 1));
+                if (cpuConfig.color == BoardClass.WHITE)
+                {
+                    rev = cpw.GetBoardChangeInfo(bk, wh, pos);
+                    move_bk = bk ^ ((1UL << pos) | rev);
+                    move_wh = wh ^ rev;
+                }
+                else
+                {
+                    rev = cpw.GetBoardChangeInfo(wh, bk, pos);
+                    move_wh = wh ^ ((1UL << pos) | rev);
+                    move_bk = bk ^ rev;
+
+                }
+                cpw.GetCpuMove(move_bk, move_wh, cpuConfig);
+
+                hintData.SetPos(pos);
+                hintData.SetEval(-cpw.GetLastEvaluation());
+
+                // UIに評価値を通知
+                ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { hintData });
+
+                // 中断処理
+                if (m_abort == true)
+                {
+                    m_abort = false;
+                    ret = -1; 
+                    break;
+                }
+            }
+
+            return ret;
+        }
+
+
 
         private CpuConfig SetCpuConfig(CpuClass cpuClass)
         {
@@ -236,5 +317,10 @@ namespace KZreversi
             return cpuConfig;
         }
 
+
+        public void AbortAll()
+        {
+            m_abort = true;
+        }
     }
 }

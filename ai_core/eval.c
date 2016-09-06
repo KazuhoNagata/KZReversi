@@ -1249,6 +1249,7 @@ BOOL LoadData()
 		return result;
 	}
 #endif
+
 	/* •]‰¿ƒe[ƒuƒ‹‚Ì“Ç‚İ‚İ */
 	result = OpenEvalData("src\\eval.bin");
 	if (result == FALSE)

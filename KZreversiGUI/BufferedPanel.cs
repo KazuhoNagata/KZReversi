@@ -10,12 +10,19 @@ namespace KZreversi
 {
     class BufferedPanel : Panel
     {
+        private bool m_allowRedraw;
 
-        public BufferedPanel()
+        public BufferedPanel(bool allowRedraw)
         {
+            m_allowRedraw = allowRedraw;
             this.DoubleBuffered = true;
-            SetStyle(ControlStyles.SupportsTransparentBackColor, true);
-        }
+            SetStyle(
+                ControlStyles.DoubleBuffer |
+                ControlStyles.UserPaint |
+                ControlStyles.OptimizedDoubleBuffer |
+                ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.SupportsTransparentBackColor, true);
 
+        }
     }
 }

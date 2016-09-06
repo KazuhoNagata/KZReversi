@@ -15,6 +15,7 @@
 #include "board.h"
 #include "book.h"
 #include "fio.h"
+#include "mt.h"
 
 INT32 max_change_num[2];
 BOOL g_book_done;
@@ -28,22 +29,24 @@ BOOL g_book_done;
 int TRANCE_MOVE;
 
 
-BooksNode g_bookTree;
+BooksNode *g_bookTreeRoot;
 BooksNode *g_bestNode;
-
+INT32 g_book_node_count;
 /***************************************************************************
-* 
+*
 * ProtoType(private)
-* 
+*
 ****************************************************************************/
 INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
 	UINT32 color, UINT32 change, INT32 turn);
 BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
 	UINT64 bk, UINT64 wh, INT32 turn);
-INT32 book_alphabeta(BooksNode *book_header, UINT32 depth, INT32 alpha, INT32 beta,
-	UINT32 color, UINT32 change, INT32 turn);
+INT32 book_alphabeta(BooksNode *header, UINT32 depth, INT32 alpha, INT32 beta,
+	UINT32 color, UINT32 change, BooksNode **outBestNode);
 VOID SortBookNode(BooksNode *best_node[], INT32 e_list[], INT32 cnt);
 INT32 SelectNode(INT32 e_list[], INT32 cnt, UINT32 change, INT32 turn);
+
+
 
 /***************************************************************************
 * Name  : GetMoveFromBooks
@@ -53,35 +56,19 @@ INT32 SelectNode(INT32 e_list[], INT32 cnt, UINT32 change, INT32 turn);
 UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32 turn)
 {
 	INT64 move;
-	if (turn == 0)
+	if (turn == 0 && bk == BK_FIRST && wh == WH_FIRST)
 	{
-		srand((UINT32)time(NULL));
+		UINT64 first_move_list[] = { c4, d3, e6, f5 };
 		// 一手目の着手はどこに着手しても同じなのでランダムとする
-		int cnt;
-		INT64 moves;
-		if (color == BLACK)
-		{
-			moves = CreateMoves(bk, wh, (UINT32 *)&cnt);
-		}
-		else
-		{
-			moves = CreateMoves(wh, bk, (UINT32 *)&cnt);
-		}
+		int rand = genrand_int32() % 4;
+		return first_move_list[rand];
 
-		int rnd = rand() % cnt;
-
-		while (rnd)
-		{
-			moves &= moves - 1;
-			rnd--;
-		}
-		move = CountBit((moves & (-moves)) - 1);
 	}
 	else
 	{
-		move = SearchBooks(g_bookTree.child, bk, wh, color, change, turn);
+		move = SearchBooks(g_bookTreeRoot, bk, wh, color, change, turn);
 	}
-	
+
 	if (move == MOVE_NONE)
 	{
 		return move;
@@ -91,19 +78,19 @@ UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32
 
 }
 
+
+
 /***************************************************************************
 * Name  : SearchBooks
 * Brief : 定石やからCPUの着手を決定する
 * Return: 着手可能位置のビット列
 ****************************************************************************/
-INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh, 
+INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
 	UINT32 color, UINT32 change, INT32 turn)
 {
 	INT32 move = MOVE_NONE;
 	ULONG eval = 0;
 	BooksNode *book_header;
-
-	srand((unsigned int)time(NULL));
 
 	/* 局面から該当の定石を探す */
 	book_header = SearchBookInfo(book_root, NULL, bk, wh, turn);
@@ -111,7 +98,7 @@ INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
 	if (book_header != NULL)
 	{
 		/* 評価値により次の手を定石から選ぶ */
-		eval = book_alphabeta(book_header, 0, NEGAMIN, NEGAMAX, color, change, turn);
+		eval = book_alphabeta(book_header, 0, NEGAMIN, NEGAMAX, color, change, &g_bestNode);
 		book_header = g_bestNode;
 		g_evaluation = eval;
 
@@ -172,12 +159,14 @@ INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
 	return move;
 }
 
+
+
 /***************************************************************************
 * Name  : SearchBookInfo
 * Brief : 定石からCPUの着手を決定する
 * Return: 着手可能位置のビット列
 ****************************************************************************/
-BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header, 
+BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
 	UINT64 bk, UINT64 wh, INT32 turn)
 {
 	/* 葉ノードまで検索して見つからない場合 */
@@ -191,59 +180,61 @@ BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
 	}
 	if (book_header->depth == turn)
 	{
-		if (turn == 0)
+		do
 		{
-			before_book_header = &g_bookTree;
-		}
-		/* 該当の定石を発見(回転・対称も考える) */
-		if (book_header->bk == bk && book_header->wh == wh)
-		{
-			/* 指し手の回転・対称変換なし */
-			TRANCE_MOVE = 0;
-			return before_book_header;
-		}
-		/* 90度の回転形 */
-		if (book_header->bk == rotate_90(bk) && book_header->wh == rotate_90(wh))
-		{
-			TRANCE_MOVE = 1;
-			return before_book_header;
-		}
-		/* 180度の回転形 */
-		if (book_header->bk == rotate_180(bk) && book_header->wh == rotate_180(wh))
-		{
-			TRANCE_MOVE = 2;
-			return before_book_header;
-		}
-		/* 270度の回転形 */
-		if (book_header->bk == rotate_270(bk) && book_header->wh == rotate_270(wh))
-		{
-			TRANCE_MOVE = 3;
-			return before_book_header;
-		}
-		/* X軸の対称形 */
-		if (book_header->bk == symmetry_x(bk) && book_header->wh == symmetry_x(wh))
-		{
-			TRANCE_MOVE = 4;
-			return before_book_header;
-		}
-		/* Y軸の対称形 */
-		if (book_header->bk == symmetry_y(bk) && book_header->wh == symmetry_y(wh))
-		{
-			TRANCE_MOVE = 5;
-			return before_book_header;
-		}
-		/* ブラックラインの対称形 */
-		if (book_header->bk == symmetry_b(bk) && book_header->wh == symmetry_b(wh))
-		{
-			TRANCE_MOVE = 6;
-			return before_book_header;
-		}
-		/* ホワイトラインの対称形 */
-		if (book_header->bk == symmetry_w(bk) && book_header->wh == symmetry_w(wh))
-		{
-			TRANCE_MOVE = 7;
-			return before_book_header;
-		}
+			/* 該当の定石を発見(回転・対称も考える) */
+			if (book_header->bk == bk && book_header->wh == wh)
+			{
+				/* 指し手の回転・対称変換なし */
+				TRANCE_MOVE = 0;
+				return book_header;
+			}
+			/* 90度の回転形 */
+			if (book_header->bk == rotate_90(bk) && book_header->wh == rotate_90(wh))
+			{
+				TRANCE_MOVE = 1;
+				return book_header;
+			}
+			/* 180度の回転形 */
+			if (book_header->bk == rotate_180(bk) && book_header->wh == rotate_180(wh))
+			{
+				TRANCE_MOVE = 2;
+				return book_header;
+			}
+			/* 270度の回転形 */
+			if (book_header->bk == rotate_270(bk) && book_header->wh == rotate_270(wh))
+			{
+				TRANCE_MOVE = 3;
+				return book_header;
+			}
+			/* X軸の対称形 */
+			if (book_header->bk == symmetry_x(bk) && book_header->wh == symmetry_x(wh))
+			{
+				TRANCE_MOVE = 4;
+				return book_header;
+			}
+			/* Y軸の対称形 */
+			if (book_header->bk == symmetry_y(bk) && book_header->wh == symmetry_y(wh))
+			{
+				TRANCE_MOVE = 5;
+				return book_header;
+			}
+			/* ブラックラインの対称形 */
+			if (book_header->bk == symmetry_b(bk) && book_header->wh == symmetry_b(wh))
+			{
+				TRANCE_MOVE = 6;
+				return book_header;
+			}
+			/* ホワイトラインの対称形 */
+			if (book_header->bk == symmetry_w(bk) && book_header->wh == symmetry_w(wh))
+			{
+				TRANCE_MOVE = 7;
+				return book_header;
+			}
+			book_header = book_header->next;
+		} while (book_header != NULL);
+
+		return NULL;
 	}
 
 	BooksNode *ret;
@@ -251,110 +242,78 @@ BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
 	{
 		return ret;
 	}
-	if ((ret = SearchBookInfo(book_header->next, book_header, bk, wh, turn)) != NULL)
-	{
-		return ret;
-	}
 
+	book_header = book_header->next;
+	while (book_header != NULL)
+	{
+		/* 該当局面を取得 */
+		if ((ret = SearchBookInfo(book_header->child, book_header, bk, wh, turn)) != NULL)
+		{
+			return ret;
+		}
+		book_header = book_header->next;
+	}
 	return NULL;
 }
+
+
 
 /***************************************************************************
 * Name  : book_alphabeta
 * Brief : 定石の候補手のうち、後々に評価値が最も高くなるものを算出する
 * Return: 定石の評価値
 ****************************************************************************/
-INT32 book_alphabeta(BooksNode *book_header, UINT32 depth, INT32 alpha, INT32 beta,
-	UINT32 color, UINT32 change, INT32 turn)
+INT32 book_alphabeta(BooksNode *header, UINT32 depth, INT32 alpha, INT32 beta,
+	UINT32 color, UINT32 change, BooksNode **outBestNode)
 {
-	if (book_header->child == NULL)
+	if (header->child == NULL)
 	{
-		if (color == WHITE)
+		/* 葉ノード(読みの限界値のノード)の場合は評価値を算出 */
+		if (color == WHITE) return -header->eval;
+		else return header->eval;
+	}
+
+	int eval;
+	int max;
+	BooksNode *iter;
+
+	max = NEGAMIN;
+	for (iter = header; alpha < beta && iter != NULL; iter = iter->next)
+	{
+		/* nextノードの子ノードがNULLの場合があるのでチェック */
+		if (iter->child == NULL)
 		{
-			return -book_header->eval;
+			if (color == WHITE) eval = -iter->eval;
+			else eval = iter->eval;
 		}
-		return book_header->eval;
-	}
-
-	int i;
-
-	if (depth == 0)
-	{
-		int e_list[24] =
+		else
 		{
-			NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN,
-			NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN, NEGAMIN
-		};
-		int eval, max = NEGAMIN - 1;
-		BooksNode *best_node[24] =
+			/* go to child node  */
+			eval = -book_alphabeta(iter->child, depth + 1, alpha, beta, color ^ 1, change, outBestNode);
+		}
+
+		// βカット
+		if (beta <= eval)
 		{
-			NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-			NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-		};
+			return eval;
+		}
 
-		i = 0;
-		do{
-			if (i == 0)
+		/* 今までより良い局面が見つかれば最善手の更新 */
+		if (eval > max)
+		{
+			max = eval;
+			if (depth == 0) *outBestNode = iter;
+			if (max > alpha)
 			{
-				book_header = book_header->child;
+				alpha = max;
 			}
-			else
-			{
-				book_header = book_header->next;
-			}
-			eval = -book_alphabeta(book_header, depth + 1, 
-				-beta, -alpha, color ^ 1, change, turn);
-			e_list[i] = eval;
-			best_node[i] = book_header;
-			if (eval > max)
-			{
-				max = eval;
-			}
-			i++;
-		} while (book_header->next != NULL);
-
-		SortBookNode(best_node, e_list, i);
-		/* ノード番号を算出 */
-		INT32 node_num = SelectNode(e_list, i, change, turn);
-		g_bestNode = best_node[node_num];
-
-		return e_list[node_num];
+		}
 	}
-	else
-	{
-		int eval, max = NEGAMIN - 1;
-		i = 0;
 
-		do{
-			if (i == 0)
-			{
-				book_header = book_header->child;
-			}
-			else
-			{
-				book_header = book_header->next;
-			}
-			eval = -book_alphabeta(book_header, depth + 1, -beta, -alpha, 
-				color ^ 1, change, turn);
-			if (eval > max)
-			{
-				max = eval;
-				if (max > alpha)
-				{
-					alpha = max;   //下限値も更新
-					/* アルファカット */
-					if (beta <= alpha)
-					{
-						break;
-					}
-				}
-			}
-			i++;
-		} while (book_header->next != NULL);
-
-		return max;
-	}
+	return max;
 }
+
+
 
 /***************************************************************************
 * Name  : SortBookNode
@@ -397,6 +356,8 @@ void SortBookNode(BooksNode *best_node[], int e_list[], int cnt)
 		}
 	}
 }
+
+
 
 /***************************************************************************
 * Name  : SelectNode
@@ -520,8 +481,10 @@ INT32 SelectNode(int e_list[], int cnt, UINT32 change, INT32 turn)
 	return ret;
 }
 
+
+
 /* ノードを接続 */
-void Append(BooksNode *parent, BooksNode *node)
+void AppendNew(BooksNode *parent, BooksNode *node)
 {
 	//node->book_name = name;
 	//node->move = move;
@@ -537,14 +500,38 @@ void Append(BooksNode *parent, BooksNode *node)
 	}
 	else
 	{
-		BooksNode *last = parent->child;
-		while (last->next != NULL)
+		while (parent->next != NULL)
 		{
-			last = last->next;
+			parent = parent->next;
 		}
-		last->next = node;
+		parent->next = node;
 	}
 }
+
+
+
+/* ノードを接続 */
+void Append(BooksNode *parent, BooksNode *node)
+{
+	if (parent == NULL)
+	{
+		return;
+	}
+	if (parent->child == NULL)
+	{
+		parent->child = node;
+	}
+	else
+	{
+		while (parent->next != NULL)
+		{
+			parent = parent->next;
+		}
+		parent->next = node;
+	}
+}
+
+
 
 BooksNode *SearchChild(BooksNode *head, int move)
 {
@@ -565,100 +552,119 @@ BooksNode *SearchChild(BooksNode *head, int move)
 	return NULL;
 }
 
-void StTreeFromLine(BooksNode *head, char *line, int eval)
+
+
+void bookline_strtok(char *line_data, char* dest_data, INT32 *eval)
 {
-	short depth = 0;
-	char move_str[3];
-	UINT64 bk = BK_FIRST;
-	UINT64 wh = WH_FIRST;
-	UINT64 rev;
-	INT64 line_len = strlen(line);
-	BooksNode *head_child;
+	int cnt;
+	for (cnt = 0; line_data[cnt] != ';'; cnt++);
 
-	while (depth < line_len)
-	{
-		//move_str[0] = 'a' + line[depth] - 'A';
-		move_str[0] = line[depth];
-		move_str[1] = line[depth + 1];
-		move_str[2] = '\0';
-		/* a1⇒0 など 数値に変換 */
-		int move = (move_str[0] - 'a') * 8 + move_str[1] - '1';
-
-		/* すでに登録されているノードがあるか探す */
-		head_child = SearchChild(head, move);
-
-		/* 新規の場合 */
-		if (head_child == NULL)
-		{
-			BooksNode *node = (BooksNode *)malloc(sizeof(BooksNode));
-			if (node == NULL) return;
-			node->move = (short)move;
-			if (depth % 4)
-			{
-				rev = GetRev[move](wh, bk);
-				node->bk = bk;
-				node->wh = wh;
-				wh ^= (1ULL << move) | rev;
-				bk ^= rev;
-			}
-			else
-			{
-				rev = GetRev[move](bk, wh);
-				node->bk = bk;
-				node->wh = wh;
-				bk ^= (1ULL << move) | rev;
-				wh ^= rev;
-			}
-			node->eval = eval;
-			node->depth = depth / 2;
-			Append(head, node);
-			head = node;
-		}
-		/* 既出の場合 */
-		else
-		{
-			if (depth % 4)
-			{
-				rev = GetRev[move](wh, bk);
-				wh ^= (1ULL << move) | rev;
-				bk ^= rev;
-			}
-			else
-			{
-				rev = GetRev[move](bk, wh);
-				bk ^= (1ULL << move) | rev;
-				wh ^= rev;
-			}
-			head = head_child;
-		}
-		depth += 2;
-	}
+	memcpy_s(dest_data, 128, line_data, cnt);
+	dest_data[cnt] = '\0';
+	*eval = (INT32)(atof(&line_data[cnt + 1]) * EVAL_ONE_STONE);
 }
 
-void StructionBookTree(BooksNode *head, char *filename)
-{
-	char *decode_sep, *line_data, *eval_str;
-	char *next_str = NULL, *next_line = NULL;
-	UCHAR* decodeData;
-	INT64 decodeDataLen;
 
-	decodeData = DecodeBookData(&decodeDataLen, filename);
-	if (decodeDataLen == -1)
+
+BooksNode *StructionBookTree(BooksNode *head, INT32 *new_eval_p, char *line_data_p, char** next, INT32 depth)
+{
+	char *decode_sep;
+	char move;
+	INT32 current_eval;
+	UINT64 rev;
+
+	// 行の終わりチェック
+	if (line_data_p[depth] == '\0')
 	{
-		return;
+		/* ラインが終了したので次ラインを分離 */
+		decode_sep = strtok_s(NULL, "\n", next);
+		if (decode_sep == NULL)
+		{
+			// end...
+			return NULL;
+		}
+		// ラインデータと評価値を分離
+		bookline_strtok(decode_sep, line_data_p, &current_eval);
+		*new_eval_p = current_eval;
+
+		return head;
+	}
+	else
+	{
+
+		// ラインから手を取得
+		move = (line_data_p[depth] - 'a') * 8 + line_data_p[depth + 1] - '1';
+		// ノードを作成して登録
+		BooksNode *child_node = (BooksNode *)malloc(sizeof(BooksNode));
+		child_node->depth = depth / 2;
+		child_node->eval = *new_eval_p;
+		child_node->move = move;
+		if (child_node->depth % 2)
+		{
+			// 黒番
+			rev = GetRev[head->move](head->bk, head->wh);
+			child_node->bk = head->bk ^ (rev | (1ULL << head->move));
+			child_node->wh = head->wh ^ rev;
+		}
+		else
+		{
+			// 白番
+			rev = GetRev[head->move](head->wh, head->bk);
+			child_node->wh = head->wh ^ (rev | (1ULL << head->move));
+			child_node->bk = head->bk ^ rev;
+		}
+		// ノードを登録
+		AppendNew(head, child_node);
+
+		/* first entry, start child node area */
+
+		BooksNode *before;
+		if (head->child != NULL)
+		{
+			before = StructionBookTree(head->child, new_eval_p, line_data_p, next, depth + 2);
+		}
+
+		if (before == NULL)
+		{
+			// file end sequence
+			return before;
+		}
+
+		// check length
+		if (depth > strlen(line_data_p)) return head;
+
+		/* next entry, start next node area */
+		// ラインから手を取得
+		move = (line_data_p[depth - 2] - 'a') * 8 + line_data_p[depth - 1] - '1';
+		// ノードを作成して登録
+		BooksNode *next_node = (BooksNode *)malloc(sizeof(BooksNode));
+		next_node->depth = (depth - 2) / 2;
+		next_node->eval = *new_eval_p;
+		next_node->move = move;
+		if (next_node->depth % 2)
+		{
+			// 白番
+			rev = GetRev[head->move](head->wh, head->bk);
+			next_node->wh = head->wh ^ (rev | (1ULL << move));
+			next_node->bk = head->bk ^ rev;
+		}
+		else
+		{
+			// 黒番
+			rev = GetRev[head->move](head->bk, head->wh);
+			next_node->bk = before->bk ^ (rev | (1ULL << move));
+			next_node->wh = before->wh ^ rev;
+		}
+		// ノードを登録
+		AppendNew(head, next_node);
+		if (head->next != NULL)
+		{
+			head = StructionBookTree(head->next, new_eval_p, line_data_p, next, depth);
+		}
+
+		return head;
 	}
 
-	decode_sep = strtok_s((char *)decodeData, "\n", &next_line);
-	do
-	{
-		/* ファイルから1行づつ読み込んで木構造を作成 */
-		line_data = strtok_s(decode_sep, ";", &next_str);
-		eval_str = strtok_s(next_str, ";", &next_str);
-		StTreeFromLine(head, line_data, (int)(atof(eval_str) * EVAL_ONE_STONE));
-
-	} while ((decode_sep = strtok_s(next_line, "\n", &next_line)) != NULL);
-
-	free(decodeData);
 }
 
 /***************************************************************************
@@ -668,16 +674,47 @@ void StructionBookTree(BooksNode *head, char *filename)
 ****************************************************************************/
 BOOL OpenBook(char *filename)
 {
-	BooksNode *root = &g_bookTree;
+	UCHAR* decodeData;
+	char *decode_sep, *next_line;
+	INT64 decodeDataLen;
+	BooksNode *root;
+	char line_data[128];
+	INT32 eval;
+
+	// ファイルからデコード
+	decodeData = DecodeBookData(&decodeDataLen, filename);
+	if (decodeDataLen == -1)
+	{
+		return FALSE;
+	}
+
+	// root設定
+	root = (BooksNode *)malloc(sizeof(BooksNode));
 	root->bk = BK_FIRST;
 	root->wh = WH_FIRST;
-	root->move = 64;
 	root->eval = 0;
 	root->depth = 0;
-	StructionBookTree(root, filename);
+	root->move = 19; /* C4 */
+	root->child = NULL;
+	root->next = NULL;
 
-	if (root->child == NULL)
+	decode_sep = strtok_s(decodeData, "\n", &next_line);
+	if (decode_sep == NULL)
 	{
+		// end...
+		return FALSE;
+	}
+	// ラインデータと評価値を分離
+	bookline_strtok(decode_sep, line_data, &eval);
+	// 深さ優先で木構造を構築
+	StructionBookTree(root, &eval, line_data, &next_line, 2);
+
+	g_bookTreeRoot = root;
+
+	free(decodeData);
+	if (g_bookTreeRoot->child == NULL)
+	{
+		// メモリがない
 		return FALSE;
 	}
 

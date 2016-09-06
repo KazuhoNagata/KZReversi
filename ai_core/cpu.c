@@ -968,18 +968,18 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	*
 	*************************************************************/
 #if 1
-	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
+	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24 && depth != g_limitDepth)
 	{
 		INT32 mpc_level;
 		if (empty <= 24)
 		{
 			MPC_CUT_VAL = cutval_table[5];
-			mpc_level = 5;
+			mpc_level = 4;
 		}
 		else
 		{
 			MPC_CUT_VAL = cutval_table[4];
-			mpc_level = 4;
+			mpc_level = 3;
 		}
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
