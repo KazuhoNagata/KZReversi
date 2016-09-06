@@ -10,6 +10,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KZReversiGUI", "KZreversiGU
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ai_core", "ai_core\ai_core.vcxproj", "{159DD7E1-D7F9-4273-AAFD-9B6047A96735}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{87A1A625-65B8-4AB2-81D8-C68D4B3ACE02}"
+	ProjectSection(SolutionItems) = preProject
+		KZreversiGUI\bin\x64\Release\KZReversi.zip = KZreversiGUI\bin\x64\Release\KZReversi.zip
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

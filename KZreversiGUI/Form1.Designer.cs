@@ -1069,6 +1069,7 @@
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(265, 19);
             this.textBox1.TabIndex = 15;
+            this.textBox1.Visible = false;
             // 
             // Form1
             // 
