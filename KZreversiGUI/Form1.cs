@@ -122,6 +122,7 @@ namespace KZreversi
         private float m_mass_size;
         private float m_fix_x = 0, m_fix_y = 0;
         private float m_board_width, m_board_height;
+        private float m_board_start_x, m_board_start_y;
         private const float border_rate = (float)(290.0 / 2450.0);
 
         private Bitmap m_panel1_bitmap;
@@ -155,8 +156,16 @@ namespace KZreversi
 
             // デフォルトプレイヤー
             nowPlayer = playerArray[COLOR_BLACK];
-            label3.Visible = true;
-            label4.Visible = false;
+            if (nowColor == COLOR_BLACK)
+            {
+                label1.BackColor = Color.PowderBlue;
+                label2.BackColor = Control.DefaultBackColor;
+            }
+            else
+            {
+                label2.BackColor = Color.PowderBlue;
+                label1.BackColor = Control.DefaultBackColor;
+            }
 
             // 探索時間表示用
             m_sw = new Stopwatch();
@@ -204,8 +213,6 @@ namespace KZreversi
                 SetPlayerInfo();
 
                 m_mode = ON_GAME;
-                //
-
                 ChangePlayer();
                 if (nowPlayer.playerInfo == Player.PLAYER_CPU)
                 {
@@ -249,7 +256,8 @@ namespace KZreversi
                     if (m_mode == ON_HINT) hintAbort();
                     this.Cursor = Cursors.Default;
                     SetControlEnable(true);
-                    panel1.Refresh();
+                    panel1.Invalidate(false);
+                    panel1.Update();
                 }
                 else
                 {
@@ -272,7 +280,8 @@ namespace KZreversi
                 {
                     m_mode = ON_NOTHING;
                     ChangePlayer();
-                    this.panel1.Refresh();
+                    panel1.Invalidate(false);
+                    panel1.Update();
                 }
             }
             else if (sender == this.button2) // 最新に進むボタン
@@ -282,7 +291,8 @@ namespace KZreversi
                 {
                     m_mode = ON_NOTHING;
                     ChangePlayer();
-                    this.panel1.Refresh();
+                    panel1.Invalidate(false);
+                    panel1.Update();
                 }
             }
             else if (sender == this.button3) // 一手戻るボタン
@@ -292,7 +302,8 @@ namespace KZreversi
                 {
                     m_mode = ON_NOTHING;
                     ChangePlayer();
-                    this.panel1.Refresh();
+                    panel1.Invalidate(false);
+                    panel1.Update();
                 }
             }
             else if (sender == this.button4) // 一手進むボタン
@@ -302,7 +313,8 @@ namespace KZreversi
                 {
                     m_mode = ON_NOTHING;
                     ChangePlayer();
-                    this.panel1.Refresh();
+                    panel1.Invalidate(false);
+                    panel1.Update();
                 }
             }
         }
@@ -318,13 +330,13 @@ namespace KZreversi
             nowPlayer = playerArray[nowColor];
             if (nowColor == COLOR_BLACK)
             {
-                label3.Visible = true;
-                label4.Visible = false;
+                label1.BackColor = Color.PowderBlue;
+                label2.BackColor = Control.DefaultBackColor;
             }
             else
             {
-                label3.Visible = false;
-                label4.Visible = true;
+                label2.BackColor = Color.PowderBlue;
+                label1.BackColor = Control.DefaultBackColor;
             }
         }
 
@@ -361,7 +373,7 @@ namespace KZreversi
             panel_back.Width = 534;
             panel_back.Height = 534;
             panel_back.Location = new Point(0, 0);
-            panel_back.BackgroundImage = m_back_bitmap;
+            panel_back.Paint += panel_back_Paint;
             panel_back.BackgroundImageLayout = ImageLayout.Stretch;
             panel_back.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
             this.Controls.Add(panel_back);
@@ -372,7 +384,8 @@ namespace KZreversi
             panel_board.Height = 480;
             panel_board.Location = new Point(26, 30);
             panel_board.BackColor = Color.Transparent;
-            panel_board.BackgroundImage = m_panel1_bitmap;
+            panel_board.Paint += panel_board_Paint;
+            panel_board.Resize += panel_Resize;
             panel_board.BackgroundImageLayout = ImageLayout.Zoom;
             panel_board.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
             // 盤面背景の子として登録
@@ -457,6 +470,7 @@ namespace KZreversi
             }
         }
 
+
         void resize_stone(BufferedPanel panel)
         {
             //label5.Text = "x=" + panel.Width + "y=" + panel.Height;
@@ -502,12 +516,35 @@ namespace KZreversi
             }
         }
 
+
+        void resize_board(BufferedPanel bp) 
+        {
+            if (bp.Width < bp.Height)
+            {
+                m_board_start_x = 0;
+                m_board_start_y = (bp.Height - bp.Width) / 2;
+            }
+            else
+            {
+                m_board_start_x = (bp.Width - bp.Height) / 2;
+                m_board_start_y = 0;
+            }
+        }
+
         // 盤面のリサイズ処理
         void panel_Resize(object sender, EventArgs e)
         {
             BufferedPanel pl = (BufferedPanel)sender;
-            // 石やフォントのスケーリング処理
-            resize_stone(pl);
+            if(pl == panel1)
+            {
+                // 石やフォントのスケーリング処理
+                resize_stone(pl);
+            }
+            else if(pl == panel_board)
+            {
+                // 盤面のスケーリング
+                resize_board(pl);
+            }
         }
 
         private float stone_size_x, stone_size_y;
@@ -605,6 +642,55 @@ namespace KZreversi
             textBox1.Text = String.Format("0x{0:x}, 0x{1:x}",
                        boardclass.GetBlack(), boardclass.GetWhite());
         }
+
+
+        private void panel_back_Paint(object sender, PaintEventArgs e)
+        {
+            
+            BufferedPanel bp = (BufferedPanel)sender;
+            Rectangle board_rect1;
+
+            if (panel_board.Width < panel_board.Height)
+            {
+                board_rect1 = new Rectangle((int)(panel_board.Location.X + m_board_start_x),
+                    (int)(panel_board.Location.Y + m_board_start_y),
+                    panel_board.Width, panel_board.Width);
+            }
+            else 
+            {
+                board_rect1 = new Rectangle((int)(panel_board.Location.X + m_board_start_x),
+                    (int)(panel_board.Location.Y + m_board_start_y),
+                    panel_board.Height, panel_board.Height);
+            }
+
+            Rectangle board_rect2 = new Rectangle(bp.Location,
+                new Size(bp.Width, bp.Height));
+
+            Region rgn = new Region(board_rect2);
+            rgn.Xor(board_rect1);
+
+            e.Graphics.Clip = rgn;
+            e.Graphics.DrawImage(m_back_bitmap, 0, 0, bp.Width, bp.Height);
+
+        }
+
+
+        private void panel_board_Paint(object sender, PaintEventArgs e)
+        {
+            BufferedPanel bp = (BufferedPanel)sender;
+
+            if (bp.Width < bp.Height)
+            {
+                e.Graphics.DrawImage(m_panel1_bitmap, m_board_start_x, m_board_start_y, bp.Width, bp.Width);
+            }
+            else
+            {
+                e.Graphics.DrawImage(m_panel1_bitmap, m_board_start_x, m_board_start_y, bp.Height, bp.Height);
+            }
+
+        }
+
+
 
         private void dispExactEval(PaintEventArgs e, int pos, int eval, bool first)
         {
@@ -1031,7 +1117,7 @@ namespace KZreversi
                 m_passCount++;
 
                 // ゲーム終了？
-                if (m_passCount == 2)
+                if (m_passCount == 2 || cppWrapper.CountBit(~(boardclass.GetBlack() | boardclass.GetWhite())) == 0)
                 {
                     // ゲーム終了
                     m_mode = ON_NOTHING;
@@ -1042,7 +1128,8 @@ namespace KZreversi
                     // 結果表示
                     PrintResult();
                     // 画面描画
-                    panel1.Refresh();
+                    panel1.Invalidate(false);
+                    panel1.Update();
 
                     return;
                 }
@@ -1075,7 +1162,8 @@ namespace KZreversi
             if (m_mode == ON_GAME && nowPlayer.playerInfo == Player.PLAYER_CPU)
             {
                 // 画面再描画(前のCPUの手を画面に反映しておく)
-                panel1.Refresh();
+                panel1.Invalidate(false);
+                panel1.Update();
 
                 gmt = new GameThread();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
@@ -1089,15 +1177,14 @@ namespace KZreversi
             if (nowPlayer.playerInfo == Player.PLAYER_HUMAN && cppWrapper.GetEnumMove(boardclass) == 0)
             {
                 // 画面再描画(前のCPUの手を画面に反映しておく)
-                panel1.Refresh();
+                panel1.Invalidate(false);
+                panel1.Update();
 
                 m_sw.Stop();
-                MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
-                                MessageBoxButtons.OK, MessageBoxIcon.Information);
-                m_sw.Start();
 
                 m_passCount++;
-                if (m_passCount == 2)
+
+                if (m_passCount == 2 || cppWrapper.CountBit(~(boardclass.GetBlack() | boardclass.GetWhite())) == 0)
                 {
                     // ゲーム終了
                     m_mode = ON_NOTHING;
@@ -1107,10 +1194,15 @@ namespace KZreversi
                     // 結果表示
                     PrintResult();
                     // 画面描画
-                    panel1.Refresh();
+                    panel1.Invalidate(false);
+                    panel1.Update();
 
                     return;
                 }
+
+                MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+                m_sw.Start();
 
                 // プレイヤー変更
                 ChangePlayerReasonPass();
@@ -1120,7 +1212,8 @@ namespace KZreversi
                 gmt.m_recvcmdProperty = args;
                 m_sw.Restart();
                 // 画面再描画
-                panel1.Refresh();
+                panel1.Invalidate(false);
+                panel1.Update();
                 return;
 
             }
@@ -1130,7 +1223,8 @@ namespace KZreversi
             m_passCount = 0;
             SetControlEnable(true);
             // 画面再描画
-            panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
 
         }
 
@@ -1381,7 +1475,8 @@ namespace KZreversi
 
             m_mode = ON_GAME;
 
-            this.panel1.Refresh();
+            panel1.Invalidate(false);
+            panel1.Update();
         }
 
         private void 盤面編集ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1508,261 +1603,168 @@ namespace KZreversi
             }
         }
 
-        private void fFO40ToolStripMenuItem_Click(object sender, EventArgs e)
+        private void FFOToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //FFO#40(black to move) (WinLoss:[a2:WIN] Exact:[a2:+38])
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 9158069842325798912, 11047339776155165);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
+            uint color;
+            ulong bk, wh;
 
-        private void fFO41ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#41(black to move) (WinLoss:(h4:DRAW) 3.46sec Exact:(h4:+0) 3.28sec)
             m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 616174399789064, 39493460025648416);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
 
-        private void fFO42ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#42(black to move) (WinLoss:(g2:WIN) 2.26sec Exact:(g2:+6) 3.88sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 22586176447709200, 9091853944868375556);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
+            if (sender == toolStripFFO40) 
+            {
+                //FFO40
+                bk = 9158069842325798912;
+                wh = 11047339776155165;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO41)
+            {
+                //FFO41
+                bk = 616174399789064;
+                wh = 39493460025648416;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO42)
+            {
+                //FFO42
+                bk = 22586176447709200;
+                wh = 9091853944868375556;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO43)
+            {
+                //FFO43
+                bk = 38808086923902976;
+                wh = 13546258740034592;
+                color = COLOR_WHITE;
+            }
+            else if (sender == toolStripFFO44)
+            {
+                //FFO44
+                bk = 2494790880993312;
+                wh = 1010251075753548824;
+                color = COLOR_WHITE;
+            }
+            else if (sender == toolStripFFO45)
+            {
+                //FFO45
+                bk = 282828816915486;
+                wh = 9287318235258944;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO46)
+            {
+                //FFO46
+                bk = 4052165999611379712;
+                wh = 36117299622447104;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO47)
+            {
+                //FFO47
+                bk = 277938752194568;
+                wh = 3536224466208;
+                color = COLOR_WHITE;
+            }
+            else if (sender == toolStripFFO48)
+            {
+                //FFO48
+                bk = 38519958422848574;
+                wh = 4725679339520;
+                color = COLOR_WHITE;
+            }
+            else if (sender == toolStripFFO49)
+            {
+                //FFO49
+                bk = 5765976742297600;
+                wh = 4253833575484;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO50)
+            {
+                //FFO50
+                bk = 4504145659822080;
+                wh = 4336117619740130304;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO51)
+            {
+                //FFO51
+                bk = 349834415978528;
+                wh = 8664011788383158280;
+                color = COLOR_WHITE;
+            }
+            else if (sender == toolStripFFO52)
+            {
+                //FFO52
+                bk = 9096176176681728056;
+                wh = 35409824317440;
+                color = COLOR_WHITE;
+            }
+            else if (sender == toolStripFFO53)
+            {
+                //FFO53
+                bk = 2515768979493888;
+                wh = 8949795312300457984;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO54)
+            {
+                //FFO54
+                bk = 26457201720894;
+                wh = 289431515079835648;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO55)
+            {
+                //FFO55
+                bk = 4635799596172290;
+                wh = 289361502099486840;
+                color = COLOR_WHITE;
+            }
+            else if (sender == toolStripFFO56)
+            {
+                //FFO56
+                bk = 4925086697193472;
+                wh = 9007372734053408;
+                color = COLOR_WHITE;
+            }
+            else if (sender == toolStripFFO57)
+            {
+                //FFO57
+                bk = 9060166336512000;
+                wh = 8943248156475301888;
+                color = COLOR_BLACK;
+            }
+            else if (sender == toolStripFFO58)
+            {
+                //FFO58
+                bk = 4636039783186432;
+                wh = 3383245044333600;
+                color = COLOR_BLACK;
+            }
+            else 
+            {
+                // FFO59
+                bk = 17320879491911778304;
+                wh = 295223649004691488;
+                color = COLOR_BLACK;
+            }
 
-        private void fFO43ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#43(white to move) (WinLoss:(c7:LOSS) 0.501sec Exact:(c7:-12) 8.06sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_WHITE, 38808086923902976, 13546258740034592);
+            boardclass.InitBoard(color, bk, wh);
             nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
 
-        private void fFO44ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#44(white to move) (WinLoss:(d2:LOSS) 0.729sec  Exact:(d2:-14) 2.09ec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_WHITE, 2494790880993312, 1010251075753548824);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
+            if (color == COLOR_BLACK)
+            {
+                comboBox1.SelectedIndex = 14;
+                comboBox2.SelectedIndex = 0;
+            }
+            else 
+            {
+                comboBox1.SelectedIndex = 0;
+                comboBox2.SelectedIndex = 14;
+            }
 
-        private void fFO45ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#45(black to move) (WinLoss:(b2:WIN) 2.37sec Exact:(b2:+6) 38.21sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 282828816915486, 9287318235258944);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO46ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#46(black to move) (WinLoss:(b7:LOSS) 8.09sec Exact:(b3:-8) 15.63sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 4052165999611379712, 36117299622447104);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO47ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#47(white to move) (WinLoss:(g2:WIN) 2.87sec: Exact:(g2:+4) 4.70sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_WHITE, 277938752194568, 3536224466208);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO48ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#48(white to move) (WinLoss:(f6:WIN) 0.98sec: Exact:(f6:+28) 42.42sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_WHITE, 38519958422848574, 4725679339520);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO49ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#49(black to move) (WinLoss:(e1:WIN) 4.52sec: Exact:(e1:+16) 95.10sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 5765976742297600, 4253833575484);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO50ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#50(black to move) (WinLoss:(d8:WIN) 2.861sec: Exact:(d8:+10) 141.83sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 4504145659822080, 4336117619740130304);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO51ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#51(white to move) (WinLoss:(e2:WIN) 2.92sec: Exact:(e2:+6) 137.96sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_WHITE, 349834415978528, 8664011788383158280);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO52ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#52(white to move) (WinLoss:(a3:DRAW) 140.0sec: Exact:(a3:+0) 167.26sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_WHITE, 9096176176681728056, 35409824317440);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO53ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#53(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 2515768979493888, 8949795312300457984);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO54ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#54(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 26457201720894, 289431515079835648);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO55ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#55(white to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_WHITE, 4635799596172290, 289361502099486840);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO56ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#56(white to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_WHITE, 4925086697193472, 9007372734053408);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 14;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO57ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#57(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 9060166336512000, 8943248156475301888);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO58ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#58(black to move) (WinLoss:(WIN) 8.79sec: Exact:(g2:+4) 22.5sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 4636039783186432, 3383245044333600);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
-            SetPlayerInfo();
-            panel1.Invalidate(false);
-            panel1.Update();
-        }
-
-        private void fFO59ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //FFO#59(black to move) (WinLoss:(g8:WIN) 0.32sec: Exact:(g8:+64) 0.34sec)
-            m_mode = ON_NOTHING;
-            boardclass.InitBoard(COLOR_BLACK, 17320879491911778304, 295223649004691488);
-            nowColor = boardclass.GetNowColor();
-            comboBox1.SelectedIndex = 14;
-            comboBox2.SelectedIndex = 0;
             SetPlayerInfo();
             panel1.Invalidate(false);
             panel1.Update();
@@ -1861,6 +1863,52 @@ namespace KZreversi
             m_hintFlagProperty = true;
         }
 
+        /// <summary>
+        /// コントロールの配列を取得する
+        /// </summary>
+        /// <param name="frm">コントロールのあるフォーム</param>
+        /// <param name="name">後ろの数字を除いたコントロールの名前</param>
+        /// <returns>コントロールの配列。
+        /// 取得できなかった時はnull(VB.NETではNothing)。</returns>
+        public object GetControlArrayByName(Form frm, string name)
+        {
+            System.Collections.ArrayList ctrs =
+                new System.Collections.ArrayList();
+            object obj;
+            for (int i = 1;
+                (obj = FindControlByFieldName(frm, name + i.ToString())) != null;
+                i++)
+                ctrs.Add(obj);
+            if (ctrs.Count == 0)
+                return null;
+            else
+                return ctrs.ToArray(ctrs[0].GetType());
+        }
+
+        /// <summary>
+        /// フォームに配置されているコントロールを名前で探す
+        /// （フォームクラスのフィールドをフィールド名で探す）
+        /// </summary>
+        /// <param name="frm">コントロールを探すフォーム</param>
+        /// <param name="name">コントロール（フィールド）の名前</param>
+        /// <returns>見つかった時は、コントロールのオブジェクト。
+        /// 見つからなかった時は、null(VB.NETではNothing)。</returns>
+        public static object FindControlByFieldName(Form frm, string name)
+        {
+            System.Type t = frm.GetType();
+
+            System.Reflection.FieldInfo fi = t.GetField(
+                name,
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.DeclaredOnly);
+
+            if (fi == null)
+                return null;
+
+            return fi.GetValue(frm);
+        }
 
     }
 }

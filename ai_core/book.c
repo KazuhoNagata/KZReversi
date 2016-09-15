@@ -17,8 +17,14 @@
 #include "fio.h"
 #include "mt.h"
 
-INT32 max_change_num[2];
-BOOL g_book_done;
+#define N_BOOK_MAX 1000000
+
+
+typedef struct
+{
+	INT32 eval;
+	BooksNode *node;
+}BookData;
 
 /***************************************************************************
 *
@@ -29,22 +35,27 @@ BOOL g_book_done;
 int TRANCE_MOVE;
 
 
+BooksNode *g_hashBookTable[N_BOOK_MAX];
 BooksNode *g_bookTreeRoot;
 BooksNode *g_bestNode;
-INT32 g_book_node_count;
+BookData g_bookList[36];
+INT32 g_booklist_cnt;
+
+double g_err_rate;
+INT32 max_change_num[2];
+BOOL g_book_done;
+
+
 /***************************************************************************
 *
 * ProtoType(private)
 *
 ****************************************************************************/
-INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
-	UINT32 color, UINT32 change, INT32 turn);
-BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
-	UINT64 bk, UINT64 wh, INT32 turn);
-INT32 book_alphabeta(BooksNode *header, UINT32 depth, INT32 alpha, INT32 beta,
-	UINT32 color, UINT32 change, BooksNode **outBestNode);
-VOID SortBookNode(BooksNode *best_node[], INT32 e_list[], INT32 cnt);
-INT32 SelectNode(INT32 e_list[], INT32 cnt, UINT32 change, INT32 turn);
+INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32 turn);
+BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header, UINT64 bk, UINT64 wh, INT32 turn);
+INT32 book_alphabeta(BooksNode *header, UINT32 depth, INT32 alpha, INT32 beta, UINT32 color);
+void sort_book_node(BookData data_list[], int cnt);
+BookData *select_node(UINT32 change);
 
 
 
@@ -79,6 +90,30 @@ UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32
 }
 
 
+void set_book_error(int change)
+{
+
+	switch (change)
+	{
+	case 0: // no random
+		g_err_rate = 0.0;
+		break;
+	case 1: // err 5%
+		g_err_rate = 0.05;
+		break;
+	case 2: // err 10%
+		g_err_rate = 0.1;
+		break;
+	case 3: // err 20%
+		g_err_rate = 0.2;
+		break;
+	case 4: // full random
+		g_err_rate = 100.0;
+		break;
+	}
+
+}
+
 
 /***************************************************************************
 * Name  : SearchBooks
@@ -90,68 +125,73 @@ INT32 SearchBooks(BooksNode *book_root, UINT64 bk, UINT64 wh,
 {
 	INT32 move = MOVE_NONE;
 	ULONG eval = 0;
+	BookData *book_data;
 	BooksNode *book_header;
 
+	g_booklist_cnt = 0;
+	// ïœâªìxê›íË
+	set_book_error(change);
+
 	/* ã«ñ Ç©ÇÁäYìñÇÃíËêŒÇíTÇ∑ */
-	book_header = SearchBookInfo(book_root, NULL, bk, wh, turn);
+	book_header = SearchBookInfo(book_root, book_root, bk, wh, turn);
 
 	if (book_header != NULL)
 	{
 		/* ï]âøílÇ…ÇÊÇËéüÇÃéËÇíËêŒÇ©ÇÁëIÇ‘ */
-		eval = book_alphabeta(book_header, 0, NEGAMIN, NEGAMAX, color, change, &g_bestNode);
-		book_header = g_bestNode;
-		g_evaluation = eval;
+		eval = book_alphabeta(book_header, 0, NEGAMIN, NEGAMAX, color);
+		book_data = select_node(change);
+		g_evaluation = book_data->eval;
 
 		/* éwÇµéËÇÃëŒèÃâÒì]ïœä∑ÇÃèÍçáï™ÇØ */
 		switch (TRANCE_MOVE)
 		{
 		case 0:
-			move = book_header->move;
+			move = book_data->node->move;
 			break;
 		case 1:
 		{
-			UINT64 t_move = rotate_90(1ULL << book_header->move);
+			UINT64 t_move = rotate_90(1ULL << book_data->node->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 2:
 		{
-			UINT64 t_move = rotate_180(1ULL << book_header->move);
+			UINT64 t_move = rotate_180(1ULL << book_data->node->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 3:
 		{
-			UINT64 t_move = rotate_270(1ULL << book_header->move);
+			UINT64 t_move = rotate_270(1ULL << book_data->node->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 4:
 		{
-			UINT64 t_move = symmetry_x(1ULL << book_header->move);
+			UINT64 t_move = symmetry_x(1ULL << book_data->node->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 5:
 		{
-			UINT64 t_move = symmetry_y(1ULL << book_header->move);
+			UINT64 t_move = symmetry_y(1ULL << book_data->node->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 6:
 		{
-			UINT64 t_move = symmetry_b(1ULL << book_header->move);
+			UINT64 t_move = symmetry_b(1ULL << book_data->node->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		case 7:
 		{
-			UINT64 t_move = symmetry_w(1ULL << book_header->move);
+			UINT64 t_move = symmetry_w(1ULL << book_data->node->move);
 			move = CountBit((t_move & (-(INT64)t_move)) - 1);
 		}
 		break;
 		default:
-			move = book_header->move;
+			move = book_data->node->move;
 			break;
 		}
 	}
@@ -187,49 +227,49 @@ BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
 			{
 				/* éwÇµéËÇÃâÒì]ÅEëŒèÃïœä∑Ç»Çµ */
 				TRANCE_MOVE = 0;
-				return book_header;
+				return before_book_header;
 			}
 			/* 90ìxÇÃâÒì]å` */
 			if (book_header->bk == rotate_90(bk) && book_header->wh == rotate_90(wh))
 			{
 				TRANCE_MOVE = 1;
-				return book_header;
+				return before_book_header;
 			}
 			/* 180ìxÇÃâÒì]å` */
 			if (book_header->bk == rotate_180(bk) && book_header->wh == rotate_180(wh))
 			{
 				TRANCE_MOVE = 2;
-				return book_header;
+				return before_book_header;
 			}
 			/* 270ìxÇÃâÒì]å` */
 			if (book_header->bk == rotate_270(bk) && book_header->wh == rotate_270(wh))
 			{
 				TRANCE_MOVE = 3;
-				return book_header;
+				return before_book_header;
 			}
 			/* Xé≤ÇÃëŒèÃå` */
 			if (book_header->bk == symmetry_x(bk) && book_header->wh == symmetry_x(wh))
 			{
 				TRANCE_MOVE = 4;
-				return book_header;
+				return before_book_header;
 			}
 			/* Yé≤ÇÃëŒèÃå` */
 			if (book_header->bk == symmetry_y(bk) && book_header->wh == symmetry_y(wh))
 			{
 				TRANCE_MOVE = 5;
-				return book_header;
+				return before_book_header;
 			}
 			/* ÉuÉâÉbÉNÉâÉCÉìÇÃëŒèÃå` */
 			if (book_header->bk == symmetry_b(bk) && book_header->wh == symmetry_b(wh))
 			{
 				TRANCE_MOVE = 6;
-				return book_header;
+				return before_book_header;
 			}
 			/* ÉzÉèÉCÉgÉâÉCÉìÇÃëŒèÃå` */
 			if (book_header->bk == symmetry_w(bk) && book_header->wh == symmetry_w(wh))
 			{
 				TRANCE_MOVE = 7;
-				return book_header;
+				return before_book_header;
 			}
 			book_header = book_header->next;
 		} while (book_header != NULL);
@@ -263,51 +303,96 @@ BooksNode *SearchBookInfo(BooksNode *book_header, BooksNode *before_book_header,
 * Brief : íËêŒÇÃåÛï‚éËÇÃÇ§ÇøÅAå„ÅXÇ…ï]âøílÇ™ç≈Ç‡çÇÇ≠Ç»ÇÈÇ‡ÇÃÇéZèoÇ∑ÇÈ
 * Return: íËêŒÇÃï]âøíl
 ****************************************************************************/
-INT32 book_alphabeta(BooksNode *header, UINT32 depth, INT32 alpha, INT32 beta,
-	UINT32 color, UINT32 change, BooksNode **outBestNode)
+INT32 book_alphabeta(BooksNode *header, UINT32 depth, INT32 alpha, INT32 beta, UINT32 color)
 {
-	if (header->child == NULL)
+
+	// ótÉmÅ[ÉhÅH
+	if (header->next == NULL && header->child == NULL)
 	{
+		if (abs(header->eval) == NEGAMAX)
+		{
+			header->eval = NEGAMAX;
+		}
 		/* ótÉmÅ[Éh(ì«Ç›ÇÃå¿äEílÇÃÉmÅ[Éh)ÇÃèÍçáÇÕï]âøílÇéZèo */
 		if (color == WHITE) return -header->eval;
-		else return header->eval;
+		return header->eval;
 	}
 
 	int eval;
 	int max;
-	BooksNode *iter;
-
 	max = NEGAMIN;
-	for (iter = header; alpha < beta && iter != NULL; iter = iter->next)
+	if (header->child)
 	{
-		/* nextÉmÅ[ÉhÇÃéqÉmÅ[ÉhÇ™NULLÇÃèÍçáÇ™Ç†ÇÈÇÃÇ≈É`ÉFÉbÉN */
-		if (iter->child == NULL)
+		if (depth != 0)
 		{
-			if (color == WHITE) eval = -iter->eval;
-			else eval = iter->eval;
+			eval = -book_alphabeta(header->child, depth + 1, -beta, -alpha, color ^ 1);
 		}
 		else
 		{
-			/* go to child node  */
-			eval = -book_alphabeta(iter->child, depth + 1, alpha, beta, color ^ 1, change, outBestNode);
+			// Prevent cutting(alpha) node for get correct evaluation
+			eval = -book_alphabeta(header->child, depth + 1, NEGAMIN, NEGAMAX, color ^ 1);
 		}
-
 		// É¿ÉJÉbÉg
-		if (beta <= eval)
+		if (depth != 0 && beta <= eval)
 		{
 			return eval;
 		}
-
 		/* ç°Ç‹Ç≈ÇÊÇËó«Ç¢ã«ñ Ç™å©Ç¬Ç©ÇÍÇŒç≈ëPéËÇÃçXêV */
 		if (eval > max)
 		{
 			max = eval;
-			if (depth == 0) *outBestNode = iter;
-			if (max > alpha)
-			{
-				alpha = max;
-			}
+			if (alpha < max) alpha = max;
 		}
+
+		if (depth == 0)
+		{
+			g_bookList[g_booklist_cnt].eval = eval;
+			g_bookList[g_booklist_cnt++].node = header->child;
+		}
+	}
+
+	BooksNode *next_node = header->child;
+	if (next_node != NULL)
+	{
+		while (next_node->next)
+		{
+			if (depth != 0)
+			{
+				eval = -book_alphabeta(next_node->next, depth + 1, -beta, -alpha, color ^ 1);
+			}
+			else
+			{
+				// Prevent cutting(alpha) node for get correct evaluation
+				eval = -book_alphabeta(next_node->next, depth + 1, NEGAMIN, NEGAMAX, color ^ 1);
+			}
+
+			// É¿ÉJÉbÉg
+			if (depth != 0 && beta <= eval)
+			{
+				return eval;
+			}
+
+			/* ç°Ç‹Ç≈ÇÊÇËó«Ç¢ã«ñ Ç™å©Ç¬Ç©ÇÍÇŒç≈ëPéËÇÃçXêV */
+			if (eval > max)
+			{
+				max = eval;
+				if (alpha < max) alpha = max;
+			}
+
+			if (depth == 0)
+			{
+				g_bookList[g_booklist_cnt].eval = eval;
+				g_bookList[g_booklist_cnt++].node = next_node->next;
+			}
+
+			next_node = next_node->next;
+		}
+	}
+	else
+	{
+		// NEXTÉmÅ[ÉhÇµÇ©Ç»Ç©Ç¡ÇΩ(åªÉmÅ[ÉhÇ…ï]âøílÇ™Ç†ÇÈÇÃÇ≈ï‘Ç∑)
+		if (color == WHITE) max = -header->eval;
+		else max = header->eval;
 	}
 
 	return max;
@@ -316,166 +401,76 @@ INT32 book_alphabeta(BooksNode *header, UINT32 depth, INT32 alpha, INT32 beta,
 
 
 /***************************************************************************
-* Name  : SortBookNode
+* Name  : sort_book_node
 * Brief : íËêŒÇÃåÛï‚éËÇÃÇ§ÇøÅAï]âøílÇÃçÇÇ¢èáÇ…É\Å[Ég
 ****************************************************************************/
-void SortBookNode(BooksNode *best_node[], int e_list[], int cnt)
+void sort_book_node(BookData data_list[], int cnt)
 {
-	int i = 0;
-	int h = cnt * 10 / 13;
-	int swaps;
-	BooksNode *temp;
-	int int_temp;
-	if (cnt == 1){ return; }
-	while (1)
+	BookData temp;
+
+	for (int i = 0; i < cnt - 1; i++)
 	{
-		swaps = 0;
-		for (i = 0; i + h < cnt; i++)
+		for (int j = cnt - 1; j > i; j--)
 		{
-			if (e_list[i] < e_list[i + h])
+			if (data_list[j - 1].eval < data_list[j].eval)
 			{
-				temp = best_node[i];
-				best_node[i] = best_node[i + h];
-				best_node[i + h] = temp;
-				int_temp = e_list[i];
-				e_list[i] = e_list[i + h];
-				e_list[i + h] = int_temp;
-				swaps++;
+				temp = data_list[j - 1];
+				data_list[j - 1] = data_list[j];
+				data_list[j] = temp;
 			}
-		}
-		if (h == 1)
-		{
-			if (swaps == 0)
-			{
-				break;
-			}
-		}
-		else
-		{
-			h = h * 10 / 13;
 		}
 	}
+
 }
 
+/***************************************************************************
+* Name  : extract_booklist
+* Brief : åÎç∑Ç…ÇÊÇÈÉmÅ[ÉhëIë
+****************************************************************************/
+BookData *extract_booklist(BookData *node_list, double rate, int cnt)
+{
+	int i;
+	int entry_count = 1;
+	BookData *extracted_list[36];
 
+	extracted_list[0] = &node_list[0]; // best node
+
+	double abs_threshold = 160000 * rate;
+
+	for (i = 1; i < cnt; i++)
+	{
+		if (node_list[0].eval - node_list[i].eval <= abs_threshold)
+		{
+			extracted_list[i] = &node_list[i];
+			entry_count++;
+		}
+	}
+
+	return extracted_list[genrand_int32() % entry_count];
+}
 
 /***************************************************************************
 * Name  : SelectNode
 * Brief : íËêŒÇÃïœâªìxÇ…ÇÊÇ¡ÇƒåÛï‚éËÇåàíËÇ∑ÇÈ
 * Return: íËêŒî‘çÜ
 ****************************************************************************/
-INT32 SelectNode(int e_list[], int cnt, UINT32 change, INT32 turn)
+BookData *select_node(UINT32 change)
 {
-	int ret;
-	srand((UINT32)time(NULL));
+	BookData *ret = NULL;
+
+	sort_book_node(g_bookList, g_booklist_cnt);
+
 	if (change == NOT_CHANGE)
 	{
-		int count;
-		int max = e_list[0];
-		for (count = 1; count < cnt; count++)
-		{
-			if (e_list[count] < max)
-			{
-				break;
-			}
-		}
-		ret = rand() % count;
+		ret = &g_bookList[0];
 	}
-	/* éüëPéËÇ©Ç¬-2à»è„Ç‹Ç≈ãñâ¬ */
-	else if (change == CHANGE_LITTLE)
+	else if (change != CHANGE_RANDOM) // err = 5%Å`20%
 	{
-		int count;
-		int flag = 0;
-		int max = e_list[0];
-		for (count = 1; count < cnt; count++)
-		{
-			/* àÍìxéüëPéËÇëIÇÒÇ≈Ç¢ÇÈÅA
-			Ç‹ÇΩÇÕéüëPéËÇ™ç°ÇÃï]âøílÇÊÇË2000à»è„í·Ç¢Ç∆Ç´ÇÕbreak */
-			if (max_change_num[turn] || max - e_list[count] >= 20000)
-			{
-				break;
-			}
-			if (e_list[count] < max)
-			{
-				if (flag)
-				{
-					break;
-				}
-				flag++;
-			}
-
-		}
-		ret = rand() % count;
-		/* éüëPéËÇëIÇÒÇæ */
-		if (e_list[ret] != max)
-		{
-			max_change_num[turn]++;
-		}
+		ret = extract_booklist(g_bookList, g_err_rate, g_booklist_cnt);
 	}
-	else if (change == CHANGE_MIDDLE)
+	else // full random
 	{
-		int count;
-		int flag = 0;
-		int max = e_list[0];
-		for (count = 1; count < cnt; count++)
-		{
-			/* àÍìxéüëPéËÇëIÇÒÇ≈Ç¢ÇÈÅA
-			Ç‹ÇΩÇÕéüëPéËÇ™ç°ÇÃï]âøílÇÊÇË2000à»è„í·Ç¢Ç∆Ç´ÇÕbreak */
-			if (max_change_num[turn] > 1 || max - e_list[count] >= 40000)
-			{
-				break;
-			}
-			if (e_list[count] < max)
-			{
-				if (flag)
-				{
-					break;
-				}
-				flag++;
-			}
-
-		}
-		ret = rand() % count;
-		/* éüëPéËÇëIÇÒÇæ */
-		if (e_list[ret] != max)
-		{
-			max_change_num[turn]++;
-		}
-	}
-	else if (change == CHANGE_ROUGH)
-	{
-		int count;
-		int flag = 0;
-		int max = e_list[0];
-		for (count = 1; count < cnt; count++)
-		{
-			/* àÍìxéüëPéËÇëIÇÒÇ≈Ç¢ÇÈÅA
-			Ç‹ÇΩÇÕéüëPéËÇ™ç°ÇÃï]âøílÇÊÇË6000à»è„í·Ç¢Ç∆Ç´ÇÕbreak */
-			if (max_change_num[turn] > 2 || max - e_list[count] >= 60000)
-			{
-				break;
-			}
-			if (e_list[count] < max)
-			{
-				if (flag)
-				{
-					break;
-				}
-				flag++;
-			}
-
-		}
-		ret = rand() % count;
-		/* éüëPéËÇëIÇÒÇæ */
-		if (e_list[ret] != max)
-		{
-			max_change_num[turn]++;
-		}
-	}
-	else
-	{
-		// äÆëSÉâÉìÉ_ÉÄ
-		ret = rand() % cnt;
+		ret = &g_bookList[genrand_int32() % g_booklist_cnt];
 	}
 
 	return ret;
@@ -484,12 +479,8 @@ INT32 SelectNode(int e_list[], int cnt, UINT32 change, INT32 turn)
 
 
 /* ÉmÅ[ÉhÇê⁄ë± */
-void AppendNew(BooksNode *parent, BooksNode *node)
+void AppendChild(BooksNode *parent, BooksNode *node)
 {
-	//node->book_name = name;
-	//node->move = move;
-	node->child = NULL;
-	node->next = NULL;
 	if (parent == NULL)
 	{
 		return;
@@ -497,38 +488,24 @@ void AppendNew(BooksNode *parent, BooksNode *node)
 	if (parent->child == NULL)
 	{
 		parent->child = node;
-	}
-	else
-	{
-		while (parent->next != NULL)
-		{
-			parent = parent->next;
-		}
-		parent->next = node;
 	}
 }
 
 
 
 /* ÉmÅ[ÉhÇê⁄ë± */
-void Append(BooksNode *parent, BooksNode *node)
+void AppendNext(BooksNode *parent, BooksNode *node)
 {
 	if (parent == NULL)
 	{
 		return;
 	}
-	if (parent->child == NULL)
+
+	while (parent->next != NULL)
 	{
-		parent->child = node;
+		parent = parent->next;
 	}
-	else
-	{
-		while (parent->next != NULL)
-		{
-			parent = parent->next;
-		}
-		parent->next = node;
-	}
+	parent->next = node;
 }
 
 
@@ -565,8 +542,9 @@ void bookline_strtok(char *line_data, char* dest_data, INT32 *eval)
 }
 
 
-
-BooksNode *StructionBookTree(BooksNode *head, INT32 *new_eval_p, char *line_data_p, char** next, INT32 depth)
+UINT32 g_malloc_count = 0;
+UINT32 g_debug_count = 0;
+BooksNode *StructionBookTree(BooksNode *head, INT32 *new_eval_p, char *line_data_p, char** next, INT32 depth, INT32 *return_depth)
 {
 	char *decode_sep;
 	char move;
@@ -578,28 +556,65 @@ BooksNode *StructionBookTree(BooksNode *head, INT32 *new_eval_p, char *line_data
 	{
 		/* ÉâÉCÉìÇ™èIóπÇµÇΩÇÃÇ≈éüÉâÉCÉìÇï™ó£ */
 		decode_sep = strtok_s(NULL, "\n", next);
+		g_debug_count++;
+
+		if (g_debug_count == 68022)
+		{
+			g_debug_count = 68022;
+		}
+
 		if (decode_sep == NULL)
 		{
 			// end...
+			head->eval = *new_eval_p;
 			return NULL;
 		}
+
+		int i;
+		char old_line_data[256];
+		strcpy_s(old_line_data, 256, line_data_p);
 		// ÉâÉCÉìÉfÅ[É^Ç∆ï]âøílÇï™ó£
 		bookline_strtok(decode_sep, line_data_p, &current_eval);
+		head->eval = *new_eval_p;
 		*new_eval_p = current_eval;
+
+		// ñﬂÇÈê[Ç≥ÇåàíË
+		int new_len = (int)strlen(line_data_p);
+		int old_len = (int)strlen(old_line_data);
+		if (old_len > new_len)
+		{
+			for (i = 0; i < new_len; i += 2)
+			{
+				if (old_line_data[i] != line_data_p[i] ||
+					old_line_data[i + 1] != line_data_p[i + 1]) break;
+			}
+		}
+		else
+		{
+			for (i = 0; i < old_len; i += 2)
+			{
+				if (old_line_data[i] != line_data_p[i] ||
+					old_line_data[i + 1] != line_data_p[i + 1]) break;
+			}
+		}
+
+		*return_depth = i;
 
 		return head;
 	}
 	else
 	{
-
 		// ÉâÉCÉìÇ©ÇÁéËÇéÊìæ
 		move = (line_data_p[depth] - 'a') * 8 + line_data_p[depth + 1] - '1';
 		// ÉmÅ[ÉhÇçÏê¨ÇµÇƒìoò^
 		BooksNode *child_node = (BooksNode *)malloc(sizeof(BooksNode));
+		g_malloc_count++;
+		child_node->child = NULL;
+		child_node->next = NULL;
 		child_node->depth = depth / 2;
-		child_node->eval = *new_eval_p;
+		child_node->eval = NEGAMIN;
 		child_node->move = move;
-		if (child_node->depth % 2)
+		if ((child_node->depth % 2) != 0)
 		{
 			// çïî‘
 			rev = GetRev[head->move](head->bk, head->wh);
@@ -613,53 +628,62 @@ BooksNode *StructionBookTree(BooksNode *head, INT32 *new_eval_p, char *line_data
 			child_node->wh = head->wh ^ (rev | (1ULL << head->move));
 			child_node->bk = head->bk ^ rev;
 		}
-		// ÉmÅ[ÉhÇìoò^
-		AppendNew(head, child_node);
 
 		/* first entry, start child node area */
 
-		BooksNode *before;
-		if (head->child != NULL)
-		{
-			before = StructionBookTree(head->child, new_eval_p, line_data_p, next, depth + 2);
+		BooksNode *ret;
+		ret = StructionBookTree(child_node, new_eval_p, line_data_p, next, depth + 2, return_depth);
+
+		// file end or fault sequence
+		if (ret == NULL) {
+			free(child_node);
+			return NULL;
 		}
 
-		if (before == NULL)
-		{
-			// file end sequence
-			return before;
-		}
-
-		// check length
-		if (depth > strlen(line_data_p)) return head;
-
-		/* next entry, start next node area */
-		// ÉâÉCÉìÇ©ÇÁéËÇéÊìæ
-		move = (line_data_p[depth - 2] - 'a') * 8 + line_data_p[depth - 1] - '1';
-		// ÉmÅ[ÉhÇçÏê¨ÇµÇƒìoò^
-		BooksNode *next_node = (BooksNode *)malloc(sizeof(BooksNode));
-		next_node->depth = (depth - 2) / 2;
-		next_node->eval = *new_eval_p;
-		next_node->move = move;
-		if (next_node->depth % 2)
-		{
-			// îíî‘
-			rev = GetRev[head->move](head->wh, head->bk);
-			next_node->wh = head->wh ^ (rev | (1ULL << move));
-			next_node->bk = head->bk ^ rev;
-		}
-		else
-		{
-			// çïî‘
-			rev = GetRev[head->move](head->bk, head->wh);
-			next_node->bk = before->bk ^ (rev | (1ULL << move));
-			next_node->wh = before->wh ^ rev;
-		}
 		// ÉmÅ[ÉhÇìoò^
-		AppendNew(head, next_node);
-		if (head->next != NULL)
+		AppendChild(head, child_node);
+
+		int count = 0;
+		while (*return_depth == depth)
 		{
-			head = StructionBookTree(head->next, new_eval_p, line_data_p, next, depth);
+
+			move = (line_data_p[depth] - 'a') * 8 + line_data_p[depth + 1] - '1';
+
+			// ÉmÅ[ÉhÇçÏê¨ÇµÇƒìoò^
+			BooksNode *next_node = (BooksNode *)malloc(sizeof(BooksNode));
+			g_malloc_count++;
+			next_node->child = NULL;
+			next_node->next = NULL;
+			next_node->depth = depth / 2;
+			next_node->eval = NEGAMIN;
+			next_node->move = move;
+			if ((next_node->depth % 2) != 0)
+			{
+				// çïî‘
+				rev = GetRev[head->move](head->bk, head->wh);
+				next_node->bk = head->bk ^ (rev | (1ULL << head->move));
+				next_node->wh = head->wh ^ rev;
+			}
+			else
+			{
+				// îíî‘
+				rev = GetRev[head->move](head->wh, head->bk);
+				next_node->wh = head->wh ^ (rev | (1ULL << head->move));
+				next_node->bk = head->bk ^ rev;
+			}
+
+			ret = StructionBookTree(next_node, new_eval_p, line_data_p, next, depth + 2, return_depth);
+
+			// file end sequence
+			if (ret == NULL) {
+				// ÉmÅ[ÉhÇìoò^
+				AppendNext(head->child, next_node);
+				return NULL;
+			}
+
+			// ÉmÅ[ÉhÇìoò^
+			AppendNext(head->child, next_node);
+
 		}
 
 		return head;
@@ -706,8 +730,10 @@ BOOL OpenBook(char *filename)
 	}
 	// ÉâÉCÉìÉfÅ[É^Ç∆ï]âøílÇï™ó£
 	bookline_strtok(decode_sep, line_data, &eval);
+
 	// ê[Ç≥óDêÊÇ≈ñÿç\ë¢Çç\íz
-	StructionBookTree(root, &eval, line_data, &next_line, 2);
+	INT32 return_depth = 0;
+	StructionBookTree(root, &eval, line_data, &next_line, 2, &return_depth);
 
 	g_bookTreeRoot = root;
 
@@ -737,10 +763,13 @@ void BookFree(BooksNode *head)
 	if (head->child)
 	{
 		BookFree(head->child);
+		head->child = NULL;
 	}
+
 	if (head->next)
 	{
 		BookFree(head->next);
+		head->next = NULL;
 	}
 
 	free(head);

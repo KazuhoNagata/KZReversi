@@ -1044,7 +1044,7 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	eval += check_corner3_3(board);
 	eval += check_triangle(board);
 
-	eval += check_parity(~(bk | wh), color);
+	//eval += check_parity(~(bk | wh), color);
 	eval_sum = eval;
 	eval *= EVAL_ONE_STONE;
 
@@ -1213,7 +1213,7 @@ BOOL OpenEvalData(char *filename)
 			p_table_op[i] = -p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
-#endif
+
 		/* parity */
 		p_table = parity_data[0][stage];
 		p_table_op = parity_data[1][stage];
@@ -1223,7 +1223,7 @@ BOOL OpenEvalData(char *filename)
 			p_table_op[i] = p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
-
+#endif
 		/* constant */
 		//constant_data[0][stage] = (float)atof(line);
 		//line = strtok_s(NULL, "\n", &ctr);

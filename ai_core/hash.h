@@ -25,7 +25,6 @@ typedef struct HashInfo {
 	INT32 upper;        /*!< upper bound of the position score */
 	INT8 bestmove;      /*!< best move */
 	INT8 depth;         /*!< depth of the analysis*/
-	INT8 locked;
 	INT8 selectivity;
 } HashInfo;
 

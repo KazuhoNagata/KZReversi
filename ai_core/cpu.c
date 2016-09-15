@@ -285,13 +285,11 @@ void CreatePVLineStrAscii(INT32 *pline, INT32 empty, INT32 score)
 INT32 GetMoveFromHash(UINT64 bk, UINT64 wh, INT32 key)
 {
 	INT32 move;
-	if (g_hash->entry[key].deepest.bk == bk && g_hash->entry[key].deepest.wh == wh)
+	HashInfo *hashInfo = HashGet(g_hash, key, bk, wh);
+
+	if (hashInfo->bk == bk && hashInfo->wh == wh)
 	{
-		move = g_hash->entry[key].deepest.bestmove;
-	}
-	else if (g_hash->entry[key].newest.bk == bk && g_hash->entry[key].newest.wh == wh)
-	{
-		move = g_hash->entry[key].newest.bestmove;
+		move = hashInfo->bestmove;
 	}
 	else
 	{
@@ -404,19 +402,18 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 		}
 	}
 
-	g_mpcFlag = cpuConfig->mpcFlag;
-	g_tableFlag = cpuConfig->tableFlag;
-
-	// 今の局面の置換表を初期化しておく
-	int key = KEY_HASH_MACRO(bk, wh, cpuConfig->color);
-
 	UINT32 temp;
 	// CPUはパス
 	if (CreateMoves(bk, wh, &temp) == 0){
 		return MOVE_PASS;
 	}
 
+	g_mpcFlag = cpuConfig->mpcFlag;
+	g_tableFlag = cpuConfig->tableFlag;
 	g_empty = emptyNum;
+
+	// 今の局面の置換表を初期化しておく
+	int key = KEY_HASH_MACRO(bk, wh, cpuConfig->color);
 
 	// 中盤かどうかをチェック
 	if (emptyNum <= cpuConfig->exactDepth)
@@ -481,11 +478,18 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	g_empty = emptyNum;
 	g_solveMethod = SOLVE_MIDDLE;
 
-	//if (g_hash->attribute != HASH_ATTR_MIDDLE)
-	//{
+	if (g_hash->attribute != HASH_ATTR_MIDDLE)
+	{
 		HashClear(g_hash);
 		g_hash->attribute = HASH_ATTR_MIDDLE;
-	//}
+	}
+	else
+	{
+		FixTableToMiddle(g_hash);
+		// 着手用データ上書き防止のため事前登録
+		g_hash->entry[key].deepest.bk = bk;
+		g_hash->entry[key].deepest.wh = wh;
+	}
 	// 反復深化深さ優先探索
 	for (int count = 2; count <= limit; count += 2)
 	{
@@ -626,6 +630,10 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	memset(g_pvline, -1, sizeof(g_pvline));
 	g_pvline_len = 0;
 
+	// 着手用データ上書き防止のため事前登録
+	g_hash->entry[key].deepest.bk = bk;
+	g_hash->entry[key].deepest.wh = wh;
+
 	PVLINE line;
 	INT32 selectivity;
 
@@ -763,7 +771,7 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	INT32 move = NOMOVE, move_b;
 
 #if 1
-	g_limitDepth = emptyNum - 8;
+	g_limitDepth = emptyNum - 2;
 
 	if (g_limitDepth % 2) g_limitDepth--;
 	if (g_limitDepth > 24)
@@ -792,6 +800,9 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 			HashClear(g_hash);
 			g_hash->attribute = HASH_ATTR_WLD;
 		}
+		// 着手用データ上書き防止のため事前登録
+		g_hash->entry[key].deepest.bk = bk;
+		g_hash->entry[key].deepest.wh = wh;
 	}
 
 #else
@@ -1288,7 +1299,7 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 	* Multi-Prob-Cut(MPC) フェーズ
 	*
 	*************************************************************/
-#if 0
+#if 1
 	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 22)
 	{
 		if (empty <= 24)

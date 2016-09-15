@@ -50,7 +50,7 @@ KZ_EXPORT BOOL KZ_LibInit()
 
 	edge_stability_init();
 
-	//init_genrand((unsigned long)time(NULL));
+	init_genrand((unsigned long)time(NULL));
 	//InitHashBoard();
 
 	return result;
@@ -228,9 +228,9 @@ KZ_EXPORT void KZ_ReleaseHash()
 ****************************************************************************/
 KZ_EXPORT void KZ_ReleaseBook()
 {
-	if (g_bookTreeRoot->child != NULL)
+	if (g_bookTreeRoot != NULL)
 	{
-		BookFree(g_bookTreeRoot->child);
+		BookFree(g_bookTreeRoot);
 		g_bookTreeRoot = NULL;
 	}
 }
