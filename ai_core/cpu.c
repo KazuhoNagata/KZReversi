@@ -36,7 +36,7 @@ BOOL g_refresh_hash_flag = TRUE;
 // CPU AIî•ñ
 BOOL g_AbortFlag;
 UINT64 g_countNode;
-UINT32 g_move;
+INT32 g_move;
 INT32 g_infscore;
 
 HashTable *g_hash = NULL;
@@ -287,7 +287,10 @@ INT32 GetMoveFromHash(UINT64 bk, UINT64 wh, INT32 key)
 	INT32 move;
 	HashInfo *hashInfo = HashGet(g_hash, key, bk, wh);
 
-	if (hashInfo->bk == bk && hashInfo->wh == wh)
+	move = g_move;
+
+#if 0
+	if (hashInfo != NULL)
 	{
 		move = hashInfo->bestmove;
 	}
@@ -295,7 +298,7 @@ INT32 GetMoveFromHash(UINT64 bk, UINT64 wh, INT32 key)
 	{
 		move = g_move;
 	}
-
+#endif
 	return move;
 }
 
@@ -985,12 +988,12 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 		if (empty <= 24)
 		{
 			MPC_CUT_VAL = cutval_table[5];
-			mpc_level = 4;
+			mpc_level = 5;
 		}
 		else
 		{
 			MPC_CUT_VAL = cutval_table[4];
-			mpc_level = 3;
+			mpc_level = 4;
 		}
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
@@ -1127,6 +1130,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 
 	/* ’uŠ·•\‚É“o˜^ */
 	if (g_empty == empty){
+		g_move = bestmove;
 		HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, depth, bestmove, g_max_cut_table_size, NEGAMAX);
 	}
 	else

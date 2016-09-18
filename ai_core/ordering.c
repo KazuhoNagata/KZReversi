@@ -227,7 +227,7 @@ void SortMoveListMiddle(
 	UINT64 n_moves_wh, move_b, move_w;
 
 	INT32 searched = g_empty - empty;
-	if (searched < 6 && g_limitDepth >= 14)
+	if (searched < 6 && g_limitDepth >= 16)
 	{
 		for (iter = movelist->next; iter != NULL; iter = iter->next)
 		{
@@ -241,7 +241,7 @@ void SortMoveListMiddle(
 		/* 自分の得点の多い順にソート */
 		sort_movelist_score_descending(movelist);
 	}
-	else if (g_empty - empty == 6 && g_limitDepth >= 14){
+	else if (g_empty - empty == 6 && g_limitDepth >= 16){
 		for (iter = movelist->next; iter != NULL; iter = iter->next)
 		{
 			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);

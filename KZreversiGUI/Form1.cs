@@ -230,6 +230,7 @@ namespace KZreversi
                 toolStripStatusLabel3.Text = "";
                 //toolStripStatusLabel4.Text = "";
 
+                cppWrapper.ReleaseHash();
                 m_hintList.Clear();
                 boardclass.DeleteHistory(boardclass.GetNowTurn());
                 nowColor = boardclass.GetNowColor();
@@ -1863,51 +1864,9 @@ namespace KZreversi
             m_hintFlagProperty = true;
         }
 
-        /// <summary>
-        /// コントロールの配列を取得する
-        /// </summary>
-        /// <param name="frm">コントロールのあるフォーム</param>
-        /// <param name="name">後ろの数字を除いたコントロールの名前</param>
-        /// <returns>コントロールの配列。
-        /// 取得できなかった時はnull(VB.NETではNothing)。</returns>
-        public object GetControlArrayByName(Form frm, string name)
+        private void bOOKのメモリを解放ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            System.Collections.ArrayList ctrs =
-                new System.Collections.ArrayList();
-            object obj;
-            for (int i = 1;
-                (obj = FindControlByFieldName(frm, name + i.ToString())) != null;
-                i++)
-                ctrs.Add(obj);
-            if (ctrs.Count == 0)
-                return null;
-            else
-                return ctrs.ToArray(ctrs[0].GetType());
-        }
-
-        /// <summary>
-        /// フォームに配置されているコントロールを名前で探す
-        /// （フォームクラスのフィールドをフィールド名で探す）
-        /// </summary>
-        /// <param name="frm">コントロールを探すフォーム</param>
-        /// <param name="name">コントロール（フィールド）の名前</param>
-        /// <returns>見つかった時は、コントロールのオブジェクト。
-        /// 見つからなかった時は、null(VB.NETではNothing)。</returns>
-        public static object FindControlByFieldName(Form frm, string name)
-        {
-            System.Type t = frm.GetType();
-
-            System.Reflection.FieldInfo fi = t.GetField(
-                name,
-                System.Reflection.BindingFlags.Public |
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Instance |
-                System.Reflection.BindingFlags.DeclaredOnly);
-
-            if (fi == null)
-                return null;
-
-            return fi.GetValue(frm);
+            cppWrapper.ReleaseBook();
         }
 
     }

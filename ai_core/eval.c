@@ -1028,7 +1028,7 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	corner5_2 = corner5_2_data[color][stage];
 	corner3_3 = corner3_3_data[color][stage];
 	triangle = triangle_data[color][stage];
-	parity = parity_data[color][stage];
+	//parity = parity_data[color][stage];
 
 	eval = check_h_ver1(board);
 	eval += check_h_ver2(board);
@@ -1058,7 +1058,6 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 
 
 
-
 int opponent_feature(int l, int d)
 {
 	const int o[] = { 0, 2, 1 };
@@ -1068,7 +1067,6 @@ int opponent_feature(int l, int d)
 
 	return f;
 }
-
 
 
 

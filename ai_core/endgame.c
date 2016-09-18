@@ -854,6 +854,11 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 	HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, empty, bestmove, g_mpc_level, WIN + 1);
 	*p_selectivity = selectivity;
 
+	if (g_empty == empty)
+	{
+		g_move = bestmove;
+	}
+
 	return bestscore;
 }
 

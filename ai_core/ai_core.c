@@ -17,8 +17,9 @@
 
 #define KZ_EXPORT __declspec(dllexport)
 
-BOOL m_BookFlag;
+KZ_EXPORT void KZ_ReleaseBook();
 
+BOOL m_BookFlag;
 int g_func_count = 0;
 
 /***************************************************************************
@@ -29,7 +30,7 @@ int g_func_count = 0;
 KZ_EXPORT BOOL KZ_LibInit()
 {
 	BOOL result;
-	
+
 	// DLLのロード
 	result = AlocMobilityFunc();
 
@@ -108,7 +109,7 @@ KZ_EXPORT UINT64 KZ_GetCpuMove(UINT64 bk, UINT64 wh, CPUCONFIG *cpuConfig)
 	{
 		// 定石データから着手
 		m_BookFlag = TRUE;
-		move = GetMoveFromBooks(bk, wh, cpuConfig->color, 
+		move = GetMoveFromBooks(bk, wh, cpuConfig->color,
 			cpuConfig->bookVariability, turn);
 	}
 
@@ -217,6 +218,7 @@ KZ_EXPORT void KZ_ReleaseHash()
 {
 	if (g_hash != NULL)
 	{
+		HashClear(g_hash);
 		HashDelete(g_hash);
 		g_hash = NULL;
 	}

@@ -75,9 +75,13 @@ UINT64 GetMoveFromBooks(UINT64 bk, UINT64 wh, UINT32 color, UINT32 change, INT32
 		return first_move_list[rand];
 
 	}
-	else
+	else if (g_bookTreeRoot != NULL)
 	{
 		move = SearchBooks(g_bookTreeRoot, bk, wh, color, change, turn);
+	}
+	else
+	{
+		move = MOVE_NONE;
 	}
 
 	if (move == MOVE_NONE)
@@ -766,7 +770,7 @@ void BookFree(BooksNode *head)
 		head->child = NULL;
 	}
 
-	if (head->next)
+	while (head->next)
 	{
 		BookFree(head->next);
 		head->next = NULL;

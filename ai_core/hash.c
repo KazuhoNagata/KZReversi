@@ -149,10 +149,6 @@ void HashUpdate(
 		else if (deepest->selectivity <= selectivity)
 		{
 			// deepest already entried?
-			if (deepest->bk != 0 || deepest->wh != 0)
-			{
-				deepest = newest;
-			}
 			deepest->bk = bk;
 			deepest->wh = wh;
 			deepest->bestmove = move;
@@ -160,6 +156,17 @@ void HashUpdate(
 			deepest->lower = score;
 			deepest->upper = inf_score;
 			deepest->selectivity = selectivity;
+		}
+		else
+		{
+			// deepest already entried?
+			newest->bk = bk;
+			newest->wh = wh;
+			newest->bestmove = move;
+			newest->depth = depth;
+			newest->lower = score;
+			newest->upper = inf_score;
+			newest->selectivity = selectivity;
 		}
 	}
 	else if (score > alpha)
@@ -185,11 +192,6 @@ void HashUpdate(
 		// try to entry first hash
 		else if (deepest->selectivity <= selectivity)
 		{
-			// deepest already entried?
-			if (deepest->bk != 0 || deepest->wh != 0)
-			{
-				deepest = newest;
-			}
 			deepest->bk = bk;
 			deepest->wh = wh;
 			deepest->bestmove = move;
@@ -197,6 +199,17 @@ void HashUpdate(
 			deepest->lower = score;
 			deepest->upper = score;
 			deepest->selectivity = selectivity;
+		}
+		else
+		{
+			// deepest already entried?
+			newest->bk = bk;
+			newest->wh = wh;
+			newest->bestmove = move;
+			newest->depth = depth;
+			newest->lower = score;
+			newest->upper = score;
+			newest->selectivity = selectivity;
 		}
 	}
 	else
@@ -222,12 +235,6 @@ void HashUpdate(
 		// try to entry first hash
 		else if (deepest->selectivity <= selectivity)
 		{
-			// deepest already entried?
-			if (deepest->bk != 0 || deepest->wh != 0)
-			{
-				// try to entry second hash
-				deepest = newest;
-			}
 			deepest->bk = bk;
 			deepest->wh = wh;
 			deepest->bestmove = move;
@@ -235,6 +242,17 @@ void HashUpdate(
 			deepest->lower = -inf_score;
 			deepest->upper = score;
 			deepest->selectivity = selectivity;
+		}
+		else
+		{
+			// deepest already entried?
+			newest->bk = bk;
+			newest->wh = wh;
+			newest->bestmove = move;
+			newest->depth = depth;
+			newest->lower = score;
+			newest->upper = -inf_score;
+			newest->selectivity = selectivity;
 		}
 	}
 }

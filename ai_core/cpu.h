@@ -77,6 +77,7 @@ extern BOOL g_tableFlag;
 extern char g_cordinates_table[64][4];
 extern INT32 g_limitDepth;
 extern INT32 g_empty;
+extern INT32 g_move;
 extern UINT64 g_casheSize;
 extern INT32 g_infscore;
 extern MPCINFO mpcInfo[22];
@@ -88,6 +89,7 @@ const extern double cutval_table[8];
 extern const INT32 g_max_cut_table_size;
 extern UINT64 g_countNode;
 extern HashTable *g_hash;
+
 
 extern BOOL g_mpcFlag;
 extern BOOL g_tableFlag;
