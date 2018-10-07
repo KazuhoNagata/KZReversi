@@ -366,8 +366,8 @@ namespace KZreversi
         {
             bkImg = new Bitmap(KZreversi.Properties.Resources.othello_bk);
             whImg = new Bitmap(KZreversi.Properties.Resources.othello_wh);
-            m_back_bitmap = new Bitmap(KZreversi.Properties.Resources.wood_pattern);
-            m_panel1_bitmap = new Bitmap(KZreversi.Properties.Resources.othello_board);
+            m_back_bitmap = new Bitmap("src\\wood_pattern.png"); 
+            m_panel1_bitmap = new Bitmap("src\\othello_board.png"); 
 
             // 盤面背景のセット
             panel_back = new BufferedPanel(false);
@@ -464,11 +464,14 @@ namespace KZreversi
                 cpuClass[i].SetSearchDepth(6);
                 cpuClass[i].SetWinLossDepth(14);
                 cpuClass[i].SetExactDepth(12);
-                cpuClass[i].SetBookFlag(true);
+                cpuClass[i].SetBookFlag(1);
                 cpuClass[i].SetBookVariability(1);
-                cpuClass[i].SetMpcFlag(true);
-                cpuClass[i].SetTableFlag(true);
+                cpuClass[i].SetMpcFlag(1);
+                cpuClass[i].SetTableFlag(1);
             }
+
+            m_enablePVdisplay = MenuDisplayPV.Checked;
+            m_enableDetailDisplay = MenuAIThinking.Checked;
         }
 
 
@@ -510,7 +513,7 @@ namespace KZreversi
                 font_scale_y = (14 * m_scale) + m_fix_y;
 
                 // フォントスケーリング
-                m_ft = new Font("MS UI Gothic", 9 * m_scale);
+                m_ft = new Font("MS UI Gothic", 9 * m_scale, FontStyle.Bold);
                 m_ft2 = new Font("MS UI Gothic", 8 * m_scale);
                 m_ft3 = new Font("Arial", 18 * m_scale, FontStyle.Bold | FontStyle.Italic);
                 m_ft4 = new Font("Arial", 15 * m_scale, FontStyle.Bold | FontStyle.Italic);
@@ -603,7 +606,7 @@ namespace KZreversi
                     while (temp > 0)
                     {
                         pos = cppWrapper.ConvertMoveBit(temp);
-                        e.Graphics.DrawString("×", m_ft, Brushes.DarkOrange,
+                        e.Graphics.DrawString("×", m_ft, Brushes.DarkRed,
                             (pos / BOARD_SIZE) * m_mass_size + canmove_x,
                             (pos % BOARD_SIZE) * m_mass_size + canmove_y);
                         temp ^= (1UL << pos);
@@ -768,9 +771,9 @@ namespace KZreversi
             if (first == true || eval >= m_hintEvalMax)
             {
                 m_hintEvalMax = eval;
-                brs = Brushes.LightGreen;
+                brs = Brushes.Maroon;
             }
-            else brs = Brushes.DarkOrange;
+            else brs = Brushes.DarkGreen;
 
             e.Graphics.DrawString(wld, m_ft4, brs,
                (pos / BOARD_SIZE) * m_mass_size + font_scale_x + font_fix_x,
@@ -779,27 +782,42 @@ namespace KZreversi
 
         private void dispMiddleEval(PaintEventArgs e, int pos, int eval, bool first)
         {
+            int eval_t;
             string sign;
             float font_fix_x;
             Brush brs;
 
-            if (eval >= 0) // +0 ～ +64
+            // ループの初回が最善手なので目立つよう表示(LightGreen)
+            if (first == true || eval >= m_hintEvalMax)
             {
-                sign = "+";
-                font_fix_x = 3;
-                if (eval >= 100000) // +10 ～ +64
-                {
-                    font_fix_x = 0;
-                }
+                m_hintEvalMax = eval;
+                brs = Brushes.DarkMagenta;
             }
-            else
+            else brs = Brushes.Navy;
+
+            // 評価値を正規化
+            eval_t = (int)Math.Round(eval / 10000.0, MidpointRounding.AwayFromZero);
+
+            if (eval_t >= 0) // +0 ～ +64
             {
-                if (eval > -10000) // -0
+                if (eval / 10000.0 >= 0.0)
+                {
+                    sign = "+";
+                    font_fix_x = 3;
+                    if (eval_t >= 10) // +10 ～ +64
+                    {
+                        font_fix_x = 0;
+                    }
+                }
+                else
                 {
                     sign = "-";
                     font_fix_x = 5;
                 }
-                else if (eval <= -100000) // -10 ～ -64
+            }
+            else
+            {
+                if (eval_t <= -10) // -10 ～ -64
                 {
                     sign = "";
                     font_fix_x = 2;
@@ -812,19 +830,9 @@ namespace KZreversi
             }
 
             font_fix_x *= m_scale;
-            // ループの初回が最善手なので目立つよう表示(LightGreen)
-            if (first == true || eval >= m_hintEvalMax)
-            {
-                m_hintEvalMax = eval;
-                brs = Brushes.LightGreen;
-            }
-            else brs = Brushes.DarkOrange;
-
-            // 評価値を正規化
-            eval /= 10000;
 
             // 該当のマスに描画
-            e.Graphics.DrawString(sign + eval, m_ft3, brs,
+            e.Graphics.DrawString(sign + eval_t, m_ft3, brs,
                (pos / BOARD_SIZE) * m_mass_size + font_scale_x + font_fix_x,
                (pos % BOARD_SIZE) * m_mass_size + font_scale_y);
         }
@@ -969,50 +977,52 @@ namespace KZreversi
 
         private void setNodeCount(ulong nodeCount)
         {
-            StringBuilder sb = new StringBuilder(256);
-            string temp;
-
-            // 探索済みノード数
-            sb.Append("node:");
-
-            if (nodeCount >= 1000000000)  // Gn
+            if (m_enableDetailDisplay)
             {
-                sb.Append((nodeCount / (double)1000000000).ToString("f2"));
-                sb.Append("[Gn]");
-            }
-            else if (nodeCount >= 1000000) // Mn
-            {
-                sb.Append((nodeCount / (double)1000000).ToString("f2"));
-                sb.Append("[Mn]");
-            }
-            else if (nodeCount >= 1000) // Kn
-            {
-                sb.Append((nodeCount / (double)1000).ToString("f2"));
-                sb.Append("[Kn]");
-            }
-            else
-            {
-                sb.Append(nodeCount);
-                sb.Append("[n]");
-            }
+                StringBuilder sb = new StringBuilder(256);
+                string temp;
 
-            // 経過時間
-            sb.Append(" time:");
-            sb.Append((m_sw.ElapsedMilliseconds / (double)1000).ToString("f2"));
+                // 探索済みノード数
+                sb.Append("node:");
 
-            // NPS(node per second)
-            sb.Append(" nps:");
-            temp = ((nodeCount / (m_sw.ElapsedMilliseconds / (double)1000)) / 1000).ToString("f0");
-            sb.Append(temp);
-            sb.Append("[Knps]");
+                if (nodeCount >= 1000000000)  // Gn
+                {
+                    sb.Append((nodeCount / (double)1000000000).ToString("f2"));
+                    sb.Append("[Gn]");
+                }
+                else if (nodeCount >= 1000000) // Mn
+                {
+                    sb.Append((nodeCount / (double)1000000).ToString("f2"));
+                    sb.Append("[Mn]");
+                }
+                else if (nodeCount >= 1000) // Kn
+                {
+                    sb.Append((nodeCount / (double)1000).ToString("f2"));
+                    sb.Append("[Kn]");
+                }
+                else
+                {
+                    sb.Append(nodeCount);
+                    sb.Append("[n]");
+                }
 
-            toolStripStatusLabel1.Text = sb.ToString();
+                // 経過時間
+                sb.Append(" time:");
+                sb.Append((m_sw.ElapsedMilliseconds / (double)1000).ToString("f2"));
+
+                // NPS(node per second)
+                sb.Append(" nps:");
+                temp = ((nodeCount / (m_sw.ElapsedMilliseconds / (double)1000)) / 1000).ToString("f0");
+                sb.Append(temp);
+                sb.Append("[Knps]");
+
+                toolStripStatusLabel1.Text = sb.ToString();
+            }
         }
 
         private void setCpuMessage(string cpuMessage)
         {
-
-            toolStripStatusLabel3.Text = cpuMessage;
+            if(m_enableResultDisplay) toolStripStatusLabel3.Text = cpuMessage;
         }
 
         private void setlabelText(string text) 
@@ -1021,8 +1031,8 @@ namespace KZreversi
         }
         private void setPVLine(string cpuMessage)
         {
-            Invoke(new SetPVLineDelegate(setlabelText), cpuMessage);
-            
+            if(m_enablePVdisplay) Invoke(new SetPVLineDelegate(setlabelText), cpuMessage);
+
         }
 
         private void setMPCInfo(string mpcMessage)
@@ -1062,6 +1072,10 @@ namespace KZreversi
         }
 
         private bool _m_hintFlag;
+        private bool m_enablePVdisplay;
+        private bool m_enableDetailDisplay;
+        private bool m_enableResultDisplay;
+
         public bool m_hintFlagProperty
         {
             get
@@ -1559,14 +1573,14 @@ namespace KZreversi
 
             if (MPC_ToolStripMenuItem.Checked)
             {
-                cpuClass[0].SetMpcFlag(false);
-                cpuClass[1].SetMpcFlag(false);
+                cpuClass[0].SetMpcFlag(0);
+                cpuClass[1].SetMpcFlag(0);
                 MPC_ToolStripMenuItem.Checked = false;
             }
             else
             {
-                cpuClass[0].SetMpcFlag(true);
-                cpuClass[1].SetMpcFlag(true);
+                cpuClass[0].SetMpcFlag(1);
+                cpuClass[1].SetMpcFlag(1);
                 MPC_ToolStripMenuItem.Checked = true;
             }
         }
@@ -1576,14 +1590,14 @@ namespace KZreversi
         {
             if (Table_ToolStripMenuItem.Checked)
             {
-                cpuClass[0].SetTableFlag(false);
-                cpuClass[1].SetTableFlag(false);
+                cpuClass[0].SetTableFlag(0);
+                cpuClass[1].SetTableFlag(0);
                 Table_ToolStripMenuItem.Checked = false;
             }
             else
             {
-                cpuClass[0].SetTableFlag(true);
-                cpuClass[1].SetTableFlag(true);
+                cpuClass[0].SetTableFlag(1);
+                cpuClass[1].SetTableFlag(1);
                 Table_ToolStripMenuItem.Checked = true;
             }
         }
@@ -1592,14 +1606,14 @@ namespace KZreversi
         {
             if (BOOKFLAG_ToolStripMenuItem.Checked)
             {
-                cpuClass[0].SetBookFlag(false);
-                cpuClass[1].SetBookFlag(false);
+                cpuClass[0].SetBookFlag(0);
+                cpuClass[1].SetBookFlag(0);
                 BOOKFLAG_ToolStripMenuItem.Checked = false;
             }
             else
             {
-                cpuClass[0].SetBookFlag(true);
-                cpuClass[1].SetBookFlag(true);
+                cpuClass[0].SetBookFlag(1);
+                cpuClass[1].SetBookFlag(1);
                 BOOKFLAG_ToolStripMenuItem.Checked = true;
             }
         }
@@ -1769,6 +1783,58 @@ namespace KZreversi
             SetPlayerInfo();
             panel1.Invalidate(false);
             panel1.Update();
+        }
+
+        private void bestlineの表示ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (MenuDisplayPV.Checked)
+            {
+                m_enablePVdisplay = false;
+                MenuDisplayPV.Checked = false;
+            }
+            else
+            {
+                m_enablePVdisplay = true;
+                MenuDisplayPV.Checked = true;
+            }
+        }
+
+        private void label6_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void statusStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+
+        }
+
+        private void 思考過程を表示ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (MenuAIThinking.Checked)
+            {
+                m_enableDetailDisplay = false;
+                MenuAIThinking.Checked = false;
+            }
+            else
+            {
+                m_enableDetailDisplay = true;
+                MenuAIThinking.Checked = true;
+            }
+        }
+
+        private void 詳細結果の表示ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (MenuResultDetail.Checked)
+            {
+                m_enableResultDisplay = false;
+                MenuResultDetail.Checked = false;
+            }
+            else
+            {
+                m_enableResultDisplay = true;
+                MenuResultDetail.Checked = true;
+            }
         }
 
         private void ConfigCasheToolStripMenuItem_Click(object sender, EventArgs e)

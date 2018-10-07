@@ -464,7 +464,7 @@ static unsigned long long flip_G1(const unsigned long long P, const unsigned lon
 	flipped = (outflank_v - (unsigned int)(outflank_v != 0)) & 0x4040404040404000ULL;
 
 	outflank_h = OUTFLANK_7[O & 0x3e] & (P << 1);
-	flipped |= ((-outflank_h) & 0x3e) << 0;
+	flipped |= ((-(INT32)outflank_h) & 0x3e) << 0;
 
 	outflank_d7 = ((O | ~0x0001020408102000ULL) + 0x0000000000002000ULL) & P & 0x0001020408102000ULL;
 	flipped |= (outflank_d7 - (unsigned int)(outflank_d7 != 0)) & 0x0001020408102000ULL;
@@ -488,7 +488,7 @@ static unsigned long long flip_H1(const unsigned long long P, const unsigned lon
 	flipped = (outflank_v - (unsigned int)(outflank_v != 0)) & 0x8080808080808000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 1) & 0x3f] & P;
-	flipped |= ((-outflank_h) & 0x3f) << 1;
+	flipped |= ((-(INT32)outflank_h) & 0x3f) << 1;
 
 	outflank_d7 = ((O | ~0x0102040810204000ULL) + 0x0000000000004000ULL) & P & 0x0102040810204000ULL;
 	flipped |= (outflank_d7 - (unsigned int)(outflank_d7 != 0)) & 0x0102040810204000ULL;
@@ -666,7 +666,7 @@ static unsigned long long flip_G2(const unsigned long long P, const unsigned lon
 	flipped = (outflank_v - (unsigned int)(outflank_v != 0)) & 0x4040404040400000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 8) & 0x3e] & (P >> 7);
-	flipped |= ((-outflank_h) & 0x3e) << 8;
+	flipped |= ((-(INT32)outflank_h) & 0x3e) << 8;
 
 	outflank_d7 = ((O | ~0x0102040810200000ULL) + 0x0000000000200000ULL) & P & 0x0102040810200000ULL;
 	flipped |= (outflank_d7 - (unsigned int)(outflank_d7 != 0)) & 0x0102040810200000ULL;
@@ -690,7 +690,7 @@ static unsigned long long flip_H2(const unsigned long long P, const unsigned lon
 	flipped = (outflank_v - (unsigned int)(outflank_v != 0)) & 0x8080808080800000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 9) & 0x3f] & (P >> 8);
-	flipped |= ((-outflank_h) & 0x3f) << 9;
+	flipped |= ((-(INT32)outflank_h) & 0x3f) << 9;
 
 	outflank_d7 = ((O | ~0x0204081020400000ULL) + 0x0000000000400000ULL) & P & 0x0204081020400000ULL;
 	flipped |= (outflank_d7 - (unsigned int)(outflank_d7 != 0)) & 0x0204081020400000ULL;
@@ -874,7 +874,7 @@ static unsigned long long flip_G3(const unsigned long long P, const unsigned lon
 	flipped = (outflank_v - (unsigned int)(outflank_v != 0)) & 0x4040404040000000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 16) & 0x3e] & (P >> 15);
-	flipped |= ((-outflank_h) & 0x3e) << 16;
+	flipped |= ((-(INT32)outflank_h) & 0x3e) << 16;
 
 	outflank_d7 = ((O | ~0x0204081020000000ULL) + 0x0000000020000000ULL) & P & 0x0204081020000000ULL;
 	flipped |= (outflank_d7 - (unsigned int)(outflank_d7 != 0)) & 0x0204081020000000ULL;
@@ -900,7 +900,7 @@ static unsigned long long flip_H3(const unsigned long long P, const unsigned lon
 	flipped = (outflank_v - (unsigned int)(outflank_v != 0)) & 0x8080808080000000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 17) & 0x3f] & (P >> 16);
-	flipped |= ((-outflank_h) & 0x3f) << 17;
+	flipped |= ((-(INT32)outflank_h) & 0x3f) << 17;
 
 	outflank_d7 = ((O | ~0x0408102040000000ULL) + 0x0000000040000000ULL) & P & 0x0408102040000000ULL;
 	flipped |= (outflank_d7 - (unsigned int)(outflank_d7 != 0)) & 0x0408102040000000ULL;
@@ -930,7 +930,7 @@ static unsigned long long flip_A4(const unsigned long long P, const unsigned lon
 
 	flip_d7 = O & 0x0000000000020000ULL;
 	flip_d7 |= (flip_d7 >> 7) & O;
-	flipped |= flip_d7 & -(flip_d7 & (P << 7));
+	flipped |= flip_d7 & -(INT64)(flip_d7 & (P << 7));
 
 	outflank_d9 = ((O | ~0x1008040200000000ULL) + 0x0000000200000000ULL) & P & 0x1008040200000000ULL;
 	flipped |= (outflank_d9 - (outflank_d9 >> 32)) & 0x1008040200000000ULL;
@@ -958,7 +958,7 @@ static unsigned long long flip_B4(const unsigned long long P, const unsigned lon
 
 	flip_d7 = O & 0x0000000000040000ULL;
 	flip_d7 |= (flip_d7 >> 7) & O;
-	flipped |= flip_d7 & -(flip_d7 & (P << 7));
+	flipped |= flip_d7 & -(INT64)(flip_d7 & (P << 7));
 
 	outflank_d9 = ((O | ~0x2010080400000000ULL) + 0x0000000400000000ULL) & P & 0x2010080400000000ULL;
 	flipped |= (outflank_d9 - (outflank_d9 >> 32)) & 0x2010080400000000ULL;
@@ -986,7 +986,7 @@ static unsigned long long flip_C4(const unsigned long long P, const unsigned lon
 
 	flip_d7 = O & 0x0000000000080000ULL;
 	flip_d7 |= (flip_d7 >> 7) & O;
-	flipped |= flip_d7 & -(flip_d7 & (P << 7));
+	flipped |= flip_d7 & -(INT64)(flip_d7 & (P << 7));
 
 	outflank_d9 = ((O | ~0x4020100800000000ULL) + 0x0000000800000000ULL) & P & 0x4020100800000000ULL;
 	flipped |= (outflank_d9 - (outflank_d9 >> 32)) & 0x4020100800000000ULL;
@@ -1073,7 +1073,7 @@ static unsigned long long flip_F4(const unsigned long long P, const unsigned lon
 
 	flip_d9 = O & 0x0000000000100000ULL;
 	flip_d9 |= (flip_d9 >> 9) & O;
-	flipped |= flip_d9 & -(flip_d9 & (P << 9));
+	flipped |= flip_d9 & -(INT64)(flip_d9 & (P << 9));
 
 	flipped |= (((P << 7) & 0x0000000000400000ULL) | ((P >> 9) & 0x0000004000000000ULL)) & O;
 
@@ -1096,14 +1096,14 @@ static unsigned long long flip_G4(const unsigned long long P, const unsigned lon
 	flipped = FLIPPED_3_V[outflank_v] & 0x0040404040404000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 24) & 0x3e] & (P >> 23);
-	flipped |= ((-outflank_h) & 0x3e) << 24;
+	flipped |= ((-(INT32)outflank_h) & 0x3e) << 24;
 
 	outflank_d7 = ((O | ~0x0408102000000000ULL) + 0x0000002000000000ULL) & P & 0x0408102000000000ULL;
 	flipped |= (outflank_d7 - (outflank_d7 >> 32)) & 0x0408102000000000ULL;
 
 	flip_d9 = O & 0x0000000000200000ULL;
 	flip_d9 |= (flip_d9 >> 9) & O;
-	flipped |= flip_d9 & -(flip_d9 & (P << 9));
+	flipped |= flip_d9 & -(INT64)(flip_d9 & (P << 9));
 
 	return flipped;
 }
@@ -1124,14 +1124,14 @@ static unsigned long long flip_H4(const unsigned long long P, const unsigned lon
 	flipped = FLIPPED_3_V[outflank_v] & 0x0080808080808000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 25) & 0x3f] & (P >> 24);
-	flipped |= ((-outflank_h) & 0x3f) << 25;
+	flipped |= ((-(INT32)outflank_h) & 0x3f) << 25;
 
 	outflank_d7 = ((O | ~0x0810204000000000ULL) + 0x0000004000000000ULL) & P & 0x0810204000000000ULL;
 	flipped |= (outflank_d7 - (outflank_d7 >> 32)) & 0x0810204000000000ULL;
 
 	flip_d9 = O & 0x0000000000400000ULL;
 	flip_d9 |= (flip_d9 >> 9) & O;
-	flipped |= flip_d9 & -(flip_d9 & (P << 9));
+	flipped |= flip_d9 & -(INT64)(flip_d9 & (P << 9));
 
 	return flipped;
 }
@@ -1309,7 +1309,7 @@ static unsigned long long flip_G5(const unsigned long long P, const unsigned lon
 	flipped |= FLIPPED_3_U[outflank_d8g5g1] & 0x0010204040404000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 32) & 0x3e] & (P >> 31);
-	flipped |= (unsigned long long) ((-outflank_h) & 0x3e) << 32;
+	flipped |= (unsigned long long) ((-(INT32)outflank_h) & 0x3e) << 32;
 
 	return flipped;
 }
@@ -1333,7 +1333,7 @@ static unsigned long long flip_H5(const unsigned long long P, const unsigned lon
 	flipped |= FLIPPED_3_U[outflank_e8h5h1] & 0x0020408080808000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 33) & 0x3f] & (P >> 32);
-	flipped |= (unsigned long long) ((-outflank_h) & 0x3f) << 33;
+	flipped |= (unsigned long long) ((-(INT32)outflank_h) & 0x3f) << 33;
 
 	return flipped;
 }
@@ -1359,7 +1359,7 @@ static unsigned long long flip_A6(const unsigned long long P, const unsigned lon
 	flip_d7 = O | 0x0040810000000000ULL;
 	flip_d7 &= flip_d7 >> 7;
 	flip_d7 &= (flip_d7 >> 14) & 0x0000000204081000ULL;
-	flipped |= flip_d7 & -(flip_d7 & (P << 7));
+	flipped |= flip_d7 & -(INT64)(flip_d7 & (P << 7));
 
 	flipped |= (P >> 9) & 0x0002000000000000ULL & O;
 
@@ -1387,7 +1387,7 @@ static unsigned long long flip_B6(const unsigned long long P, const unsigned lon
 	flip_d7 = O | 0x0081020000000000ULL;
 	flip_d7 &= flip_d7 >> 7;
 	flip_d7 &= (flip_d7 >> 14) & 0x0000000408102000ULL;
-	flipped |= flip_d7 & -(flip_d7 & (P << 7));
+	flipped |= flip_d7 & -(INT64)(flip_d7 & (P << 7));
 
 	flipped |= (P >> 9) & 0x0004000000000000ULL & O;
 
@@ -1516,13 +1516,13 @@ static unsigned long long flip_G6(const unsigned long long P, const unsigned lon
 	flipped = FLIPPED_5_V[outflank_v] & 0x0040404040404000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 40) & 0x3e] & (P >> 39);
-	flipped |= (unsigned long long) ((-outflank_h) & 0x3e) << 40;
+	flipped |= (unsigned long long) ((-(INT32)outflank_h) & 0x3e) << 40;
 
 	flipped |= (P >> 7) & 0x0020000000000000ULL & O;
 
 	flip_d9 = O & ((O >> 9) | 0x0000002000000000ULL);
 	flip_d9 &= (((flip_d9 & 0x0000002010000000ULL) >> 18) | 0x0000002010000000ULL);
-	flipped |= flip_d9 & -(flip_d9 & (P << 9));
+	flipped |= flip_d9 & -(INT64)(flip_d9 & (P << 9));
 
 	return flipped;
 }
@@ -1543,13 +1543,13 @@ static unsigned long long flip_H6(const unsigned long long P, const unsigned lon
 	flipped = FLIPPED_5_V[outflank_v] & 0x0080808080808000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 41) & 0x3f] & (P >> 40);
-	flipped |= (unsigned long long) ((-outflank_h) & 0x3f) << 41;
+	flipped |= (unsigned long long) ((-(INT32)outflank_h) & 0x3f) << 41;
 
 	flipped |= (P >> 7) & 0x0040000000000000ULL & O;
 
 	flip_d9 = O & ((O >> 9) | 0x0000004000000000ULL);
 	flip_d9 &= (((flip_d9 & 0x0000004020000000ULL) >> 18) | 0x0000004020000000ULL);
-	flipped |= flip_d9 & -(flip_d9 & (P << 9));
+	flipped |= flip_d9 & -(INT64)(flip_d9 & (P << 9));
 
 	return flipped;
 }
@@ -1566,13 +1566,13 @@ static unsigned long long flip_A7(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v, outflank_h, outflank_d7;
 
 	outflank_v = (0x0000010000000000ULL >> CONTIG_UP[((O & 0x0000010101010100ULL) * 0x0102040810204080ULL) >> 56]) & P;
-	flipped = (-outflank_v * 2) & 0x0000010101010100ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0000010101010100ULL;
 
 	outflank_h = ((O & 0x007e000000000000ULL) + 0x0002000000000000ULL) & P;
 	flipped |= (outflank_h - (outflank_h >> 8)) & 0x007e000000000000ULL;
 
 	outflank_d7 = (0x0000020000000000ULL >> CONTIG_UPRIGHT[((O & 0x0000020408102000ULL) * 0x0101010101010101ULL) >> 57]) & P;
-	flipped |= (-outflank_d7 * 2) & 0x0000020408102000ULL;
+	flipped |= (-(INT64)outflank_d7 * 2) & 0x0000020408102000ULL;
 
 	return flipped;
 }
@@ -1589,13 +1589,13 @@ static unsigned long long flip_B7(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v, outflank_h, outflank_d7;
 
 	outflank_v = (0x0000020000000000ULL >> CONTIG_UP[((O & 0x0000020202020200ULL) * 0x0081020408102040ULL) >> 56]) & P;
-	flipped = (-outflank_v * 2) & 0x0000020202020200ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0000020202020200ULL;
 
 	outflank_h = ((O & 0x007c000000000000ULL) + 0x0004000000000000ULL) & P;
 	flipped |= (outflank_h - (outflank_h >> 8)) & 0x007c000000000000ULL;
 
 	outflank_d7 = (0x0000040000000000ULL >> CONTIG_UPRIGHT[((O & 0x0000040810204000ULL) * 0x0101010101010101ULL) >> 58]) & P;
-	flipped |= (-outflank_d7 * 2) & 0x0000040810204000ULL;
+	flipped |= (-(INT64)outflank_d7 * 2) & 0x0000040810204000ULL;
 
 	return flipped;
 }
@@ -1613,7 +1613,7 @@ static unsigned long long flip_C7(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v;
 
 	outflank_v = (0x0000040000000000ULL >> CONTIG_UP[((O & 0x0000040404040400ULL) * 0x0040810204081020ULL) >> 56]) & P;
-	flipped = (-outflank_v * 2) & 0x0000040404040400ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0000040404040400ULL;
 
 	outflank_h = OUTFLANK_2[(O >> 49) & 0x3f] & (P >> 48);
 	flipped |= FLIPPED_2_H[outflank_h] & 0x00ff000000000000ULL;
@@ -1638,7 +1638,7 @@ static unsigned long long flip_D7(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v;
 
 	outflank_v = (0x0000080000000000ULL >> CONTIG_UP[((O & 0x0000080808080800ULL) * 0x0020408102040810ULL) >> 56]) & P;
-	flipped = (-outflank_v * 2) & 0x0000080808080800ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0000080808080800ULL;
 
 	outflank_h = OUTFLANK_3[(O >> 49) & 0x3f] & (P >> 48);
 	flipped |= FLIPPED_3_H[outflank_h] & 0x00ff000000000000ULL;
@@ -1663,7 +1663,7 @@ static unsigned long long flip_E7(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v;
 
 	outflank_v = (0x0000100000000000ULL >> CONTIG_UP[((O & 0x0000101010101000ULL) * 0x0010204081020408ULL) >> 56]) & P;
-	flipped = (-outflank_v * 2) & 0x0000101010101000ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0000101010101000ULL;
 
 	outflank_h = OUTFLANK_4[(O >> 49) & 0x3f] & (P >> 48);
 	flipped |= FLIPPED_4_H[outflank_h] & 0x00ff000000000000ULL;
@@ -1688,7 +1688,7 @@ static unsigned long long flip_F7(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v;
 
 	outflank_v = (0x0000200000000000ULL >> CONTIG_UP[((O & 0x0000202020202000ULL) * 0x0008102040810204ULL) >> 56]) & P;
-	flipped = (-outflank_v * 2) & 0x0000202020202000ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0000202020202000ULL;
 
 	outflank_h = OUTFLANK_5[(O >> 49) & 0x3f] & (P >> 48);
 	flipped |= FLIPPED_5_H[outflank_h] & 0x00ff000000000000ULL;
@@ -1713,13 +1713,13 @@ static unsigned long long flip_G7(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v, outflank_d9;
 
 	outflank_v = (0x0000400000000000ULL >> CONTIG_UP[((O & 0x0000404040404000ULL) * 0x0004081020408102ULL) >> 56]) & P;
-	flipped = (-outflank_v * 2) & 0x0000404040404000ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0000404040404000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 48) & 0x3e] & (P >> 47);
-	flipped |= (unsigned long long) ((-outflank_h) & 0x3e) << 48;
+	flipped |= (unsigned long long) ((-(INT32)outflank_h) & 0x3e) << 48;
 
 	outflank_d9 = (0x0000200000000000ULL >> CONTIG_UPLEFT[((O & 0x0000201008040200ULL) * 0x0101010101010101ULL) >> 56]) & P;
-	flipped |= (-outflank_d9 * 2) & 0x0000201008040200ULL;
+	flipped |= (-(INT64)outflank_d9 * 2) & 0x0000201008040200ULL;
 
 	return flipped;
 }
@@ -1737,13 +1737,13 @@ static unsigned long long flip_H7(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v, outflank_d9;
 
 	outflank_v = (0x0000800000000000ULL >> CONTIG_UP[((O & 0x0000808080808000ULL) * 0x0002040810204081ULL) >> 56]) & P;
-	flipped = (-outflank_v * 2) & 0x0000808080808000ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0000808080808000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 49) & 0x3f] & (P >> 48);
-	flipped |= (unsigned long long) ((-outflank_h) & 0x3f) << 49;
+	flipped |= (unsigned long long) ((-(INT32)outflank_h) & 0x3f) << 49;
 
 	outflank_d9 = (0x0000400000000000ULL >> CONTIG_UPLEFT[((O & 0x0000402010080400ULL) * 0x0101010101010101ULL) >> 57]) & P;
-	flipped |= (-outflank_d9 * 2) & 0x0000402010080400ULL;
+	flipped |= (-(INT64)outflank_d9 * 2) & 0x0000402010080400ULL;
 
 	return flipped;
 }
@@ -1760,13 +1760,13 @@ static unsigned long long flip_A8(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v, outflank_h, outflank_d7;
 
 	outflank_v = (0x0001000000000000ULL >> CONTIG_UP[((O & 0x0001010101010100ULL) * 0x0102040810204080ULL) >> 57]) & P;
-	flipped = (-outflank_v * 2) & 0x0001010101010100ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0001010101010100ULL;
 
 	outflank_h = ((O & 0x7e00000000000000ULL) + 0x0200000000000000ULL) & P;
 	flipped |= (outflank_h - (outflank_h >> 8)) & 0x7e00000000000000ULL;
 
 	outflank_d7 = (0x0002000000000000ULL >> CONTIG_UPRIGHT[((O & 0x0002040810204000ULL) * 0x0101010101010101ULL) >> 57]) & P;
-	flipped |= (-outflank_d7 * 2) & 0x0002040810204000ULL;
+	flipped |= (-(INT64)outflank_d7 * 2) & 0x0002040810204000ULL;
 
 	return flipped;
 }
@@ -1783,13 +1783,13 @@ static unsigned long long flip_B8(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v, outflank_h, outflank_d7;
 
 	outflank_v = (0x0002000000000000ULL >> CONTIG_UP[((O & 0x0002020202020200ULL) * 0x0081020408102040ULL) >> 57]) & P;
-	flipped = (-outflank_v * 2) & 0x0002020202020200ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0002020202020200ULL;
 
 	outflank_h = ((O & 0x7c00000000000000ULL) + 0x0400000000000000ULL) & P;
 	flipped |= (outflank_h - (outflank_h >> 8)) & 0x7c00000000000000ULL;
 
 	outflank_d7 = (0x0004000000000000ULL >> CONTIG_UPRIGHT[((O & 0x0004081020400000ULL) * 0x0101010101010101ULL) >> 58]) & P;
-	flipped |= (-outflank_d7 * 2) & 0x0004081020400000ULL;
+	flipped |= (-(INT64)outflank_d7 * 2) & 0x0004081020400000ULL;
 
 	return flipped;
 }
@@ -1807,7 +1807,7 @@ static unsigned long long flip_C8(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v;
 
 	outflank_v = (0x0004000000000000ULL >> CONTIG_UP[((O & 0x0004040404040400ULL) * 0x0040810204081020ULL) >> 57]) & P;
-	flipped = (-outflank_v * 2) & 0x0004040404040400ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0004040404040400ULL;
 
 	outflank_h = OUTFLANK_2[(O >> 57) & 0x3f] & (P >> 56);
 	flipped |= FLIPPED_2_H[outflank_h] & 0xff00000000000000ULL;
@@ -1832,7 +1832,7 @@ static unsigned long long flip_D8(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v;
 
 	outflank_v = (0x0008000000000000ULL >> CONTIG_UP[((O & 0x0008080808080800ULL) * 0x0020408102040810ULL) >> 57]) & P;
-	flipped = (-outflank_v * 2) & 0x0008080808080800ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0008080808080800ULL;
 
 	outflank_h = OUTFLANK_3[(O >> 57) & 0x3f] & (P >> 56);
 	flipped |= FLIPPED_3_H[outflank_h] & 0xff00000000000000ULL;
@@ -1857,7 +1857,7 @@ static unsigned long long flip_E8(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v;
 
 	outflank_v = (0x0010000000000000ULL >> CONTIG_UP[((O & 0x0010101010101000ULL) * 0x0010204081020408ULL) >> 57]) & P;
-	flipped = (-outflank_v * 2) & 0x0010101010101000ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0010101010101000ULL;
 
 	outflank_h = OUTFLANK_4[(O >> 57) & 0x3f] & (P >> 56);
 	flipped |= FLIPPED_4_H[outflank_h] & 0xff00000000000000ULL;
@@ -1882,7 +1882,7 @@ static unsigned long long flip_F8(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v;
 
 	outflank_v = (0x0020000000000000ULL >> CONTIG_UP[((O & 0x0020202020202000ULL) * 0x0008102040810204ULL) >> 57]) & P;
-	flipped = (-outflank_v * 2) & 0x0020202020202000ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0020202020202000ULL;
 
 	outflank_h = OUTFLANK_5[(O >> 57) & 0x3f] & (P >> 56);
 	flipped |= FLIPPED_5_H[outflank_h] & 0xff00000000000000ULL;
@@ -1907,13 +1907,13 @@ static unsigned long long flip_G8(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v, outflank_d9;
 
 	outflank_v = (0x0040000000000000ULL >> CONTIG_UP[((O & 0x0040404040404000ULL) * 0x0004081020408102ULL) >> 57]) & P;
-	flipped = (-outflank_v * 2) & 0x0040404040404000ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0040404040404000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 56) & 0x3e] & (P >> 55);
-	flipped |= (unsigned long long) ((-outflank_h) & 0x3e) << 56;
+	flipped |= (unsigned long long) ((-(INT32)outflank_h) & 0x3e) << 56;
 
 	outflank_d9 = (0x0020000000000000ULL >> CONTIG_UPLEFT[((O & 0x0020100804020000ULL) * 0x0101010101010101ULL) >> 56]) & P;
-	flipped |= (-outflank_d9 * 2) & 0x0020100804020000ULL;
+	flipped |= (-(INT64)outflank_d9 * 2) & 0x0020100804020000ULL;
 
 	return flipped;
 }
@@ -1931,13 +1931,13 @@ static unsigned long long flip_H8(const unsigned long long P, const unsigned lon
 	unsigned long long flipped, outflank_v, outflank_d9;
 
 	outflank_v = (0x0080000000000000ULL >> CONTIG_UP[((O & 0x0080808080808000ULL) * 0x0002040810204081ULL) >> 57]) & P;
-	flipped = (-outflank_v * 2) & 0x0080808080808000ULL;
+	flipped = (-(INT64)outflank_v * 2) & 0x0080808080808000ULL;
 
 	outflank_h = OUTFLANK_7[(O >> 57) & 0x3f] & (P >> 56);
-	flipped |= (unsigned long long) ((-outflank_h) & 0x3f) << 57;
+	flipped |= (unsigned long long) ((-(INT32)outflank_h) & 0x3f) << 57;
 
 	outflank_d9 = (0x0040000000000000ULL >> CONTIG_UPLEFT[((O & 0x0040201008040200ULL) * 0x0101010101010101ULL) >> 57]) & P;
-	flipped |= (-outflank_d9 * 2) & 0x0040201008040200ULL;
+	flipped |= (-(INT64)outflank_d9 * 2) & 0x0040201008040200ULL;
 
 	return flipped;
 }

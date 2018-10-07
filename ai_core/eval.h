@@ -98,7 +98,7 @@ extern UINT64 h6;			/* h6 */
 extern UINT64 h7;			/* h7 */
 extern UINT64 h8;			/* h8 */
 
-extern float eval_sum;
+extern INT32 eval_sum;
 
 INT32 Evaluation(UINT8 *board, UINT64 b_board, UINT64 w_board, UINT32 color, UINT32 stage);
 INT32 GetExactScore(UINT64 bk, UINT64 wh, INT32 empty);

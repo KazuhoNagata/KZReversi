@@ -16,7 +16,7 @@
 typedef struct Move {
 	UINT32 pos;
 	UINT64 rev;                     /*< flipped discs */
-	INT64 score;                   /*< score for this move */
+	INT32  score;                   /*< score for this move */
 } Move;
 
 /*! (simple) list of a legal moves */

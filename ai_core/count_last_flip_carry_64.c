@@ -110,10 +110,10 @@ static int count_last_flip_A1(const unsigned long long P)
 	unsigned long long P_v, P_d9;
 
 	P_v = P & 0x0101010101010100ULL;
-	n_flipped  = ((P_v & -P_v) * 0x000020406080a0c0ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x000020406080a0c0ULL) >> 60;
 	n_flipped += COUNT_FLIP_R[(P >> 1) & 0x7f];
 	P_d9 = P & 0x8040201008040200ULL;
-	n_flipped += (((P_d9 & -P_d9) >> 1) * 0x000010100c080503ULL) >> 60;
+	n_flipped += (((P_d9 & -(INT64)P_d9) >> 1) * 0x000010100c080503ULL) >> 60;
 
 	return n_flipped;
 }
@@ -130,10 +130,10 @@ static int count_last_flip_B1(const unsigned long long P)
 	unsigned long long P_v, P_d9;
 
 	P_v = P & 0x0202020202020200ULL;
-	n_flipped  = ((P_v & -P_v) * 0x0000102030405060ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x0000102030405060ULL) >> 60;
 	n_flipped += COUNT_FLIP_R[(P >> 2) & 0x3f];
 	P_d9 = P & 0x0080402010080400ULL;
-	n_flipped += ((P_d9 & -P_d9) * 0x0000040403020140ULL) >> 60;
+	n_flipped += ((P_d9 & -(INT64)P_d9) * 0x0000040403020140ULL) >> 60;
 
 	return n_flipped;
 }
@@ -150,7 +150,7 @@ static int count_last_flip_C1(const unsigned long long P)
 	unsigned long long P_v;
 
 	P_v = P & 0x0404040404040400ULL;
-	n_flipped  = ((P_v & -P_v) * 0x0000081018202830ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x0000081018202830ULL) >> 60;
 	n_flipped += COUNT_FLIP_2[P & 0xff];
 	n_flipped += COUNT_FLIP_2[((P & 0x0000804020110A04ULL) * 0x0101010101010101ULL) >> 56];
 
@@ -169,7 +169,7 @@ static int count_last_flip_D1(const unsigned long long P)
 	unsigned long long P_v;
 
 	P_v = P & 0x0808080808080800ULL;
-	n_flipped  = ((P_v & -P_v) * 0x000004080c101418ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x000004080c101418ULL) >> 60;
 	n_flipped += COUNT_FLIP_3[P & 0xff];
 	n_flipped += COUNT_FLIP_3[((P & 0x0000008041221408ULL) * 0x0101010101010101ULL) >> 56];
 
@@ -188,7 +188,7 @@ static int count_last_flip_E1(const unsigned long long P)
 	unsigned long long P_v;
 
 	P_v = P & 0x1010101010101000ULL;
-	n_flipped  = ((P_v & -P_v) * 0x0000020406080a0cULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x0000020406080a0cULL) >> 60;
 	n_flipped += COUNT_FLIP_4[P & 0xff];
 	n_flipped += COUNT_FLIP_4[((P & 0x0000000182442810ULL) * 0x0101010101010101ULL) >> 56];
 
@@ -207,7 +207,7 @@ static int count_last_flip_F1(const unsigned long long P)
 	unsigned long long P_v;
 
 	P_v = P & 0x2020202020202000ULL;
-	n_flipped  = ((P_v & -P_v) * 0x0000010203040506ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x0000010203040506ULL) >> 60;
 	n_flipped += COUNT_FLIP_5[P & 0xff];
 	n_flipped += COUNT_FLIP_5[((P & 0x0000010204885020ULL) * 0x0101010101010101ULL) >> 56];
 
@@ -226,10 +226,10 @@ static int count_last_flip_G1(const unsigned long long P)
 	unsigned long long P_v, P_d7;
 
 	P_v = P & 0x4040404040404000ULL;
-	n_flipped  = ((P_v & -P_v) * 0x0000008101820283ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x0000008101820283ULL) >> 60;
 	n_flipped += COUNT_FLIP_L[(P << 1) & 0x7e];
 	P_d7 = P & 0x0001020408102000ULL;
-	n_flipped += ((P_d7 & -P_d7) * 0x000002081840a000ULL) >> 60;
+	n_flipped += ((P_d7 & -(INT64)P_d7) * 0x000002081840a000ULL) >> 60;
 
 	return n_flipped;
 }
@@ -246,10 +246,10 @@ static int count_last_flip_H1(const unsigned long long P)
 	unsigned long long P_v, P_d7;
 
 	P_v = P & 0x8080808080808000ULL;
-	n_flipped  = (((P_v & -P_v) >> 1) * 0x0000008101820283ULL) >> 60;
+	n_flipped  = (((P_v & -(INT64)P_v) >> 1) * 0x0000008101820283ULL) >> 60;
 	n_flipped += COUNT_FLIP_L[P & 0x7f];
 	P_d7 = P & 0x0102040810204000ULL;
-	n_flipped += ((P_d7 & -P_d7) * 0x000001040c2050c0ULL) >> 60;
+	n_flipped += ((P_d7 & -(INT64)P_d7) * 0x000001040c2050c0ULL) >> 60;
 
 	return n_flipped;
 }
@@ -266,10 +266,10 @@ static int count_last_flip_A2(const unsigned long long P)
 	unsigned long long P_v, P_d9;
 
 	P_v = P & 0x0101010101010000ULL;
-	n_flipped  = ((P_v & -P_v) * 0x00000020406080a0ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x00000020406080a0ULL) >> 60;
 	n_flipped += COUNT_FLIP_R[(P >> 9) & 0x7f];
 	P_d9 = P & 0x4020100804020000ULL;
-	n_flipped += (((P_d9 & -P_d9) >> 1) * 0x00000010100c0805ULL) >> 60;
+	n_flipped += (((P_d9 & -(INT64)P_d9) >> 1) * 0x00000010100c0805ULL) >> 60;
 
 	return n_flipped;
 }
@@ -286,10 +286,10 @@ static int count_last_flip_B2(const unsigned long long P)
 	unsigned long long P_v, P_d9;
 
 	P_v = P & 0x0202020202020000ULL;
-	n_flipped  = ((P_v & -P_v) * 0x0000001020304050ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x0000001020304050ULL) >> 60;
 	n_flipped += COUNT_FLIP_R[(P >> 10) & 0x3f];
 	P_d9 = P & 0x8040201008040000ULL;
-	n_flipped += (((P_d9 & -P_d9) >> 2) * 0x00000010100c0805ULL) >> 60;
+	n_flipped += (((P_d9 & -(INT64)P_d9) >> 2) * 0x00000010100c0805ULL) >> 60;
 
 	return n_flipped;
 }
@@ -306,7 +306,7 @@ static int count_last_flip_C2(const unsigned long long P)
 	unsigned long long P_v;
 
 	P_v = P & 0x0404040404040000ULL;
-	n_flipped  = ((P_v & -P_v) * 0x0000000810182028ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x0000000810182028ULL) >> 60;
 	n_flipped += COUNT_FLIP_2[(P >> 8) & 0xff];
 	n_flipped += COUNT_FLIP_2[((P & 0x00804020110A0400ULL) * 0x0101010101010101ULL) >> 56];
 
@@ -325,7 +325,7 @@ static int count_last_flip_D2(const unsigned long long P)
 	unsigned long long P_v;
 
 	P_v = P & 0x0808080808080000ULL;
-	n_flipped  = ((P_v & -P_v) * 0x00000004080c1014ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x00000004080c1014ULL) >> 60;
 	n_flipped += COUNT_FLIP_3[(P >> 8) & 0xff];
 	n_flipped += COUNT_FLIP_3[((P & 0x0000804122140800ULL) * 0x0101010101010101ULL) >> 56];
 
@@ -344,7 +344,7 @@ static int count_last_flip_E2(const unsigned long long P)
 	unsigned long long P_v;
 
 	P_v = P & 0x1010101010100000ULL;
-	n_flipped  = ((P_v & -P_v) * 0x000000020406080aULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x000000020406080aULL) >> 60;
 	n_flipped += COUNT_FLIP_4[(P >> 8) & 0xff];
 	n_flipped += COUNT_FLIP_4[((P & 0x0000018244281000ULL) * 0x0101010101010101ULL) >> 56];
 
@@ -363,7 +363,7 @@ static int count_last_flip_F2(const unsigned long long P)
 	unsigned long long P_v;
 
 	P_v = P & 0x2020202020200000ULL;
-	n_flipped  = ((P_v & -P_v) * 0x0000000102030405ULL) >> 60;
+	n_flipped  = ((P_v & -(INT64)P_v) * 0x0000000102030405ULL) >> 60;
 	n_flipped += COUNT_FLIP_5[(P >> 8) & 0xff];
 	n_flipped += COUNT_FLIP_5[((P & 0x0001020488502000ULL) * 0x0101010101010101ULL) >> 56];
 
@@ -382,10 +382,10 @@ static int count_last_flip_G2(const unsigned long long P)
 	unsigned long long P_v, P_d7;
 
 	P_v = P & 0x4040404040400000ULL;
-	n_flipped  = (((P_v & -P_v) >> 1) * 0x0000000102030405ULL) >> 60;
+	n_flipped  = (((P_v & -(INT64)P_v) >> 1) * 0x0000000102030405ULL) >> 60;
 	n_flipped += COUNT_FLIP_L[(P >> 7) & 0x7e];
 	P_d7 = P & 0x0102040810200000ULL;
-	n_flipped += ((P_d7 & -P_d7) * 0x00000002081840a0ULL) >> 60;
+	n_flipped += ((P_d7 & -(INT64)P_d7) * 0x00000002081840a0ULL) >> 60;
 
 	return n_flipped;
 }
@@ -402,10 +402,10 @@ static int count_last_flip_H2(const unsigned long long P)
 	unsigned long long P_v, P_d7;
 
 	P_v = P & 0x8080808080800000ULL;
-	n_flipped  = (((P_v & -P_v) >> 2) * 0x0000000102030405ULL) >> 60;
+	n_flipped  = (((P_v & -(INT64)P_v) >> 2) * 0x0000000102030405ULL) >> 60;
 	n_flipped += COUNT_FLIP_L[(P >> 8) & 0x7f];
 	P_d7 = P & 0x0204081020400000ULL;
-	n_flipped += (((P_d7 & -P_d7) >> 2) * 0x0000000410308143ULL) >> 60;
+	n_flipped += (((P_d7 & -(INT64)P_d7) >> 2) * 0x0000000410308143ULL) >> 60;
 
 	return n_flipped;
 }

@@ -61,7 +61,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 
 	int score, bestscore, lower, upper, bestmove;
 	UINT32 key;
-	MoveList movelist[32 + 2], *iter;
+	MoveList movelist[48], *iter;
 	Move *move;
 	HashInfo *hashInfo;
 
@@ -252,6 +252,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 				if (lower < score && score < upper)
 				{
 					selectivity = g_mpc_level;
+					lower = score;
 					score = -PVS_SearchDeepExact(move_w, move_b,
 						empty - 1, color ^ 1, hash, -upper, -lower, 0, &selectivity, &line);
 				}
@@ -289,6 +290,10 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 		}
 	}
 
+	if (g_empty - empty == 0)
+	{
+		g_move = bestmove;
+	}
 	/* ’uŠ·•\‚É“o˜^ */
 	HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, empty, bestmove, g_mpc_level, g_infscore);
 	*p_selectivity = selectivity;
@@ -473,12 +478,15 @@ INT32 AB_SearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 col
 		{
 			max = GetEndScore[g_solveMethod](bk, wh, empty);
 			pline->cmove = 0;
+			*p_selectivity = g_mpc_level;
 		}
 		else
 		{
 			max = -AB_SearchExact(wh, bk, blank, empty,
 				color ^ 1, -beta, -alpha, 1, quad_parity, p_selectivity, pline);
+
 		}
+		return max;
 	}
 	else
 	{
@@ -631,7 +639,7 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 
 	int score, bestscore, lower, upper, bestmove;
 	UINT32 key;
-	MoveList movelist[32 + 2], *iter;
+	MoveList movelist[48], *iter;
 	Move *move;
 	HashInfo *hashInfo;
 
@@ -825,6 +833,7 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 				if (lower < score && score < upper)
 				{
 					selectivity = g_mpc_level;
+					lower = score;
 					score = -PVS_SearchDeepWinLoss(move_w, move_b,
 						empty - 1, color ^ 1, hash, -upper, -lower, 0, &selectivity, &line);
 				}
@@ -919,7 +928,7 @@ INT32 AB_SearchWinLoss(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	max = LOSS - 1;
 
 	UINT32 move_cnt;
-	MoveList movelist[24], *iter = movelist;
+	MoveList movelist[48], *iter = movelist;
 	UINT64 moves = CreateMoves(bk, wh, &move_cnt);
 	PVLINE line;
 	INT32 selectivity; // init now thresould

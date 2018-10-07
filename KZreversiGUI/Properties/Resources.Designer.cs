@@ -73,29 +73,9 @@ namespace KZreversi.Properties {
         /// <summary>
         ///   型 System.Drawing.Bitmap のローカライズされたリソースを検索します。
         /// </summary>
-        internal static System.Drawing.Bitmap othello_board {
-            get {
-                object obj = ResourceManager.GetObject("othello_board", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   型 System.Drawing.Bitmap のローカライズされたリソースを検索します。
-        /// </summary>
         internal static System.Drawing.Bitmap othello_wh {
             get {
                 object obj = ResourceManager.GetObject("othello_wh", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   型 System.Drawing.Bitmap のローカライズされたリソースを検索します。
-        /// </summary>
-        internal static System.Drawing.Bitmap wood_pattern {
-            get {
-                object obj = ResourceManager.GetObject("wood_pattern", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

@@ -81,7 +81,12 @@ namespace KZreversi
         {
             ulong moveBit;
 
-            moveBit = NativeMethods.KZ_GetCpuMove(bk, wh, cpuConfig);
+            GCHandle gchCpuConfig = GCHandle.Alloc(cpuConfig, GCHandleType.Pinned);
+            Marshal.StructureToPtr(cpuConfig, gchCpuConfig.AddrOfPinnedObject(), false);
+
+            moveBit = NativeMethods.KZ_GetCpuMove(bk, wh, gchCpuConfig.AddrOfPinnedObject());
+
+            gchCpuConfig.Free();
 
             return moveBit;
         }
@@ -211,7 +216,7 @@ namespace KZreversi
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
-        public extern static ulong KZ_GetCpuMove(ulong bk, ulong wh, [In] CpuConfig cpuConfig);
+        public extern static ulong KZ_GetCpuMove(ulong bk, ulong wh, [In, Out] IntPtr cpuConfig);
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]

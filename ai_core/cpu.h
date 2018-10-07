@@ -45,10 +45,10 @@ typedef struct
 	UINT32 searchDepth;			// 中盤読みの深さ
 	UINT32 winLossDepth;		// 勝敗探索を開始する深さ
 	UINT32 exactDepth;			// 石差探索を開始する深さ
-	BOOL   bookFlag;			// 定石を使用するかどうか
 	UINT32 bookVariability;	    // 定石の変化度
-	BOOL   mpcFlag;				// MPCを使用するかどうか
-	BOOL   tableFlag;			// 置換表を使用するかどうか
+	UINT8  bookFlag;			// 定石を使用するかどうか
+	UINT8  mpcFlag;				// MPCを使用するかどうか
+	UINT8  tableFlag;			// 置換表を使用するかどうか
 
 }CPUCONFIG;
 
@@ -89,7 +89,7 @@ const extern double cutval_table[8];
 extern const INT32 g_max_cut_table_size;
 extern UINT64 g_countNode;
 extern HashTable *g_hash;
-
+extern INT32 g_key;
 
 extern BOOL g_mpcFlag;
 extern BOOL g_tableFlag;

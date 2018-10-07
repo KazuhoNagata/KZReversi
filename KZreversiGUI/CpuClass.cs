@@ -88,12 +88,12 @@ namespace KZreversi
             cConfig.exactDepth = exactDepth;
         }
 
-        public bool GetBookFlag()
+        public byte GetBookFlag()
         {
             return cConfig.bookFlag;
         }
 
-        public void SetBookFlag(bool bookFlag)
+        public void SetBookFlag(byte bookFlag)
         {
             cConfig.bookFlag = bookFlag;
         }
@@ -108,22 +108,22 @@ namespace KZreversi
             cConfig.bookVariability = bookVariability;
         }
 
-        public bool GetMpcFlag()
+        public byte GetMpcFlag()
         {
             return cConfig.mpcFlag;
         }
 
-        public void SetMpcFlag(bool mpcFlag)
+        public void SetMpcFlag(byte mpcFlag)
         {
             cConfig.mpcFlag = mpcFlag;
         }
 
-        public bool GetTableFlag()
+        public byte GetTableFlag()
         {
             return cConfig.tableFlag;
         }
 
-        public void SetTableFlag(bool tableFlag)
+        public void SetTableFlag(byte tableFlag)
         {
             cConfig.tableFlag = tableFlag;
         }

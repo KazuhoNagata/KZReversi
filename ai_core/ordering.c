@@ -327,24 +327,24 @@ void SortMoveListEnd(
 		else if (hash->entry[key].deepest.bk == move_w && 
 			     hash->entry[key].deepest.wh == move_b)
 		{
-			iter->move.score += (1 << 8);
+			iter->move.score += (1 << 10);
 		}
 		// ‘æ“ñƒnƒbƒVƒ…ƒe[ƒuƒ‹(newest)‚É“o˜^‚³‚ê‚Ä‚¢‚éŽè‚© 
 		else if (hash->entry[key].newest.bk == move_w &&
 			     hash->entry[key].newest.wh == move_b)
 		{
-			iter->move.score += (1 << 7);
+			iter->move.score += (1 << 8);
 		}
 		blank = ~(move_w | move_b);
 
 		// ’…Žè‰Â”\”‚ðŒvŽZ
 		n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
 		// ‘ŠŽè‚Ì’…Žè‰Â”\”
-		iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081ULL)) * (1 << 15);
+		iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081ULL)) * (1 << 3);
 		// Ž©•ª‚Ì‚S‹÷‚É‚¨‚¯‚éˆÀ’è“x
-		iter->move.score -= get_edge_stability(move_w, move_b) * (1 << 11);
+		iter->move.score -= get_edge_stability(move_w, move_b) * (1 << 2);
 		// ‘ŠŽè‚ÌöÝ“I’…Žè‰Â”\”(ŠJ•ú“x—˜_)
-		iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b, blank))) * (1 << 5);
+		iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b, blank))) * (1 << 2);
 
 		// ó‚¢’Tõ‚É‚æ‚é•]‰¿’l
 #if 1
@@ -354,7 +354,7 @@ void SortMoveListEnd(
 			if (HashGet(hash, key, move_w, move_b)) iter->move.score += (1 << 15); // ’…Žè‚µ‚½Œã‚Ì‹Ç–Ê‚ª’uŠ·•\‚É“o˜^‚³‚ê‚Ä‚¢‚½‚ç‰ÁŽZ
 			temp_eval = -AB_SearchNoPV(move_w, move_b, sort_depth, empty - 1, color ^ 1,
 				NEGAMIN, NEGAMAX, 0);
-			iter->move.score += (temp_eval) * (1 << 2);
+			iter->move.score += (temp_eval) * (1 << 6);
 		}
 #endif
 	}

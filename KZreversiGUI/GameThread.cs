@@ -169,7 +169,7 @@ namespace KZreversi
             // 現在のＣＰＵの設定を取得
             CpuConfig cpuConfig = SetCpuConfig(cpuClass);
             // BOOK禁止
-            cpuConfig.bookFlag = false;
+            cpuConfig.bookFlag = 0;
 
             ulong bk = board.GetBlack();
             ulong wh = board.GetWhite();

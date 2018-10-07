@@ -63,7 +63,7 @@ INT32 SearchEmpty_1(UINT64 bk, UINT64 wh, INT32 pos, INT32 beta, PVLINE *pline)
 		}
 	}
 
-	return 	score - 64;
+	return score - 64;
 }
 
 
