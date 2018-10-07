@@ -951,6 +951,7 @@ INT32 GetExactScore(UINT64 bk, UINT64 wh, INT32 empty)
 	const int n_discs_o = 64 - empty - n_discs_p;
 
 	int score = n_discs_p - n_discs_o;
+
 #ifdef LOSSGAME
 	return -score;
 #else

@@ -664,35 +664,47 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 				return eval_b;
 			}
 
-			eval_b = eval;
-			if (eval <= aVal)
+			if (lv == g_max_cut_table_size - 1)
 			{
-				selectivity = lv;
-				// ÉøílÇâ∫âÒÇ¡ÇΩÇÃÇ≈çƒíTçı
-				eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, -g_infscore, eval + 2,
-					NO_PASS, &selectivity, &line);
+				eval_b = eval;
+				if (eval <= aVal)
+				{
+					selectivity = lv;
+					// ÉøílÇâ∫âÒÇ¡ÇΩÇÃÇ≈çƒíTçı
+					eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, -g_infscore, eval + 2,
+						NO_PASS, &selectivity, &line);
 
-			}
-			else if (eval >= bVal)
-			{
-				selectivity = lv;
-				// É¿ílÇè„âÒÇ¡ÇΩÇÃÇ≈çƒíTçı
-				eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, eval - 2, g_infscore,
-					NO_PASS, &selectivity, &line);
+				}
+				else if (eval >= bVal)
+				{
+					selectivity = lv;
+					// É¿ílÇè„âÒÇ¡ÇΩÇÃÇ≈çƒíTçı
+					eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, eval - 2, g_infscore,
+						NO_PASS, &selectivity, &line);
+				}
+
+				// íÜífÇ≥ÇÍÇΩÇÃÇ≈íºãﬂÇÃämíËï]âøílÇï‘ãp
+				if (g_AbortFlag == TRUE)
+				{
+					sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.");
+					g_set_message_funcptr[0](g_AiMsg);
+					g_hash->entry[key].deepest.bestmove = move_b;
+					return eval_b;
+				}
 			}
 
-			// íÜífÇ≥ÇÍÇΩÇÃÇ≈íºãﬂÇÃämíËï]âøílÇï‘ãp
-			if (g_AbortFlag == TRUE)
-			{
-				sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.");
-				g_set_message_funcptr[0](g_AiMsg);
-				g_hash->entry[key].deepest.bestmove = move_b;
-				return eval_b;
-			}
+			if (eval >= bVal) eval + 2; // ï]âøílÇ™É¿à»è„ÇÃèÍçáÅAÇªÇÍÇÊÇËçÇÇ¢Ç±Ç∆Ç™ï€èÿÇ≥ÇÍÇÈ
+			else if (eval < aVal) eval - 2; // ï]âøílÇ™ÉøÇÊÇËè¨Ç≥Ç¢èÍçáÅAÇªÇÍÇÊÇËí·Ç¢Ç±Ç∆Ç™ï€èÿÇ≥ÇÍÇÈ
 
 			// evalÇÃílÇ≈åàÇﬂë≈Çøï]âøÇµÇƒÇ›ÇÈ
+			if(eval % 2)
+			{
+				if (eval < 0) eval -= 1;
+				else eval += 1;
+			}
+
 			aVal = eval - 1;
-			bVal = eval + 1;
+			bVal = eval;
 
 			// íuä∑ï\Ç©ÇÁç≈ëPéËÇéÊìæ
 			move = GetMoveFromHash(bk, wh, key);
@@ -971,15 +983,20 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	{
 		INT32 mpc_level;
 		double MPC_CUT_VAL;
-		if (empty <= 12)
+		if (g_empty - empty >= 8)
 		{
-			MPC_CUT_VAL = cutval_table[4];
-			mpc_level = 4;
+			MPC_CUT_VAL = cutval_table[2];
+			mpc_level = 2;
 		}
-		else
+		else if (g_empty - empty >= 4)
 		{
 			MPC_CUT_VAL = cutval_table[3];
 			mpc_level = 3;
+		}
+		else
+		{
+			MPC_CUT_VAL = cutval_table[4];
+			mpc_level = 4;
 		}
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
@@ -1081,12 +1098,13 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 				if (score > lower && score < upper)
 				{
 					selectivity = g_max_cut_table_size; // init max thresould
+					lower = score;
 					score = -PVS_SearchDeep(wh ^ move->rev, bk ^ ((1ULL << move->pos) | move->rev),
-						depth - 1, empty - 1, color ^ 1, hash, -upper, -score, 0, &selectivity, &line);
+						depth - 1, empty - 1, color ^ 1, hash, -upper, -lower, 0, &selectivity, &line);
 				}
 			}
 
-			if (score >= beta)
+			if (score >= upper)
 			{
 				bestscore = score;
 				break;
@@ -1095,10 +1113,10 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 			if (score > bestscore) {
 				bestscore = score;
 				bestmove = move->pos;
+				pv_flag = FALSE;
 				if (bestscore > lower)
 				{
 					lower = bestscore;
-					pv_flag = FALSE;
 					if (line.cmove < 0 || line.cmove > 59)
 					{
 						line.cmove = 0;
@@ -1161,17 +1179,17 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
 	{
 		double MPC_CUT_VAL;
-		if (empty <= 16)
+		if (g_empty - empty >= 8)
 		{
-			MPC_CUT_VAL = cutval_table[4];
+			MPC_CUT_VAL = cutval_table[2];
 		}
-		else if (empty <= 36)
+		else if (g_empty - empty >= 4)
 		{
 			MPC_CUT_VAL = cutval_table[3];
 		}
 		else
 		{
-			MPC_CUT_VAL = cutval_table[2];
+			MPC_CUT_VAL = cutval_table[4];
 		}
 
 
@@ -1300,17 +1318,17 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
 	{
 		double MPC_CUT_VAL;
-		if (empty <= 16)
+		if (g_empty - empty >= 8)
 		{
-			MPC_CUT_VAL = cutval_table[4];
+			MPC_CUT_VAL = cutval_table[2];
 		}
-		else if (empty <= 36)
+		else if (g_empty - empty >= 4)
 		{
 			MPC_CUT_VAL = cutval_table[3];
 		}
 		else
 		{
-			MPC_CUT_VAL = cutval_table[2];
+			MPC_CUT_VAL = cutval_table[4];
 		}
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];

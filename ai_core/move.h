@@ -16,7 +16,7 @@
 typedef struct Move {
 	UINT32 pos;
 	UINT64 rev;                     /*< flipped discs */
-	INT32  score;                   /*< score for this move */
+	INT64  score;                   /*< score for this move */
 } Move;
 
 /*! (simple) list of a legal moves */
@@ -29,6 +29,5 @@ UINT64 CreateMoves(UINT64 bk_p, UINT64 wh_p, UINT32 *p_count_p);
 void StoreMovelist(MoveList *list, UINT64 bk, UINT64 wh, UINT64 moves);
 
 UINT64 GetPotentialMoves(UINT64 P, UINT64 O, UINT64 blank);
-UINT64 GetFirstRandomMove(UINT64 move);
 
 BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos);

@@ -340,7 +340,7 @@ void SortMoveListEnd(
 		// 着手可能数を計算
 		n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
 		// 相手の着手可能数
-		iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081ULL)) * (1 << 3);
+		iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081ULL)) * (1 << 12);
 		// 自分の４隅における安定度
 		iter->move.score -= get_edge_stability(move_w, move_b) * (1 << 2);
 		// 相手の潜在的着手可能数(開放度理論)
@@ -351,10 +351,9 @@ void SortMoveListEnd(
 		if (sort_depth > 0)
 		{
 			INT32 temp_eval;
-			if (HashGet(hash, key, move_w, move_b)) iter->move.score += (1 << 15); // 着手した後の局面が置換表に登録されていたら加算
 			temp_eval = -AB_SearchNoPV(move_w, move_b, sort_depth, empty - 1, color ^ 1,
 				NEGAMIN, NEGAMAX, 0);
-			iter->move.score += (temp_eval) * (1 << 6);
+			iter->move.score += (temp_eval) * (1 << 8);
 		}
 #endif
 	}

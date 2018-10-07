@@ -199,6 +199,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 			bestscore = GetEndScore[g_solveMethod](bk, wh, empty);
 			bestmove = NOMOVE;
 			pline->cmove = 0;
+			*p_selectivity = g_mpc_level;
 		}
 		else
 		{
@@ -268,9 +269,9 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 			if (score > bestscore) {
 				bestscore = score;
 				bestmove = move->pos;
+				pv_flag = FALSE;
 				if (score > lower)
 				{
-					pv_flag = FALSE;
 					lower = score;
 					if (line.cmove < 0 || line.cmove > 63)
 					{
@@ -780,6 +781,7 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 			bestscore = GetEndScore[g_solveMethod](bk, wh, empty);
 			bestmove = NOMOVE;
 			pline->cmove = 0;
+			*p_selectivity = g_mpc_level;
 		}
 		else
 		{
@@ -849,9 +851,9 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color,
 			if (score > bestscore) {
 				bestscore = score;
 				bestmove = move->pos;
+				pv_flag = FALSE;
 				if (score > lower)
 				{
-					pv_flag = FALSE;
 					lower = score;
 				}
 			}
