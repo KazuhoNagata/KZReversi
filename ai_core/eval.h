@@ -17,7 +17,7 @@
 #define LOSS -1
 
 #define INDEX_NUM 6561
-#define MOBILITY_NUM 1
+#define MOBILITY_NUM 36
 #define PARITY_NUM 16
 // ”ÍˆÍŠO‚Ì“_”
 #define INF_SCORE 127

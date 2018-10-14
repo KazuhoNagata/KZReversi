@@ -100,8 +100,8 @@ INT32 *edge;
 INT32 *corner5_2;
 INT32 *corner3_3;
 INT32 *triangle;
-//INT32 *mobility;
-//INT32 *parity;
+INT32 *mobility;
+INT32 *parity;
 
 /* 評価パターンテーブル(おおもと) */
 INT32 hori_ver1_data[2][60][INDEX_NUM];
@@ -115,8 +115,8 @@ INT32 edge_data[2][60][INDEX_NUM * 9];
 INT32 corner5_2_data[2][60][INDEX_NUM * 9];
 INT32 corner3_3_data[2][60][INDEX_NUM * 3];
 INT32 triangle_data[2][60][INDEX_NUM * 9];
-//INT32 mobility_data[2][60][MOBILITY_NUM];
-//INT32 parity_data[2][60][PARITY_NUM];
+INT32 mobility_data[2][60][MOBILITY_NUM];
+INT32 parity_data[2][60][PARITY_NUM];
 //INT32 constant_data[2][60];
 
 int pow_table[10] = { 1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683 };
@@ -132,8 +132,8 @@ INT32 key_edge[4];
 INT32 key_corner5_2[8];
 INT32 key_corner3_3[4];
 INT32 key_triangle[4];
-//float key_mobility;
-//INT32 key_parity;
+INT32 key_mobility;
+INT32 key_parity;
 //float key_constant;
 INT32 eval_sum;
 
@@ -910,7 +910,7 @@ INT32 check_triangle(UINT8 *board)
 	return eval;
 }
 
-#if 0
+#if 1
 INT32 check_parity(UINT64 blank, UINT32 color)
 {
 	int p;
@@ -923,13 +923,13 @@ INT32 check_parity(UINT64 blank, UINT32 color)
 	return parity[p];
 }
 
-double check_mobility(UINT64 b_board, UINT64 w_board)
+INT32 check_mobility(UINT64 b_board, UINT64 w_board)
 {
 	UINT32 mob1;
 
 	CreateMoves(b_board, w_board, &mob1);
 	//CreateMoves(w_board, b_board, &mob2);
-	key_mobility = mob1 * mobility[0];
+	key_mobility = mobility[mob1];
 
 	return key_mobility;
 }
@@ -952,6 +952,8 @@ INT32 GetExactScore(UINT64 bk, UINT64 wh, INT32 empty)
 
 	int score = n_discs_p - n_discs_o;
 
+	if (score > 0) score += empty;
+	else if (score < 0) score -= empty;
 #ifdef LOSSGAME
 	return -score;
 #else
@@ -971,10 +973,12 @@ INT32 GetExactScore(UINT64 bk, UINT64 wh, INT32 empty)
 */
 INT32 GetWinLossScore(UINT64 bk, UINT64 wh, INT32 empty)
 {
-	int score;
 	const int n_discs_p = CountBit(bk);
 	const int n_discs_o = 64 - empty - n_discs_p;
+	int score = n_discs_p - n_discs_o;
 
+	if (score > 0) score += empty;
+	else if (score < 0) score -= empty;
 #ifdef LOSSGAME
 	if (n_discs_p < n_discs_o)
 	{
@@ -989,11 +993,11 @@ INT32 GetWinLossScore(UINT64 bk, UINT64 wh, INT32 empty)
 		score = DRAW;
 	}
 #else
-	if (n_discs_p > n_discs_o)
+	if (score > 0)
 	{
 		score = WIN;
 	}
-	else if (n_discs_p < n_discs_o)
+	else if (score < 0)
 	{
 		score = LOSS;
 	}
@@ -1022,7 +1026,8 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	corner5_2 = corner5_2_data[color][stage];
 	corner3_3 = corner3_3_data[color][stage];
 	triangle = triangle_data[color][stage];
-	//parity = parity_data[color][stage];
+	mobility = mobility_data[color][stage];
+	parity = parity_data[color][stage];
 
 	eval = check_h_ver1(board);
 	eval += check_h_ver2(board);
@@ -1038,9 +1043,8 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	eval += check_corner3_3(board);
 	eval += check_triangle(board);
 
-	//eval += check_parity(~(bk | wh), color);
-	//eval += color * 20000;
-	//eval *= EVAL_ONE_STONE;
+	eval += check_mobility(bk, wh);
+	eval += check_parity(~(bk | wh), color);
 
 	eval_sum = eval;
 	return eval;
@@ -1236,13 +1240,13 @@ BOOL OpenEvalData(char *filename)
 			p_table_op[opponent_feature(i, 10)] = -p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
-#if 0
+#if 1
 		/* mobility */
 		p_table = mobility_data[0][stage];
 		p_table_op = mobility_data[1][stage];
 		for (i = 0; i < MOBILITY_NUM; i++)
 		{
-			p_table[i] = (float)atof(line);
+			p_table[i] = atoi(line);
 			p_table_op[i] = -p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
@@ -1252,7 +1256,7 @@ BOOL OpenEvalData(char *filename)
 		p_table_op = parity_data[1][stage];
 		for (i = 0; i < PARITY_NUM; i++)
 		{
-			p_table[i] = (float)atof(line);
+			p_table[i] = atoi(line);
 			p_table_op[i] = p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}

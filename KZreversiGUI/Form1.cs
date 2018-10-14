@@ -128,6 +128,12 @@ namespace KZreversi
         private Bitmap m_panel1_bitmap;
         private Bitmap m_back_bitmap;
 
+        private bool _m_hintFlag;
+        private bool m_enablePVdisplay;
+        private bool m_enableDetailDisplay;
+        private bool m_enableResultDisplay;
+
+
         public Form1()
         {
             boardclass = new BoardClass();
@@ -138,9 +144,9 @@ namespace KZreversi
 
             delegateObj = new SetMoveProperty(setMove);
             nodeCountDelegate = new SetNodeCountProperty(setNodeCount);
-            cpuMessageDelegate = new SetCpuMessageProperty(setCpuMessage);
-            setPVLineDelegate = new SetCpuMessageProperty(setPVLine);
-            setMPCInfoDelegate = new SetCpuMessageProperty(setMPCInfo);
+            cpuMessageDelegate = new SetCpuMessageProperty(SetCpuMessage);
+            setPVLineDelegate = new SetCpuMessageProperty(SetPVLine);
+            setMPCInfoDelegate = new SetCpuMessageProperty(SetMPCInfo);
             hintDelegate = new DoHintProperty(doHintProcess);
 
             boardclass.InitBoard(COLOR_BLACK);
@@ -268,7 +274,7 @@ namespace KZreversi
                     cppWrapper.SendAbort();
                     this.Cursor = Cursors.Default;
                     MessageBox.Show(
-                        "AIの処理を中断しました。再開はゲーム開始ボタンを押してください。",
+                        "AIの処理を中断しました。",
                         "中断",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
@@ -466,12 +472,13 @@ namespace KZreversi
                 cpuClass[i].SetExactDepth(12);
                 cpuClass[i].SetBookFlag(1);
                 cpuClass[i].SetBookVariability(1);
-                cpuClass[i].SetMpcFlag(1);
-                cpuClass[i].SetTableFlag(1);
+                cpuClass[i].SetMpcFlag(Convert.ToByte(MenuUseMPC.Checked));
+                cpuClass[i].SetTableFlag(Convert.ToByte(MenuUseTable.Checked));
             }
 
             m_enablePVdisplay = MenuDisplayPV.Checked;
             m_enableDetailDisplay = MenuAIThinking.Checked;
+            m_enableResultDisplay = MenuResultDetail.Checked;
         }
 
 
@@ -1020,22 +1027,21 @@ namespace KZreversi
             }
         }
 
-        private void setCpuMessage(string cpuMessage)
+        private void SetCpuMessage(string cpuMessage)
         {
             if(m_enableResultDisplay) toolStripStatusLabel3.Text = cpuMessage;
         }
 
-        private void setlabelText(string text) 
+        private void SetlabelText(string text) 
         {
             label6.Text = text;    
         }
-        private void setPVLine(string cpuMessage)
+        private void SetPVLine(string cpuMessage)
         {
-            if(m_enablePVdisplay) Invoke(new SetPVLineDelegate(setlabelText), cpuMessage);
-
+            if(m_enablePVdisplay) Invoke(new SetPVLineDelegate(SetlabelText), cpuMessage);
         }
 
-        private void setMPCInfo(string mpcMessage)
+        private void SetMPCInfo(string mpcMessage)
         {
             toolStripStatusLabel2.Text = mpcMessage;
         }
@@ -1070,11 +1076,6 @@ namespace KZreversi
                 }
             }
         }
-
-        private bool _m_hintFlag;
-        private bool m_enablePVdisplay;
-        private bool m_enableDetailDisplay;
-        private bool m_enableResultDisplay;
 
         public bool m_hintFlagProperty
         {
@@ -1571,34 +1572,34 @@ namespace KZreversi
         private void mPC探索を行うToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
-            if (MPC_ToolStripMenuItem.Checked)
+            if (MenuUseMPC.Checked)
             {
                 cpuClass[0].SetMpcFlag(0);
                 cpuClass[1].SetMpcFlag(0);
-                MPC_ToolStripMenuItem.Checked = false;
+                MenuUseMPC.Checked = false;
             }
             else
             {
                 cpuClass[0].SetMpcFlag(1);
                 cpuClass[1].SetMpcFlag(1);
-                MPC_ToolStripMenuItem.Checked = true;
+                MenuUseMPC.Checked = true;
             }
         }
 
 
         private void 置換表を使うToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (Table_ToolStripMenuItem.Checked)
+            if (MenuUseTable.Checked)
             {
                 cpuClass[0].SetTableFlag(0);
                 cpuClass[1].SetTableFlag(0);
-                Table_ToolStripMenuItem.Checked = false;
+                MenuUseTable.Checked = false;
             }
             else
             {
                 cpuClass[0].SetTableFlag(1);
                 cpuClass[1].SetTableFlag(1);
-                Table_ToolStripMenuItem.Checked = true;
+                MenuUseTable.Checked = true;
             }
         }
 

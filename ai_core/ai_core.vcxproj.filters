@@ -68,9 +68,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ai_core.c">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="bit64.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -84,9 +81,6 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="cpu.c">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="dllmain.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="empty.c">
@@ -117,6 +111,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="ai_core.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

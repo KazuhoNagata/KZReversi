@@ -161,8 +161,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <StackReserveSize>
       </StackReserveSize>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
-      <GenerateMapFile>false</GenerateMapFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <PostBuildEvent>
       <Command>copy "D:\Repos\KZReversi\ai_core\x64\Release\ai_core.dll" "D:\Repos\KZReversi\KZreversiGUI\bin\x64\Release\"</Command>
@@ -196,20 +196,7 @@
     <ClCompile Include="book.c" />
     <ClCompile Include="count_last_flip_carry_64.c" />
     <ClCompile Include="cpu.c" />
-    <ClCompile Include="dllmain.c">
-      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
-      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</CompileAsManaged>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</CompileAsManaged>
-      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</CompileAsManaged>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="dllmain.c" />
     <ClCompile Include="empty.c" />
     <ClCompile Include="endgame.c" />
     <ClCompile Include="eval.c" />

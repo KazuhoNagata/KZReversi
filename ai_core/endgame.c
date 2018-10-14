@@ -131,8 +131,8 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 				}
 
 				// change window width
-				//lower = max(lower, hash_lower);
-				//upper = min(upper, hash_upper);
+				lower = max(lower, hash_lower);
+				upper = min(upper, hash_upper);
 			}
 
 			bestmove = hashInfo->bestmove;
@@ -212,7 +212,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 		BOOL pv_flag = TRUE;
 		if (moveCount > 1)
 		{
-			if (g_empty - empty <= 10)
+			if (g_empty - empty <= 14)
 			{
 				SortMoveListMiddle(movelist, bk, wh, hash, empty, alpha, beta, color);
 			}
@@ -244,6 +244,7 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 			{
 				score = -PVS_SearchDeepExact(move_w, move_b,
 					empty - 1, color ^ 1, hash, -upper, -lower, 0, &selectivity, &line);
+				pv_flag = FALSE;
 			}
 			else
 			{
@@ -269,7 +270,6 @@ INT32 PVS_SearchDeepExact(UINT64 bk, UINT64 wh, INT32 empty, UINT32 color, HashT
 			if (score > bestscore) {
 				bestscore = score;
 				bestmove = move->pos;
-				pv_flag = FALSE;
 				if (score > lower)
 				{
 					lower = score;

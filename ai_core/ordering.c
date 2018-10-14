@@ -327,35 +327,28 @@ void SortMoveListEnd(
 		else if (hash->entry[key].deepest.bk == move_w && 
 			     hash->entry[key].deepest.wh == move_b)
 		{
-			iter->move.score += (1 << 10);
+			iter->move.score += (1 << 29);
 		}
 		// 第二ハッシュテーブル(newest)に登録されている手か 
 		else if (hash->entry[key].newest.bk == move_w &&
 			     hash->entry[key].newest.wh == move_b)
 		{
-			iter->move.score += (1 << 8);
+			iter->move.score += (1 << 28);
 		}
-		blank = ~(move_w | move_b);
-
-		// 着手可能数を計算
-		n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
-		// 相手の着手可能数
-		iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081ULL)) * (1 << 12);
-		// 自分の４隅における安定度
-		iter->move.score -= get_edge_stability(move_w, move_b) * (1 << 2);
-		// 相手の潜在的着手可能数(開放度理論)
-		iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b, blank))) * (1 << 2);
-
-		// 浅い探索による評価値
-#if 1
-		if (sort_depth > 0)
+		else
 		{
-			INT32 temp_eval;
-			temp_eval = -AB_SearchNoPV(move_w, move_b, sort_depth, empty - 1, color ^ 1,
-				NEGAMIN, NEGAMAX, 0);
-			iter->move.score += (temp_eval) * (1 << 8);
+			blank = ~(move_w | move_b);
+
+			// 着手可能数を計算
+			n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
+			// 相手の着手可能数
+			iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081ULL)) * (1 << 16);
+			// 自分の４隅における安定度
+			iter->move.score -= get_edge_stability(move_w, move_b) * (1 << 2);
+			// 相手の潜在的着手可能数(開放度理論)
+			iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b, blank))) * (1 << 2);
 		}
-#endif
+		
 	}
 
 	/* 得点の高い順にソート */

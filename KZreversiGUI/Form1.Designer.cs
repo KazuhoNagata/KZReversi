@@ -68,8 +68,8 @@
             this.MenuResultDetail = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuDisplayPV = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuAIThinking = new System.Windows.Forms.ToolStripMenuItem();
-            this.Table_ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.MPC_ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.MenuUseTable = new System.Windows.Forms.ToolStripMenuItem();
+            this.MenuUseMPC = new System.Windows.Forms.ToolStripMenuItem();
             this.CasheToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mBToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mBToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
@@ -407,7 +407,7 @@
             // 変化なしToolStripMenuItem
             // 
             this.変化なしToolStripMenuItem.Name = "変化なしToolStripMenuItem";
-            this.変化なしToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.変化なしToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.変化なしToolStripMenuItem.Text = "変化なし";
             this.変化なしToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
@@ -416,28 +416,28 @@
             this.変化小ToolStripMenuItem.Checked = true;
             this.変化小ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.変化小ToolStripMenuItem.Name = "変化小ToolStripMenuItem";
-            this.変化小ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.変化小ToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.変化小ToolStripMenuItem.Text = "変化(小)";
             this.変化小ToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
             // 変化中ToolStripMenuItem
             // 
             this.変化中ToolStripMenuItem.Name = "変化中ToolStripMenuItem";
-            this.変化中ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.変化中ToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.変化中ToolStripMenuItem.Text = "変化(中)";
             this.変化中ToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
             // 変化大ToolStripMenuItem
             // 
             this.変化大ToolStripMenuItem.Name = "変化大ToolStripMenuItem";
-            this.変化大ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.変化大ToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.変化大ToolStripMenuItem.Text = "変化(大)";
             this.変化大ToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
             // ランダムToolStripMenuItem
             // 
             this.ランダムToolStripMenuItem.Name = "ランダムToolStripMenuItem";
-            this.ランダムToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ランダムToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
             this.ランダムToolStripMenuItem.Text = "ランダム";
             this.ランダムToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
@@ -447,8 +447,8 @@
             this.MenuResultDetail,
             this.MenuDisplayPV,
             this.MenuAIThinking,
-            this.Table_ToolStripMenuItem,
-            this.MPC_ToolStripMenuItem});
+            this.MenuUseTable,
+            this.MenuUseMPC});
             this.aI設定ToolStripMenuItem.Name = "aI設定ToolStripMenuItem";
             this.aI設定ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.aI設定ToolStripMenuItem.Text = "AI設定";
@@ -480,23 +480,23 @@
             this.MenuAIThinking.Text = "思考過程を表示";
             this.MenuAIThinking.Click += new System.EventHandler(this.思考過程を表示ToolStripMenuItem_Click);
             // 
-            // Table_ToolStripMenuItem
+            // MenuUseTable
             // 
-            this.Table_ToolStripMenuItem.Checked = true;
-            this.Table_ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.Table_ToolStripMenuItem.Name = "Table_ToolStripMenuItem";
-            this.Table_ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.Table_ToolStripMenuItem.Text = "置換表を使用";
-            this.Table_ToolStripMenuItem.Click += new System.EventHandler(this.置換表を使うToolStripMenuItem_Click);
+            this.MenuUseTable.Checked = true;
+            this.MenuUseTable.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.MenuUseTable.Name = "MenuUseTable";
+            this.MenuUseTable.Size = new System.Drawing.Size(180, 22);
+            this.MenuUseTable.Text = "置換表を使用";
+            this.MenuUseTable.Click += new System.EventHandler(this.置換表を使うToolStripMenuItem_Click);
             // 
-            // MPC_ToolStripMenuItem
+            // MenuUseMPC
             // 
-            this.MPC_ToolStripMenuItem.Checked = true;
-            this.MPC_ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.MPC_ToolStripMenuItem.Name = "MPC_ToolStripMenuItem";
-            this.MPC_ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.MPC_ToolStripMenuItem.Text = "MPCを使用";
-            this.MPC_ToolStripMenuItem.Click += new System.EventHandler(this.mPC探索を行うToolStripMenuItem_Click);
+            this.MenuUseMPC.Checked = true;
+            this.MenuUseMPC.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.MenuUseMPC.Name = "MenuUseMPC";
+            this.MenuUseMPC.Size = new System.Drawing.Size(180, 22);
+            this.MenuUseMPC.Text = "MPCを使用";
+            this.MenuUseMPC.Click += new System.EventHandler(this.mPC探索を行うToolStripMenuItem_Click);
             // 
             // CasheToolStripMenuItem
             // 
@@ -1145,8 +1145,8 @@
         private System.Windows.Forms.ToolStripMenuItem Hint4ToolStripMenuItem3;
         private System.Windows.Forms.ToolStripMenuItem Hint5ToolStripMenuItem4;
         private System.Windows.Forms.ToolStripMenuItem Hint6ToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem Table_ToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem MPC_ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem MenuUseTable;
+        private System.Windows.Forms.ToolStripMenuItem MenuUseMPC;
         private System.Windows.Forms.ToolStripMenuItem kZreversiについてToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 度回転ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 度回転ToolStripMenuItem1;
