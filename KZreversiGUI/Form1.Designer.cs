@@ -515,51 +515,51 @@
             // mBToolStripMenuItem
             // 
             this.mBToolStripMenuItem.Name = "mBToolStripMenuItem";
-            this.mBToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.mBToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.mBToolStripMenuItem.Text = "4MB";
             this.mBToolStripMenuItem.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem1
             // 
             this.mBToolStripMenuItem1.Name = "mBToolStripMenuItem1";
-            this.mBToolStripMenuItem1.Size = new System.Drawing.Size(110, 22);
+            this.mBToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
             this.mBToolStripMenuItem1.Text = "8MB";
             this.mBToolStripMenuItem1.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem2
             // 
             this.mBToolStripMenuItem2.Name = "mBToolStripMenuItem2";
-            this.mBToolStripMenuItem2.Size = new System.Drawing.Size(110, 22);
+            this.mBToolStripMenuItem2.Size = new System.Drawing.Size(180, 22);
             this.mBToolStripMenuItem2.Text = "16MB";
             this.mBToolStripMenuItem2.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem3
             // 
             this.mBToolStripMenuItem3.Name = "mBToolStripMenuItem3";
-            this.mBToolStripMenuItem3.Size = new System.Drawing.Size(110, 22);
+            this.mBToolStripMenuItem3.Size = new System.Drawing.Size(180, 22);
             this.mBToolStripMenuItem3.Text = "32MB";
             this.mBToolStripMenuItem3.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem4
             // 
             this.mBToolStripMenuItem4.Name = "mBToolStripMenuItem4";
-            this.mBToolStripMenuItem4.Size = new System.Drawing.Size(110, 22);
+            this.mBToolStripMenuItem4.Size = new System.Drawing.Size(180, 22);
             this.mBToolStripMenuItem4.Text = "64MB";
             this.mBToolStripMenuItem4.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem5
             // 
-            this.mBToolStripMenuItem5.Checked = true;
-            this.mBToolStripMenuItem5.CheckState = System.Windows.Forms.CheckState.Checked;
             this.mBToolStripMenuItem5.Name = "mBToolStripMenuItem5";
-            this.mBToolStripMenuItem5.Size = new System.Drawing.Size(110, 22);
+            this.mBToolStripMenuItem5.Size = new System.Drawing.Size(180, 22);
             this.mBToolStripMenuItem5.Text = "128MB";
             this.mBToolStripMenuItem5.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem6
             // 
+            this.mBToolStripMenuItem6.Checked = true;
+            this.mBToolStripMenuItem6.CheckState = System.Windows.Forms.CheckState.Checked;
             this.mBToolStripMenuItem6.Name = "mBToolStripMenuItem6";
-            this.mBToolStripMenuItem6.Size = new System.Drawing.Size(110, 22);
+            this.mBToolStripMenuItem6.Size = new System.Drawing.Size(180, 22);
             this.mBToolStripMenuItem6.Text = "256MB";
             this.mBToolStripMenuItem6.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
@@ -589,7 +589,7 @@
             this.lEVEL11ToolStripMenuItem,
             this.lEVEL12ToolStripMenuItem});
             this.hintToolStripMenuItem.Name = "hintToolStripMenuItem";
-            this.hintToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.hintToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.hintToolStripMenuItem.Text = "ヒント表示";
             // 
             // 表示なしToolStripMenuItem
@@ -708,7 +708,7 @@
             this.toolStripFFO58,
             this.toolStripFFO59});
             this.fFOテストToolStripMenuItem.Name = "fFOテストToolStripMenuItem";
-            this.fFOテストToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.fFOテストToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.fFOテストToolStripMenuItem.Text = "FFOテスト";
             // 
             // toolStripFFO40

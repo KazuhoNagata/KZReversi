@@ -129,7 +129,7 @@ namespace KZreversi
             ulong moves = cpw.GetCpuMove(bk, wh, cpuConfig);
 
             // Form1のプロパティにCPUの着手を設定
-            ((Form1)formobj).Invoke(((Form1)formobj).delegateObj, new object[] { moves });
+            formobj.Invoke(formobj.delegateObj, new object[] { moves });
             m_onAi = false;
 
         }
@@ -141,14 +141,14 @@ namespace KZreversi
 
             ulong nodeCount = 0;
             // Form1のプロパティにノード数を設定(初期値)
-            ((Form1)formobj).Invoke(((Form1)formobj).nodeCountDelegate, new object[] { nodeCount });
+            formobj.Invoke(formobj.nodeCountDelegate, new object[] { nodeCount });
 
             do
             {
                 // CPU処理が終了するまで更新する
                 nodeCount = cpw.GetCountNode();
                 // Form1のプロパティにノード数を設定
-                ((Form1)formobj).Invoke(((Form1)formobj).nodeCountDelegate, new object[] { nodeCount });
+                formobj.Invoke(formobj.nodeCountDelegate, new object[] { nodeCount });
                 Thread.Sleep(30);
             } while (m_onAi);
         }
@@ -199,7 +199,7 @@ namespace KZreversi
                     if (ret == -1) break;
                     // UIに反復x回目終了を通知
                     hintData.SetPos(64);
-                    ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { hintData });
+                    formobj.Invoke(formobj.hintDelegate, new object[] { hintData });
                 }
 
                 if (ret == 0)
@@ -224,7 +224,7 @@ namespace KZreversi
                     if (ret == -1) break;
                     // UIに反復x回目終了を通知
                     hintData.SetPos(64);
-                    ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { hintData });
+                    formobj.Invoke(formobj.hintDelegate, new object[] { hintData });
                 }
                 if (ret == 0)
                 {
@@ -246,12 +246,12 @@ namespace KZreversi
                     if (ret == -1) break;
                     // UIに反復x回目終了を通知
                     hintData.SetPos(64);
-                    ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { hintData });
+                    formobj.Invoke(formobj.hintDelegate, new object[] { hintData });
                 }
             }
 
             // UIに探索終了を通知
-            ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { null });
+            formobj.Invoke(formobj.hintDelegate, new object[] { null });
         }
 
 
@@ -284,7 +284,7 @@ namespace KZreversi
                 hintData.SetEval(-cpw.GetLastEvaluation());
 
                 // UIに評価値を通知
-                ((Form1)formobj).Invoke(((Form1)formobj).hintDelegate, new object[] { hintData });
+                formobj.Invoke(formobj.hintDelegate, new object[] { hintData });
 
                 // 中断処理
                 if (m_abort == true)

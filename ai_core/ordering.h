@@ -16,10 +16,20 @@ typedef struct {
 }MOVELIST;
 
 UINT32 GetOrderPosition(UINT64 blank);
-UINT32 MoveOrderingMiddle(INT8 *pos_list, UINT64 b_board, UINT64 w_board,
-	HashTable *hash, UINT64 moves, UINT64 rev_list[], INT32 depth, UINT32 empty,
-	INT32 alpha, INT32 beta, UINT32 color);
-
+void SortMoveList(
+	MoveList *movelist,
+	UINT64 bk,
+	UINT64 wh,
+	HashTable *hash,
+	HashTable *pvHash,
+	HashInfo *hashInfo,
+	INT32 empty,
+	UINT32 parity,
+	INT32 alpha,
+	INT32 beta,
+	UINT32 color,
+	INT32 *selectivity
+);
 void SortMoveListTableMoveFirst(MoveList *movelist, int move);
 void SortFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh);
 void SortPotentionalFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh, UINT64 blank);
@@ -27,9 +37,12 @@ void SortMoveListMiddle(
 	MoveList *movelist,
 	UINT64 bk, UINT64 wh,
 	HashTable *hash,
+	HashTable *pvHash,
 	UINT32 empty,
-	INT32 alpha, INT32 beta,
-	UINT32 color);
+	INT32 alpha, 
+	INT32 beta,
+	UINT32 color
+);
 void SortMoveListEnd(
 	MoveList *movelist,
 	UINT64 bk, UINT64 wh,

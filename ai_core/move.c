@@ -103,15 +103,51 @@ UINT64 GetSomePotentialMoves(const unsigned long long P, const int dir)
 * @param O bitboard with opponent's discs.
 * @return all potential moves in a 64-bit unsigned integer.
 */
-UINT64 GetPotentialMoves(UINT64 P, UINT64 O, UINT64 blank)
+UINT64 GetPotentialMoves(UINT64 P, UINT64 O)
 {
 	return (GetSomePotentialMoves(O & 0x7E7E7E7E7E7E7E7Eull, 1) // horizontal
 		| GetSomePotentialMoves(O & 0x00FFFFFFFFFFFF00ull, 8)   // vertical
 		| GetSomePotentialMoves(O & 0x007E7E7E7E7E7E00ull, 7)   // diagonals
 		| GetSomePotentialMoves(O & 0x007E7E7E7E7E7E00ull, 9))
-		& blank; // mask with empties
+		& (~(P | O)); // mask with empties
 }
 
+
+
+INT32 bit_weighted_count(const UINT64 v)
+{
+	return CountBit(v) + CountBit(v & 0x8100000000000081ULL);
+}
+
+/**
+ * @brief Get potential mobility.
+ *
+ * Count the list of empty squares in contact of a player square.
+ *
+ * @param P bitboard with player's discs.
+ * @param O bitboard with opponent's discs.
+ * @return a count of potential moves.
+ */
+INT32 get_potential_mobility(const UINT64 P, const UINT64 O)
+{
+	return bit_weighted_count(GetPotentialMoves(P, O));
+}
+
+/**
+ * @brief Count legal moves.
+ *
+ * Compute mobility, ie the number of legal moves.
+ *
+ * @param P bitboard with player's discs.
+ * @param O bitboard with opponent's discs.
+ * @return a count of all legal moves.
+ */
+INT32 get_weighted_mobility(const UINT64 P, const UINT64 O)
+{
+	INT32 temp;
+	UINT64 moves = CreateMoves(P, O, &temp);
+	return temp + CountBit(moves & 0x8100000000000081ULL);
+}
 
 
 BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos)

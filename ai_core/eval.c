@@ -1027,7 +1027,7 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	corner3_3 = corner3_3_data[color][stage];
 	triangle = triangle_data[color][stage];
 	mobility = mobility_data[color][stage];
-	parity = parity_data[color][stage];
+	//parity = parity_data[color][stage];
 
 	eval = check_h_ver1(board);
 	eval += check_h_ver2(board);
@@ -1044,7 +1044,7 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	eval += check_triangle(board);
 
 	eval += check_mobility(bk, wh);
-	eval += check_parity(~(bk | wh), color);
+	//eval += check_parity(~(bk | wh), color);
 
 	eval_sum = eval;
 	return eval;
@@ -1240,17 +1240,17 @@ BOOL OpenEvalData(char *filename)
 			p_table_op[opponent_feature(i, 10)] = -p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
-#if 1
+
 		/* mobility */
 		p_table = mobility_data[0][stage];
 		p_table_op = mobility_data[1][stage];
 		for (i = 0; i < MOBILITY_NUM; i++)
 		{
 			p_table[i] = atoi(line);
-			p_table_op[i] = -p_table[i];
+			p_table_op[i] = p_table[i];
 			line = strtok_s(NULL, "\n", &ctr);
 		}
-
+#if 0
 		/* parity */
 		p_table = parity_data[0][stage];
 		p_table_op = parity_data[1][stage];

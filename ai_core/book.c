@@ -439,7 +439,7 @@ BookData *extract_booklist(BookData *node_list, double rate, int cnt)
 
 	extracted_list[0] = &node_list[0]; // best node
 
-	double abs_threshold = 160000 * rate;
+	INT32 abs_threshold = 160000 * rate;
 
 	for (i = 1; i < cnt; i++)
 	{
@@ -612,6 +612,7 @@ BooksNode *StructionBookTree(BooksNode *head, INT32 *new_eval_p, char *line_data
 		move = (line_data_p[depth] - 'a') * 8 + line_data_p[depth + 1] - '1';
 		// ƒm[ƒh‚ðì¬‚µ‚Ä“o˜^
 		BooksNode *child_node = (BooksNode *)malloc(sizeof(BooksNode));
+		if (child_node == NULL) return NULL;
 		g_malloc_count++;
 		child_node->child = NULL;
 		child_node->next = NULL;
@@ -655,6 +656,7 @@ BooksNode *StructionBookTree(BooksNode *head, INT32 *new_eval_p, char *line_data
 
 			// ƒm[ƒh‚ðì¬‚µ‚Ä“o˜^
 			BooksNode *next_node = (BooksNode *)malloc(sizeof(BooksNode));
+			if (next_node == NULL) return NULL;
 			g_malloc_count++;
 			next_node->child = NULL;
 			next_node->next = NULL;
@@ -718,6 +720,7 @@ BOOL OpenBook(char *filename)
 
 	// rootÝ’è
 	root = (BooksNode *)malloc(sizeof(BooksNode));
+	if (root == NULL) return FALSE;
 	root->bk = BK_FIRST;
 	root->wh = WH_FIRST;
 	root->eval = 0;

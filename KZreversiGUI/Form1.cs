@@ -579,7 +579,7 @@ namespace KZreversi
                     (pos / BOARD_SIZE) * m_mass_size + m_fix_x,
                     (pos % BOARD_SIZE) * m_mass_size + m_fix_y,
                     stone_size_x, stone_size_y);
-                temp ^= (1UL << (int)pos);
+                temp ^= (1UL << pos);
             }
 
             temp = boardclass.GetWhite();
@@ -590,7 +590,7 @@ namespace KZreversi
                     (pos / BOARD_SIZE) * m_mass_size + m_fix_x,
                     (pos % BOARD_SIZE) * m_mass_size + m_fix_y,
                     stone_size_x, stone_size_y);
-                temp ^= (1UL << (int)pos);
+                temp ^= (1UL << pos);
             }
 
             // 最後に打った手を強調する
@@ -863,8 +863,8 @@ namespace KZreversi
 
                     // 押された瞬間の座標を取得
                     pos = mouseEvent.Location;
-                    num = (int)(((float)pos.X - m_fix_x) / m_mass_size) * BOARD_SIZE;
-                    num += (int)(((float)pos.Y - m_fix_y) / m_mass_size);
+                    num = (int)((pos.X - m_fix_x) / m_mass_size) * BOARD_SIZE;
+                    num += (int)((pos.Y - m_fix_y) / m_mass_size);
                     // 着手出来るかチェック
                     if ((nowPlayer.moves & (1UL << num)) != 0)
                     {
@@ -923,8 +923,8 @@ namespace KZreversi
 
                     // 押された瞬間の座標を取得
                     pos = mouseEvent.Location;
-                    num = (int)(((float)pos.X - m_fix_x) / m_mass_size) * BOARD_SIZE;
-                    num += (int)(((float)pos.Y - m_fix_y) / m_mass_size);
+                    num = (int)((pos.X - m_fix_x) / m_mass_size) * BOARD_SIZE;
+                    num += (int)((pos.Y - m_fix_y) / m_mass_size);
                     ulong posBit = (1UL << num);
                     ulong bk = boardclass.GetBlack();
                     ulong wh = boardclass.GetWhite();
@@ -986,44 +986,44 @@ namespace KZreversi
         {
             if (m_enableDetailDisplay)
             {
-                StringBuilder sb = new StringBuilder(256);
+                StringBuilder timerSb = new StringBuilder(256);
                 string temp;
 
                 // 探索済みノード数
-                sb.Append("node:");
+                timerSb.Append("node:");
 
                 if (nodeCount >= 1000000000)  // Gn
                 {
-                    sb.Append((nodeCount / (double)1000000000).ToString("f2"));
-                    sb.Append("[Gn]");
+                    timerSb.Append((nodeCount / (double)1000000000).ToString("f2"));
+                    timerSb.Append("[Gn]");
                 }
                 else if (nodeCount >= 1000000) // Mn
                 {
-                    sb.Append((nodeCount / (double)1000000).ToString("f2"));
-                    sb.Append("[Mn]");
+                    timerSb.Append((nodeCount / (double)1000000).ToString("f2"));
+                    timerSb.Append("[Mn]");
                 }
                 else if (nodeCount >= 1000) // Kn
                 {
-                    sb.Append((nodeCount / (double)1000).ToString("f2"));
-                    sb.Append("[Kn]");
+                    timerSb.Append((nodeCount / (double)1000).ToString("f2"));
+                    timerSb.Append("[Kn]");
                 }
                 else
                 {
-                    sb.Append(nodeCount);
-                    sb.Append("[n]");
+                    timerSb.Append(nodeCount);
+                    timerSb.Append("[n]");
                 }
 
                 // 経過時間
-                sb.Append(" time:");
-                sb.Append((m_sw.ElapsedMilliseconds / (double)1000).ToString("f2"));
+                timerSb.Append(" time:");
+                timerSb.Append((m_sw.ElapsedMilliseconds / (double)1000).ToString("f2"));
 
                 // NPS(node per second)
-                sb.Append(" nps:");
+                timerSb.Append(" nps:");
                 temp = ((nodeCount / (m_sw.ElapsedMilliseconds / (double)1000)) / 1000).ToString("f0");
-                sb.Append(temp);
-                sb.Append("[Knps]");
+                timerSb.Append(temp);
+                timerSb.Append("[Knps]");
 
-                toolStripStatusLabel1.Text = sb.ToString();
+                toolStripStatusLabel1.Text = timerSb.ToString();
             }
         }
 

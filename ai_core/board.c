@@ -18,7 +18,7 @@
 
 UCHAR g_board[64];
 
-UINT8 board_parity[] =
+const UINT8 board_parity[] =
 {
 	0, 0, 0, 0, 1, 1, 1, 1,
 	0, 0, 0, 0, 1, 1, 1, 1,
@@ -30,7 +30,7 @@ UINT8 board_parity[] =
 	2, 2, 2, 2, 3, 3, 3, 3
 };
 
-UINT8 board_parity_bit[] =
+const UINT8 board_parity_bit[] =
 {
 	1, 1, 1, 1, 2, 2, 2, 2,
 	1, 1, 1, 1, 2, 2, 2, 2,
@@ -42,7 +42,7 @@ UINT8 board_parity_bit[] =
 	4, 4, 4, 4, 8, 8, 8, 8
 };
 
-UINT64 quad_parity_bitmask[] = 
+const UINT64 quad_parity_bitmask[] =
 {
 	0x000000000F0F0F0FULL,
 	0x00000000F0F0F0F0ULL,

@@ -13,6 +13,7 @@
 //#define LOSSGAME
 
 #define KEY_HASH_MACRO(b, w, c) (UINT32)((b ^ ((w) >> 1ULL)) % (g_casheSize - 1))
+#define KEY_HASH_MACRO_PV(b, w, c) (UINT32)((b ^ ((w) >> 1ULL)) % (g_pvCasheSize - 1))
 //#define KEY_HASH_MACRO(b, w, c) GenerateHashValue(b, w, c);
 
 #define ILLIGAL_ARGUMENT 0x80000001
@@ -27,7 +28,7 @@
 #define SOLVE_MIDDLE 2
 
 #define EMPTIES_MID_ORDER_TO_END_ORDER 12
-#define EMPTIES_DEEP_TO_SHALLOW_SEARCH 10
+#define EMPTIES_DEEP_TO_SHALLOW_SEARCH 7
 #define END_DEPTH_DEEP_TO_SHALLOW_SEARCH 19
 #define DEPTH_DEEP_TO_SHALLOW_SEARCH 5
 
@@ -66,10 +67,10 @@ typedef struct
 
 typedef struct PVLINE {
 	int   cmove;          // Number of moves in the line.
-	char argmove[60];  // The line.
+	char argmove[64];  // The line.
 } PVLINE;
 
-extern INT32 g_pvline[60];
+extern INT32 g_pvline[64];
 extern INT32 g_pvline_len;
 
 extern int g_solveMethod;
@@ -79,6 +80,7 @@ extern INT32 g_limitDepth;
 extern INT32 g_empty;
 extern INT32 g_move;
 extern UINT64 g_casheSize;
+extern UINT64 g_pvCasheSize;
 extern INT32 g_infscore;
 extern MPCINFO mpcInfo[22];
 extern MPCINFO mpcInfo_end[26];
@@ -89,6 +91,7 @@ const extern double cutval_table[8];
 extern const INT32 g_max_cut_table_size;
 extern UINT64 g_countNode;
 extern HashTable *g_hash;
+extern HashTable *g_pvHash;
 extern INT32 g_key;
 
 extern BOOL g_mpcFlag;
@@ -110,6 +113,26 @@ extern SetMessageToGUI g_set_message_funcptr[3];
 * Return: 着手可能位置のビット列
 ****************************************************************************/
 UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig);
+
+/***************************************************************************
+* Name  : NWS_SearchDeep
+* Brief : Null Window Search を行い、評価値を基に最善手を取得
+* Args  : bk        : 黒のビット列
+*         wh        : 白のビット列
+*         depth     : 読む深さ
+*         empty     : 空きマス数
+*         alpha     : このノードにおける下限値
+*         beta      : このノードにおける上限値
+*         color     : CPUの色
+*         hash      : 置換表の先頭ポインタ
+*         pass_cnt  : 今までのパスの数(２カウントで終了とみなす)
+* Return: 着手可能位置のビット列
+****************************************************************************/
+INT32 PVS_SearchDeep(
+	UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
+	HashTable *hash, INT32 alpha, INT32 beta, UINT32 passed, INT32 *p_selectivity, PVLINE *pline
+);
+
 
 /***************************************************************************
 * Name  : AB_SearchNoPV
@@ -149,5 +172,6 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 ****************************************************************************/
 void SetAbortFlag();
 
-
+BOOL search_SC_PVS(UINT64 bk, UINT64 wh, INT32 empty,
+	volatile INT32 *alpha, volatile INT32 *beta, INT32 *score);
 void CreatePVLineStr(PVLINE *pline, INT32 empty, INT32 score);

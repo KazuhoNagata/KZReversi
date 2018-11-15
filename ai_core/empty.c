@@ -190,6 +190,11 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 	INT32 alpha, INT32 beta, INT32 passed, PVLINE *pline)
 {
+	UINT64 pos_bit, rev;
+	INT32 eval;
+	INT32 best;
+	PVLINE line;
+
 	g_countNode++;
 
 	// 3 empties parity
@@ -208,11 +213,6 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 			int tmp = x1; x1 = x3; x3 = x2; x2 = tmp;
 		}
 	}
-
-	UINT64 pos_bit, rev;
-	INT32 eval;
-	INT32 best;
-	PVLINE line;
 
 	pos_bit = 1ULL << x1;
 	rev = GetRev[x1](bk, wh);
@@ -292,21 +292,22 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	UINT32 parity, INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline)
 {
+	INT32 best;
+	INT32 eval;
+	UINT64 temp_moves;
+	UINT64 pos_bit, rev;
+	PVLINE line;
+
 	g_countNode++;
 
-	INT32 best;
 	// stability cutoff
 	if (search_SC_NWS(bk, wh, empty, alpha, &best))
 	{
-		if (g_solveMethod == SOLVE_WLD)
-		{
-			if (best > DRAW) best = WIN;
-			else if (best < DRAW) best = LOSS;
-		}
 		return best;
 	}
+
 	// 4 empties parity
-	UINT64 temp_moves = blank;
+	temp_moves = blank;
 	int x1 = CountBit((~temp_moves) & (temp_moves - 1));
 	temp_moves ^= (1ULL << x1);
 	int x2 = CountBit((~temp_moves) & (temp_moves - 1));
@@ -341,10 +342,6 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			}
 		}
 	}
-
-	UINT64 pos_bit, rev;
-	INT32 eval;
-	PVLINE line;
 
 	pos_bit = 1ULL << x1;
 	rev = GetRev[x1](bk, wh);
@@ -451,11 +448,6 @@ INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	// stability cutoff
 	if (search_SC_NWS(bk, wh, empty, alpha, &best))
 	{
-		if (g_solveMethod == SOLVE_WLD)
-		{
-			if (best > DRAW) best = WIN;
-			else if (best < DRAW) best = LOSS;
-		}
 		return best;
 	}
 

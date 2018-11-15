@@ -28,6 +28,8 @@ typedef struct MoveList {
 UINT64 CreateMoves(UINT64 bk_p, UINT64 wh_p, UINT32 *p_count_p);
 void StoreMovelist(MoveList *list, UINT64 bk, UINT64 wh, UINT64 moves);
 
-UINT64 GetPotentialMoves(UINT64 P, UINT64 O, UINT64 blank);
+UINT64 GetPotentialMoves(UINT64 P, UINT64 O);
+INT32 get_potential_mobility(const UINT64 P, const UINT64 O);
+INT32 get_weighted_mobility(const UINT64 P, const UINT64 O);
 
 BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos);

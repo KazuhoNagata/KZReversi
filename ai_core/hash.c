@@ -148,7 +148,7 @@ void HashUpdate(
 			newest->selectivity = selectivity;
 		}
 		// try to entry first hash
-		else if (key != g_key && deepest->selectivity <= selectivity)
+		else if (key != g_key && deepest->selectivity <= selectivity && depth >= deepest->depth)
 		{
 			// deepest already entried?
 			deepest->bk = bk;
@@ -159,7 +159,7 @@ void HashUpdate(
 			deepest->upper = inf_score;
 			deepest->selectivity = selectivity;
 		}
-		else if (newest->selectivity <= selectivity)
+		else
 		{
 			// deepest already entried?
 			newest->bk = bk;
@@ -194,7 +194,7 @@ void HashUpdate(
 			newest->selectivity = selectivity;
 		}
 		// try to entry first hash
-		else if (key != g_key && deepest->selectivity <= selectivity)
+		else if (key != g_key && deepest->selectivity <= selectivity && depth >= deepest->depth)
 		{
 			deepest->bk = bk;
 			deepest->wh = wh;
@@ -239,7 +239,7 @@ void HashUpdate(
 			newest->selectivity = selectivity;
 		}
 		// try to entry first hash
-		else if (key != g_key && deepest->selectivity <= selectivity)
+		else if (key != g_key && deepest->selectivity <= selectivity && depth >= deepest->depth)
 		{
 			deepest->bk = bk;
 			deepest->wh = wh;

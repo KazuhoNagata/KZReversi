@@ -13,9 +13,9 @@
 #define BK_FIRST 34628173824
 #define WH_FIRST 68853694464
 
-extern UINT8 board_parity[];
-extern UINT8 board_parity_bit[];
-extern UINT64 quad_parity_bitmask[];
+extern const UINT8 board_parity[];
+extern const UINT8 board_parity_bit[];
+extern const UINT64 quad_parity_bitmask[];
 extern const INT32 NWS_STABILITY_THRESHOLD[];
 extern const INT32 PVS_STABILITY_THRESHOLD[];
 

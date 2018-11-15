@@ -31,6 +31,7 @@ INT32 g_solveMethod;
 INT32 g_empty;
 INT32 g_limitDepth;
 UINT64 g_casheSize;
+UINT64 g_pvCasheSize;
 BOOL g_refresh_hash_flag = TRUE;
 INT32 g_key;
 
@@ -40,7 +41,8 @@ UINT64 g_countNode;
 INT32 g_move;
 INT32 g_infscore;
 
-HashTable *g_hash = NULL;
+HashTable *g_hash;
+HashTable *g_pvHash;
 
 MPCINFO mpcInfo[22];
 MPCINFO mpcInfo_end[26];
@@ -64,7 +66,7 @@ char g_AiMsg[128];
 char g_PVLineMsg[256];
 SetMessageToGUI g_set_message_funcptr[3];
 
-INT32 g_pvline[60];
+INT32 g_pvline[64];
 INT32 g_pvline_len;
 UINT64 g_pvline_board[2][60];
 
@@ -388,12 +390,18 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 		if (g_hash == NULL)
 		{
 			g_hash = HashNew(cpuConfig->casheSize);
+			g_pvHash = HashNew(cpuConfig->casheSize / 5);
 			g_casheSize = cpuConfig->casheSize;
+			g_pvCasheSize = cpuConfig->casheSize / 5;
 		}
-		else if (g_casheSize != cpuConfig->casheSize){
+		else if (g_casheSize != cpuConfig->casheSize)
+		{
 			HashDelete(g_hash);
+			HashDelete(g_pvHash);
 			g_hash = HashNew(cpuConfig->casheSize);
+			g_pvHash = HashNew(cpuConfig->casheSize / 5);
 			g_casheSize = cpuConfig->casheSize;
+			g_pvCasheSize = cpuConfig->casheSize / 5;
 		}
 	}
 
@@ -405,7 +413,7 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 
 	g_mpcFlag = cpuConfig->mpcFlag;
 	g_tableFlag = cpuConfig->tableFlag;
-	g_empty = emptyNum;
+	g_empty = (INT32)emptyNum;
 
 	// 今の局面の置換表を初期化しておく
 	int key = KEY_HASH_MACRO(bk, wh, cpuConfig->color);
@@ -426,7 +434,7 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	else
 	{
 		g_limitDepth = cpuConfig->searchDepth;
-		g_evaluation = SearchMiddle(bk, wh, emptyNum, cpuConfig->color) + cpuConfig->color * 17500;
+		g_evaluation = SearchMiddle(bk, wh, emptyNum, cpuConfig->color);
 	}
 
 	g_AbortFlag = FALSE;
@@ -535,7 +543,7 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 
 		// UIにメッセージを送信
 		move = GetMoveFromHash(bk, wh, key);
-		CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval + (color * 17500), move, count, ON_MIDDLE);
+		CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval, move, count, ON_MIDDLE);
 		g_set_message_funcptr[0](g_AiMsg);
 	}
 
@@ -589,7 +597,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 #endif
 
 #if 0
-	g_limitDepth = (INT32)(emptyNum / 1.5);
+	g_limitDepth = (INT32)(emptyNum - 2);
 
 	if (g_limitDepth % 2) g_limitDepth--;
 	if (g_limitDepth > 24)
@@ -628,7 +636,9 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	if (g_tableFlag && g_empty >= 12 && g_hash->attribute != HASH_ATTR_EXACT)
 	{
 		HashClear(g_hash);
+		HashClear(g_pvHash);
 		g_hash->attribute = HASH_ATTR_EXACT;
+		g_pvHash->attribute = HASH_ATTR_EXACT;
 	}
 	aVal = -g_infscore;
 	bVal = g_infscore;
@@ -650,6 +660,12 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	g_limitDepth = emptyNum;
 	g_empty = emptyNum;
 #if 1
+	UINT64 blank = ~(bk | wh);
+	INT32 parity =
+		((CountBit(blank & quad_parity_bitmask[3]) % 2) << 3) |
+		((CountBit(blank & quad_parity_bitmask[2]) % 2) << 2) |
+		((CountBit(blank & quad_parity_bitmask[1]) % 2) << 1) |
+		(CountBit(blank & quad_parity_bitmask[0]) % 2);
 
 	if (g_empty >= 12)
 	{
@@ -682,7 +698,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 					}
 					// PVS石差探索
 					selectivity = lv;
-					eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, bVal - 1, bVal, NO_PASS, &selectivity, &line);
+					eval = PVS_SearchDeepExact(bk, wh, emptyNum, parity, color, g_hash, g_pvHash, bVal - 1, bVal, NO_PASS, &selectivity, &line);
 
 					// 中断されたので直近の確定評価値を返却
 					if (g_AbortFlag == TRUE)
@@ -712,7 +728,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 				g_set_message_funcptr[0](g_AiMsg);
 
 				selectivity = lv;
-				eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, aVal, bVal, NO_PASS, &selectivity, &line);
+				eval = PVS_SearchDeepExact(bk, wh, emptyNum, parity, color, g_hash, g_pvHash, aVal, bVal, NO_PASS, &selectivity, &line);
 
 				// 中断されたので直近の確定評価値を返却
 				if (g_AbortFlag == TRUE)
@@ -758,7 +774,10 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		// init max threshold
 		selectivity = g_max_cut_table_size;
 		// PVS石差探索
-		eval = PVS_SearchDeepExact(bk, wh, emptyNum, color, g_hash, -g_infscore, g_infscore, NO_PASS, &selectivity, &line);
+		eval = PVS_SearchDeepExact(bk, wh, emptyNum, parity, color, g_hash, g_pvHash, -g_infscore, g_infscore, NO_PASS, &selectivity, &line);
+
+		// 置換表から最善手を取得
+		move = GetMoveFromHash(bk, wh, key);
 	}
 #else
 	selectivity = g_max_cut_table_size;
@@ -958,7 +977,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	upper = beta;
 
 	// stability cutoff
-	if (depth != g_limitDepth && search_SC_PVS(bk, wh, empty, &alpha, &beta, &score)) return score;
+	//if (depth != g_limitDepth && search_SC_PVS(bk, wh, empty, &alpha, &beta, &score)) return score;
 
 	/************************************************************
 	*
@@ -1010,55 +1029,6 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 		}
 	}
 
-	/************************************************************
-	*
-	* Multi-Prob-Cut(MPC) フェーズ
-	*
-	*************************************************************/
-#if 1
-	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
-	{
-		INT32 mpc_level;
-		double MPC_CUT_VAL;
-		if (empty <= 24)
-		{
-			MPC_CUT_VAL = cutval_table[5];
-			mpc_level = 5;
-		}
-		else if (empty <= 36)
-		{
-			MPC_CUT_VAL = cutval_table[4];
-			mpc_level = 4;
-		}
-		else
-		{
-			MPC_CUT_VAL = cutval_table[3];
-			mpc_level = 3;
-		}
-
-		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
-		INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
-		if (value < NEGAMIN + 1) value = NEGAMIN + 1;
-		score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed,  pline);
-		if (score < value)
-		{
-			//HashUpdate(hash, key, bk, wh, alpha, beta, alpha, mpcInfo_p->depth, NOMOVE, mpc_level, NEGAMAX);
-			*p_selectivity = g_max_cut_table_size; // store selectivity
-			return alpha;
-		}
-
-		value = (INT32)(beta + (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
-		if (value > NEGAMAX - 1) value = NEGAMAX - 1;
-		score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, pline);
-		if (score > value)
-		{
-			//HashUpdate(hash, key, bk, wh, alpha, beta, beta, mpcInfo_p->depth, NOMOVE, mpc_level, NEGAMAX);
-			*p_selectivity = g_max_cut_table_size; // store selectivity
-			return beta;
-		}
-	}
-#endif
-
 	UINT32 moveCount;
 	UINT64 moves = CreateMoves(bk, wh, &moveCount);
 	BOOL pv_flag = TRUE;
@@ -1094,12 +1064,62 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	}
 	else
 	{
+
+		/************************************************************
+		*
+		* Multi-Prob-Cut(MPC) フェーズ
+		*
+		*************************************************************/
+#if 1
+		if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
+		{
+			INT32 mpc_level;
+			double MPC_CUT_VAL;
+			if (empty <= 24)
+			{
+				MPC_CUT_VAL = cutval_table[4];
+				mpc_level = 4;
+			}
+			else if (empty <= 36)
+			{
+				MPC_CUT_VAL = cutval_table[3];
+				mpc_level = 3;
+			}
+			else
+			{
+				MPC_CUT_VAL = cutval_table[3];
+				mpc_level = 3;
+			}
+
+			MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
+			INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+			if (value < NEGAMIN + 1) value = NEGAMIN + 1;
+			score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed, pline);
+			if (score < value)
+			{
+				//HashUpdate(hash, key, bk, wh, alpha, beta, alpha, mpcInfo_p->depth, NOMOVE, mpc_level, NEGAMAX);
+				*p_selectivity = mpc_level; // store selectivity
+				return alpha;
+			}
+
+			value = (INT32)(beta + (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+			if (value > NEGAMAX - 1) value = NEGAMAX - 1;
+			score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, pline);
+			if (score > value)
+			{
+				//HashUpdate(hash, key, bk, wh, alpha, beta, beta, mpcInfo_p->depth, NOMOVE, mpc_level, NEGAMAX);
+				*p_selectivity = mpc_level; // store selectivity
+				return beta;
+			}
+		}
+#endif
+
 		PVLINE line;
 		if (moveCount > 1)
 		{
 			if (empty > 15)
 			{
-				SortMoveListMiddle(movelist, bk, wh, hash, empty, alpha, beta, color);
+				SortMoveListMiddle(movelist, bk, wh, hash, NULL, empty, alpha, beta, color);
 			}
 			else
 			{
@@ -1163,7 +1183,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 					pline->cmove = line.cmove + 1;
 					if (g_empty - empty == 0)
 					{
-						CreatePVLineStr(pline, empty, (bestscore + color * 17500) * (1 - (2 * ((g_empty - empty) % 2))));
+						CreatePVLineStr(pline, empty, bestscore * (1 - (2 * ((g_empty - empty) % 2))));
 						g_set_message_funcptr[1](g_PVLineMsg);
 					}
 				}
@@ -1178,7 +1198,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	}
 
 	HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, depth, bestmove, g_max_cut_table_size, NEGAMAX);
-	*p_selectivity = g_max_cut_table_size; // store selectivity
+	//*p_selectivity = g_max_cut_table_size; // store selectivity
 
 	return bestscore;
 
@@ -1219,11 +1239,11 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 		double MPC_CUT_VAL;
 		if (empty <= 24)
 		{
-			MPC_CUT_VAL = cutval_table[5];
+			MPC_CUT_VAL = cutval_table[4];
 		}
 		else if (empty <= 36)
 		{
-			MPC_CUT_VAL = cutval_table[4];
+			MPC_CUT_VAL = cutval_table[3];
 		}
 		else
 		{
@@ -1352,7 +1372,7 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 	* Multi-Prob-Cut(MPC) フェーズ
 	*
 	*************************************************************/
-#if 1
+#if 0
 	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
 	{
 		double MPC_CUT_VAL;

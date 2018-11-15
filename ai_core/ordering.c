@@ -13,6 +13,19 @@
 #include "hash.h"
 #include "move.h"
 #include "ordering.h"
+#include "endgame.h"
+
+const int SQUARE_VALUE[] = {
+	// JCW's score:
+	18,  4,  16, 12, 12, 16,  4, 18,
+	 4,  2,   6,  8,  8,  6,  2,  4,
+	16,  6,  14, 10, 10, 14,  6, 16,
+	12,  8,  10,  0,  0, 10,  8, 12,
+	12,  8,  10,  0,  0, 10,  8, 12,
+	16,  6,  14, 10, 10, 14,  6, 16,
+	 4,  2,   6,  8,  8,  6,  2,  4,
+	18,  4,  16, 12, 12, 16,  4, 18
+};
 
 /* コムソート */
 void SortListUseTable(MOVELIST *pos_list, INT32 move_list[], INT32 cnt)
@@ -184,7 +197,7 @@ void SortFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh)
 		move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 		move_w = wh ^ (iter->move.rev);
 		CreateMoves(move_w, move_b, &n_moves_wh);
-		iter->move.score = (n_moves_wh << 4) - get_corner_stability(bk);
+		iter->move.score = ((UINT64)n_moves_wh << 4) - get_corner_stability(bk);
 		//iter->move.score += CountBit(GetPotentialMoves(move_w, move_b, (~(bk | wh)) ^ (1ULL << iter->move.pos)));
 	}
 
@@ -203,7 +216,7 @@ void SortPotentionalFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh, UINT64 b
 		move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 		move_w = wh ^ (iter->move.rev);
 		/* 敵の着手可能数を取得 */
-		score += CountBit(GetPotentialMoves(move_w, move_b, blank ^ (1ULL << iter->move.pos)));
+		score += CountBit(GetPotentialMoves(move_w, move_b));
 		iter->move.score = score;
 	}
 	/* 敵の得点の少ない順にソート */
@@ -216,24 +229,27 @@ void SortMoveListMiddle(
 	MoveList *movelist,
 	UINT64 bk, UINT64 wh,
 	HashTable *hash,
+	HashTable *pvHash,
 	UINT32 empty,
 	INT32 alpha, INT32 beta,
-	UINT32 color)
+	UINT32 color
+)
 {
 #if 1
 	MoveList *iter;
 	INT32 score;
 	UINT32 move_cnt, cnt = 0;
 	UINT64 n_moves_wh, move_b, move_w;
-
+	UINT32 key;
 	INT32 searched = g_empty - empty;
+
 	if (searched < 6 && g_limitDepth >= 16)
 	{
 		for (iter = movelist->next; iter != NULL; iter = iter->next)
 		{
 			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 			move_w = wh ^ (iter->move.rev);
-
+			
 			score = -AB_SearchNoPV(move_w, move_b, 6 - searched, empty - 1, color ^ 1,
 				-NEGAMAX, -NEGAMIN, 0);
 			iter->move.score = score;
@@ -241,11 +257,13 @@ void SortMoveListMiddle(
 		/* 自分の得点の多い順にソート */
 		sort_movelist_score_descending(movelist);
 	}
-	else if (g_empty - empty == 6 && g_limitDepth >= 16){
+	else if (searched == 6 && g_limitDepth >= 16)
+	{
 		for (iter = movelist->next; iter != NULL; iter = iter->next)
 		{
 			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 			move_w = wh ^ (iter->move.rev);
+
 			InitIndexBoard(move_w, move_b);
 
 			score = -Evaluation(g_board, move_w, move_b, color ^ 1, 59 - (empty - 1));
@@ -258,19 +276,37 @@ void SortMoveListMiddle(
 	{
 		for (iter = movelist->next; iter != NULL; iter = iter->next)
 		{
-			score = 0;
 			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 			move_w = wh ^ (iter->move.rev);
-			n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
 
-			/* 位置得点 */
-			score -= posEval[iter->move.pos] << 2;
-			//score += CountBit(iter->move.rev) << 4;
-			/* 敵の着手可能数を取得 */
-			score += ((move_cnt + CountBit(n_moves_wh & 0x8100000000000081)) << 4)
-				- get_corner_stability(move_b);
-			score += CountBit(GetPotentialMoves(move_w, move_b, ~(move_b | move_w))) << 3;
-			iter->move.score = score;
+			// 相手を全滅させる手か
+			if (move_w == 0)
+			{
+				iter->move.score -= (1 << 30);
+			}
+			else
+			{
+				// Enhanced cut-off
+				if (CheckTableCutOff(hash, &key, move_w, move_b, color ^ 1, empty - 1, -beta, -alpha, &score) ||
+					CheckTableCutOff_PV(pvHash, &key, move_w, move_b, color ^ 1, empty - 1, -beta, -alpha, &score))
+				{
+					iter->move.score -= (1ULL << 29) - score;
+				}
+				else
+				{
+					score = 0;
+					n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
+
+					/* 位置得点 */
+					//score -= posEval[iter->move.pos] << 2;
+					//score += CountBit(iter->move.rev) << 4;
+					/* 敵の着手可能数を取得 */
+					score += ((move_cnt + CountBit(n_moves_wh & 0x8100000000000081)) << 2)
+						- get_corner_stability(move_b);
+					score += CountBit(GetPotentialMoves(move_w, move_b)) << 1;
+					iter->move.score = score;
+				}
+			}
 		}
 		/* 敵の得点の少ない順にソート */
 		sort_movelist_score_ascending(movelist);
@@ -283,6 +319,160 @@ void SortMoveListMiddle(
 }
 
 #endif
+
+#if 0
+static void move_evaluate(
+	Move *move,
+	UINT64 bk, 
+	UINT64 wh,
+	HashTable *hash,
+	HashTable *pvHash,
+	HashInfo *hashInfo,
+	INT32 empty,
+	UINT32 parity,
+	INT32 alpha, 
+	INT32 beta,
+	UINT32 color,
+	INT32 *selectivity,
+	INT32 sortDepth
+)
+{
+	const int w_hash = 1 << 15;
+	const int w_eval = 1 << 15;
+	const int w_mobility = 1 << 15;
+	const int w_corner_stability = 1 << 11;
+	const int w_edge_stability = 1 << 11;
+	const int w_potential_mobility = 1 << 5;
+	const int w_low_parity = 1 << 3;
+	const int w_mid_parity = 1 << 2;
+	const int w_high_parity = 1 << 1;
+
+	UINT64 move_b, move_w;
+	INT32 key, pv_key;
+
+	if (move->rev == wh) move->score = (1 << 30);
+	else if (hashInfo && move->pos == hashInfo->bestmove) move->score = (1 << 29);
+	// else if (move->pos == hash_dat) move->score = (1 << 28);
+	else
+	{
+		move->score = SQUARE_VALUE[move->pos]; // square type
+		if (empty < 12 && (parity & board_parity_bit[move->pos])) move->score += w_low_parity; // parity
+		else if (empty < 21 && (parity & board_parity_bit[move->pos])) move->score += w_mid_parity; // parity
+		else if (empty < 30 && (parity & board_parity_bit[move->pos])) move->score += w_high_parity; // parity
+
+		if (sortDepth < 0)
+		{
+			move_b = bk ^ ((1ULL << move->pos) | move->rev);
+			move_w = wh ^ move->rev;
+			move->score += (36 - get_potential_mobility(move_w, move_b)) * w_potential_mobility; // potential mobility
+			move->score += get_corner_stability(move_b) * w_corner_stability; // corner stability
+			move->score += (36 - get_weighted_mobility(move_w, move_b)) * w_mobility; // real mobility
+		}
+		else
+		{
+			//INT32 l_selectivity = *selectivity;
+			//*selectivity = g_max_cut_table_size;
+
+			move_b = bk ^ ((1ULL << move->pos) | move->rev);
+			move_w = wh ^ move->rev;
+
+			move->score += (36 - get_potential_mobility(move_w, move_b)) * w_potential_mobility; // potential mobility
+			move->score += get_edge_stability(move_b, move_w) * w_edge_stability; // edge stability
+			move->score += (36 - get_weighted_mobility(move_w, move_b)) *  w_mobility; // real mobility
+			switch (sortDepth)
+			{
+			case 0:
+				InitIndexBoard(move_w, move_b);
+				move->score += ((64 - (Evaluation(g_board, move_w, move_b, color ^ 1, 59 - (empty - 1)) / EVAL_ONE_STONE)) >> 2) * w_eval; // 1 level score bonus
+				break;
+#if 0
+			case 1:
+				move->score += ((NEGAMAX - search_eval_1(search, NEGAMIN, -sort_alpha)) >> 1) * w_eval;  // 2 level score bonus
+				break;
+			case 2:
+				move->score += ((NEGAMAX - search_eval_2(search, NEGAMIN, -sort_alpha)) >> 1) * w_eval;  // 3 level score bonus
+				break;
+#endif
+			default:
+				key = KEY_HASH_MACRO(move_w, move_b, color ^ 1);
+				pv_key = KEY_HASH_MACRO_PV(move_w, move_b, color ^ 1);
+				if (HashGet(hash, key, move_w, move_b) ||
+					HashGet(pvHash, pv_key, move_w, move_b))
+				{
+					move->score += w_hash; // bonus if the position leads to a position stored in the hash-table
+				}
+				move->score += (64 - (AB_SearchNoPV(move_w, move_b, sortDepth, empty - 1, color ^ 1,
+					-NEGAMAX, -NEGAMIN, 0) / EVAL_ONE_STONE)) * w_eval; // > 3 level bonus
+				break;
+			}
+			//*selectivity = l_selectivity;
+		}
+	}
+}
+
+/**
+* @brief スコア順に手を並び替える
+*
+* 重要な順に以下の要素を考慮
+*   - 相手を全滅させる手か                              : 1 << 30
+*   - 第一ハッシュテーブル(deepest)に登録されている手か : 1 << 29
+*   - 第二ハッシュテーブル(newest)に登録されている手か  : 1 << 28
+*   - 浅い探索による評価値                              : 1 << 14
+*   - 相手の着手可能数                                  : 1 << 15
+*   - 相手の４隅における安定度                          : 1 << 11
+*   - 相手の潜在的着手可能数(開放度理論)                : 1 << 5
+*/
+void SortMoveList(
+	MoveList *movelist,
+	UINT64 bk,
+	UINT64 wh,
+	HashTable *hash,
+	HashTable *pvHash,
+	HashInfo *hashInfo,
+	INT32 empty,
+	UINT32 parity,
+	INT32 alpha,
+	INT32 beta,
+	UINT32 color,
+	INT32 *selectivity
+)
+{
+	int depth;
+	int sort_depth, min_depth;
+	MoveList *iter;
+	//int sort_alpha;
+
+#if 0
+	depth = g_empty - empty;
+	min_depth = 9;
+	if (empty <= 27) min_depth += (30 - empty) / 3;
+	if (depth >= min_depth)
+	{
+		sort_depth = (depth - 15) / 3;
+		if (hashInfo && hashInfo->upper < alpha) sort_depth -= 2;
+		if (empty >= 27) ++sort_depth;
+		if (sort_depth < 0) sort_depth = 0; else if (sort_depth > 6) sort_depth = 6;
+	}
+	else
+	{
+		sort_depth = -1;
+	}
+#else
+	sort_depth = 6 - (g_empty - empty);
+	if (sort_depth < 0) sort_depth = -1;
+#endif
+	//sort_alpha = MAX(NEGAMIN, alpha - SORT_ALPHA_DELTA);
+	for(iter = movelist->next; iter->next != NULL; iter = iter->next)
+	{
+		move_evaluate(&iter->move, bk, wh, hash, pvHash, hashInfo, empty, parity, alpha, beta, color, selectivity, sort_depth);
+	}
+
+	/* 得点の高い順にソート */
+	sort_movelist_score_descending(movelist);
+}
+
+
+#else
 
 /**
 * @brief スコア順に手を並び替える
@@ -302,14 +492,13 @@ void SortMoveListEnd(
 	HashTable *hash,
 	UINT32 empty,
 	INT32 alpha, INT32 beta,
-	UINT32 color)
+	UINT32 color
+)
 {
 	MoveList *iter;
 	UINT64 blank, n_moves_wh;
 	UINT64 move_b, move_w;
 	UINT32 key, move_cnt;
-	//UINT32 parity;
-	INT32 sort_depth = 6 - (g_empty - empty);
 
 	for (iter = movelist->next; iter != NULL; iter = iter->next)
 	{
@@ -342,11 +531,11 @@ void SortMoveListEnd(
 			// 着手可能数を計算
 			n_moves_wh = CreateMoves(move_w, move_b, &move_cnt);
 			// 相手の着手可能数
-			iter->move.score -= (move_cnt + CountBit(n_moves_wh & 0x8100000000000081ULL)) * (1 << 16);
+			iter->move.score -= ((UINT64)move_cnt + CountBit(n_moves_wh & 0x8100000000000081ULL)) * (1ULL << 4);
 			// 自分の４隅における安定度
-			iter->move.score -= get_edge_stability(move_w, move_b) * (1 << 2);
+			iter->move.score -= (get_edge_stability(move_w, move_b)) * (1ULL << 2);
 			// 相手の潜在的着手可能数(開放度理論)
-			iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b, blank))) * (1 << 2);
+			iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b))) * (1ULL << 2);
 		}
 		
 	}
@@ -355,6 +544,7 @@ void SortMoveListEnd(
 	sort_movelist_score_descending(movelist);
 }
 
+#endif
 
 /*  終盤用 move ordering */
 char MoveOrderingEnd(MOVELIST *pos_list, UINT64 b_board, UINT64 w_board, UINT64 moves)
