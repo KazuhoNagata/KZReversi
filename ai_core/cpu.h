@@ -33,7 +33,7 @@
 #define DEPTH_DEEP_TO_SHALLOW_SEARCH 5
 
 #define NO_PASS 0
-#define ABORT 0x80000000
+#define ABORT 0x40000000
 
 #define MPC_MIN_DEPTH 3
 #define MPC_END_MIN_DEPTH 6
@@ -133,6 +133,22 @@ INT32 PVS_SearchDeep(
 	HashTable *hash, INT32 alpha, INT32 beta, UINT32 passed, INT32 *p_selectivity, PVLINE *pline
 );
 
+/***************************************************************************
+* Name  : PVS_SearchShallow
+* Brief : PV Search を行い、評価値を基に最善手を取得
+* Args  : bk        : 黒のビット列
+*         wh        : 白のビット列
+*         depth     : 読む深さ
+*         empty     : 空きマス数
+*         alpha     : このノードにおける下限値
+*         beta      : このノードにおける上限値
+*         color     : CPUの色
+*         hash      : 置換表の先頭ポインタ
+*         pass_cnt  : 今までのパスの数(２カウントで終了とみなす)
+* Return: 着手可能位置のビット列
+****************************************************************************/
+INT32 PVS_SearchShallow(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
+	HashTable *hash, INT32 alpha, INT32 beta, UINT32 passed, INT32 *p_selectivity);
 
 /***************************************************************************
 * Name  : AB_SearchNoPV
@@ -175,3 +191,16 @@ void SetAbortFlag();
 BOOL search_SC_PVS(UINT64 bk, UINT64 wh, INT32 empty,
 	volatile INT32 *alpha, volatile INT32 *beta, INT32 *score);
 void CreatePVLineStr(PVLINE *pline, INT32 empty, INT32 score);
+
+INT32 ProbCutOff(
+	UINT64     bk,
+	UINT64     wh,
+	INT32      empty,
+	INT32      depth,
+	UINT32     color,
+	INT32      alpha,
+	INT32      beta,
+	UINT32     passed,
+	INT32     *score,
+	INT32     *serchDepth
+);

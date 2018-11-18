@@ -172,3 +172,60 @@ BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos)
 
 }
 
+
+void GenerateMoveList(MoveList *moves, UINT64 blank)
+{
+	MoveList *list = moves + 1, *previous = moves;
+
+	while (blank)
+	{
+		list->move.pos = CountBit((~blank) & (blank - 1));
+		previous = previous->next = list;
+		blank ^= 1ULL << list->move.pos;
+		list++;
+	}
+	previous->next = NULL;
+
+}
+
+
+MoveList *UpdateMoveList(MoveList *moves, INT32 pos)
+{
+	MoveList *iter;
+	MoveList *previous;
+	MoveList *idx;
+
+	iter = moves->next;
+	previous = moves;
+
+	while (iter->move.pos != pos)
+	{
+		previous = iter;
+		iter = iter->next;
+	}
+	
+	idx = previous->next;
+	previous->next = iter->next;
+
+	return idx;
+}
+
+
+
+void RestoreMoveList(MoveList *moves, INT32 pos, MoveList *idx)
+{
+	MoveList *iter;
+	MoveList *previous;
+
+	iter = moves;
+	previous = NULL;
+
+	while (iter != NULL && iter < idx)
+	{
+		previous = iter;
+		iter = iter->next;
+	}
+
+	if(previous != NULL) previous->next = idx;
+	idx->next = iter;
+}

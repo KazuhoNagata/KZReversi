@@ -33,16 +33,20 @@ void SortMoveList(
 void SortMoveListTableMoveFirst(MoveList *movelist, int move);
 void SortFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh);
 void SortPotentionalFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh, UINT64 blank);
+
 void SortMoveListMiddle(
-	MoveList *movelist,
-	UINT64 bk, UINT64 wh,
+	MoveList  *movelist,
+	UINT64     bk,
+	UINT64     wh,
 	HashTable *hash,
 	HashTable *pvHash,
-	UINT32 empty,
-	INT32 alpha, 
-	INT32 beta,
-	UINT32 color
+	UINT32     empty,
+	INT32      depth,
+	INT32      alpha,
+	INT32      beta,
+	UINT32     color
 );
+
 void SortMoveListEnd(
 	MoveList *movelist,
 	UINT64 bk, UINT64 wh,

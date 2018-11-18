@@ -1959,7 +1959,7 @@ static unsigned long long flip_pass(const unsigned long long P, const unsigned l
 
 
 /** Array of functions to compute flipped discs */
-unsigned long long(*GetRev[])(const unsigned long long, const unsigned long long) = {
+const unsigned long long(*GetRev[])(const unsigned long long, const unsigned long long) = {
 	flip_A1, flip_B1, flip_C1, flip_D1,
 	flip_E1, flip_F1, flip_G1, flip_H1,
 	flip_A2, flip_B2, flip_C2, flip_D2,

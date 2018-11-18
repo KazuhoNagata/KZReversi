@@ -226,13 +226,16 @@ void SortPotentionalFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh, UINT64 b
 #if 1
 /* èòî’íÜî’óp move ordering */
 void SortMoveListMiddle(
-	MoveList *movelist,
-	UINT64 bk, UINT64 wh,
+	MoveList  *movelist,
+	UINT64     bk, 
+	UINT64     wh,
 	HashTable *hash,
 	HashTable *pvHash,
-	UINT32 empty,
-	INT32 alpha, INT32 beta,
-	UINT32 color
+	UINT32     empty,
+	INT32      depth,
+	INT32      alpha, 
+	INT32      beta,
+	UINT32     color
 )
 {
 #if 1
@@ -241,7 +244,7 @@ void SortMoveListMiddle(
 	UINT32 move_cnt, cnt = 0;
 	UINT64 n_moves_wh, move_b, move_w;
 	UINT32 key;
-	INT32 searched = g_empty - empty;
+	INT32 searched = depth;
 
 	if (searched < 6 && g_limitDepth >= 16)
 	{

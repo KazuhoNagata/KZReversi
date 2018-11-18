@@ -40,7 +40,7 @@ INT32 CountBit(UINT64 bit)
 	///int l_moves = bit & 0x00000000FFFFFFFF;
 	///int h_moves = (bit & 0xFFFFFFFF00000000) >> 32;
 
-	int count = _mm_popcnt_u64(bit);
+	INT32 count = (INT32)_mm_popcnt_u64(bit);
 
 	return count;
 }

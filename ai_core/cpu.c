@@ -52,7 +52,7 @@ INT32 g_mpc_level;
 // endgame mpc info
 const double cutval_table[8] =
 {
-	0.25, 0.50, 0.75, 1.00, 1.50, 2.00, 2.40, 3.00
+	0.25, 0.50, 0.74, 1.00, 1.48, 1.96, 2.33, 2.58
 };
 
 const int cutval_table_percent[8 + 1] =
@@ -226,18 +226,24 @@ void CreatePVLineStr(PVLINE *pline, INT32 empty, INT32 score)
 	// PV shallower line
 	for (i = 0; i <= g_empty - empty; i++)
 	{
-		sprintf_s(strptr, bufsize, "%s-", g_cordinates_table[g_pvline[i]]);
-		strptr += 3; // 3文字ずつずらす
-		bufsize -= 3;
+		if (g_pvline[i] != NOMOVE)
+		{
+			sprintf_s(strptr, bufsize, "%s-", g_cordinates_table[g_pvline[i]]);
+			strptr += 3; // 3文字ずつずらす
+			bufsize -= 3;
+		}
 	}
 
 	// PV deeper line
 	int count = pline->cmove;
 	for (; i < count - 1; i++)
 	{
-		sprintf_s(strptr, bufsize, "%s-", g_cordinates_table[pline->argmove[i]]);
-		strptr += 3; // 3文字ずつずらす
-		bufsize -= 3;
+		if (g_pvline[i] != NOMOVE)
+		{
+			sprintf_s(strptr, bufsize, "%s-", g_cordinates_table[pline->argmove[i]]);
+			strptr += 3; // 3文字ずつずらす
+			bufsize -= 3;
+		}
 	}
 
 	sprintf_s(strptr, bufsize, "%s", g_cordinates_table[pline->argmove[i]]);
@@ -543,16 +549,17 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 
 		// UIにメッセージを送信
 		move = GetMoveFromHash(bk, wh, key);
-		CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval, move, count, ON_MIDDLE);
+		CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval + (color * 17500 - ((60 - emptyNum) * 200)), move, count, ON_MIDDLE);
 		g_set_message_funcptr[0](g_AiMsg);
 	}
 
 	// 中断されたので直近の確定評価値を返却
-	if (eval == ABORT){
-		return eval_b;
+	if (eval == ABORT)
+	{
+		return eval_b + (color * 17500 - ((60 - emptyNum) * 200));
 	}
 
-	return eval;
+	return eval + (color * 17500 - ((60 - emptyNum) * 200));
 }
 
 /***************************************************************************
@@ -635,8 +642,8 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 #else
 	if (g_tableFlag && g_empty >= 12 && g_hash->attribute != HASH_ATTR_EXACT)
 	{
-		HashClear(g_hash);
-		HashClear(g_pvHash);
+		//HashClear(g_hash);
+		//HashClear(g_pvHash);
 		g_hash->attribute = HASH_ATTR_EXACT;
 		g_pvHash->attribute = HASH_ATTR_EXACT;
 	}
@@ -698,7 +705,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 					}
 					// PVS石差探索
 					selectivity = lv;
-					eval = PVS_SearchDeepExact(bk, wh, emptyNum, parity, color, g_hash, g_pvHash, bVal - 1, bVal, NO_PASS, &selectivity, &line);
+					eval = PVS_SearchDeepExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, bVal - 1, bVal, NO_PASS, &selectivity, &line);
 
 					// 中断されたので直近の確定評価値を返却
 					if (g_AbortFlag == TRUE)
@@ -728,7 +735,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 				g_set_message_funcptr[0](g_AiMsg);
 
 				selectivity = lv;
-				eval = PVS_SearchDeepExact(bk, wh, emptyNum, parity, color, g_hash, g_pvHash, aVal, bVal, NO_PASS, &selectivity, &line);
+				eval = PVS_SearchDeepExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, aVal, bVal, NO_PASS, &selectivity, &line);
 
 				// 中断されたので直近の確定評価値を返却
 				if (g_AbortFlag == TRUE)
@@ -771,12 +778,15 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	}
 	else
 	{
+		HashClear(g_hash);
+		HashClear(g_pvHash);
+		g_hash->attribute = HASH_ATTR_EXACT;
+		g_pvHash->attribute = HASH_ATTR_EXACT;
 		// init max threshold
-		selectivity = g_max_cut_table_size;
+		g_mpc_level = g_max_cut_table_size;
 		// PVS石差探索
-		eval = PVS_SearchDeepExact(bk, wh, emptyNum, parity, color, g_hash, g_pvHash, -g_infscore, g_infscore, NO_PASS, &selectivity, &line);
+		eval = PVS_SearchDeepExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, -g_infscore, g_infscore, NO_PASS, &selectivity, &line);
 
-		// 置換表から最善手を取得
 		move = GetMoveFromHash(bk, wh, key);
 	}
 #else
@@ -888,7 +898,7 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		MPC_END_CUT_VAL = cutval_table[g_mpc_level];
 
 		// PVS石差探索
-		eval = PVS_SearchDeepWinLoss(bk, wh, emptyNum, color, g_hash, LOSS, WIN, NO_PASS, &selectivity, &line);
+		eval = PVS_SearchDeepWinLoss(bk, wh, emptyNum, 0, color, g_hash, LOSS, WIN, NO_PASS, &selectivity, &line);
 
 		// 中断されたので直近の確定評価値を返却
 		if (g_AbortFlag == TRUE)
@@ -977,7 +987,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	upper = beta;
 
 	// stability cutoff
-	//if (depth != g_limitDepth && search_SC_PVS(bk, wh, empty, &alpha, &beta, &score)) return score;
+	if (depth != g_limitDepth && search_SC_PVS(bk, wh, empty, &alpha, &beta, &score)) return score;
 
 	/************************************************************
 	*
@@ -1035,10 +1045,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	INT32 selectivity;
 	INT32 max_selectivity = 0;
 
-	// 着手のflip-bitを求めてmove構造体に保存
-	StoreMovelist(movelist, bk, wh, moves);
-
-	if (movelist->next == NULL) {
+	if (moveCount == 0) {
 		if (passed) {
 			bestscore = CountBit(bk) - CountBit(wh);
 
@@ -1082,7 +1089,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 			}
 			else if (empty <= 36)
 			{
-				MPC_CUT_VAL = cutval_table[3];
+				MPC_CUT_VAL = cutval_table[4];
 				mpc_level = 3;
 			}
 			else
@@ -1097,7 +1104,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 			score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed, pline);
 			if (score < value)
 			{
-				//HashUpdate(hash, key, bk, wh, alpha, beta, alpha, mpcInfo_p->depth, NOMOVE, mpc_level, NEGAMAX);
+				HashUpdate(hash, key, bk, wh, alpha, beta, alpha, depth, NOMOVE, mpc_level, NEGAMAX);
 				*p_selectivity = mpc_level; // store selectivity
 				return alpha;
 			}
@@ -1107,19 +1114,22 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 			score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, pline);
 			if (score > value)
 			{
-				//HashUpdate(hash, key, bk, wh, alpha, beta, beta, mpcInfo_p->depth, NOMOVE, mpc_level, NEGAMAX);
+				HashUpdate(hash, key, bk, wh, alpha, beta, beta, depth, NOMOVE, mpc_level, NEGAMAX);
 				*p_selectivity = mpc_level; // store selectivity
 				return beta;
 			}
 		}
 #endif
 
+		// 着手のflip-bitを求めてmove構造体に保存
+		StoreMovelist(movelist, bk, wh, moves);
+
 		PVLINE line;
 		if (moveCount > 1)
 		{
 			if (empty > 15)
 			{
-				SortMoveListMiddle(movelist, bk, wh, hash, NULL, empty, alpha, beta, color);
+				SortMoveListMiddle(movelist, bk, wh, hash, NULL, empty, depth, alpha, beta, color);
 			}
 			else
 			{
@@ -1138,7 +1148,6 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 		/* other moves : try to refute the first/best one */
 		for (iter = movelist->next; lower < upper && iter != NULL; iter = iter->next)
 		{
-			selectivity = g_max_cut_table_size; // init max thresould
 			move = &(iter->move);
 			// PV表示記憶用
 			g_pvline[g_empty - empty] = move->pos;
@@ -1183,7 +1192,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 					pline->cmove = line.cmove + 1;
 					if (g_empty - empty == 0)
 					{
-						CreatePVLineStr(pline, empty, bestscore * (1 - (2 * ((g_empty - empty) % 2))));
+						CreatePVLineStr(pline, empty, (bestscore * (1 - (2 * ((g_empty - empty) % 2))) + (color * 17500 - ((60 - empty) * 200))));
 						g_set_message_funcptr[1](g_PVLineMsg);
 					}
 				}
@@ -1201,18 +1210,13 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	//*p_selectivity = g_max_cut_table_size; // store selectivity
 
 	return bestscore;
-
 }
+
+
 
 INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 	INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline)
 {
-
-	/* アボート処理 */
-	if (g_AbortFlag)
-	{
-		return ABORT;
-	}
 
 	g_countNode++;
 
@@ -1243,7 +1247,7 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 		}
 		else if (empty <= 36)
 		{
-			MPC_CUT_VAL = cutval_table[3];
+			MPC_CUT_VAL = cutval_table[4];
 		}
 		else
 		{
@@ -1299,16 +1303,14 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 	{
 		int pos;
 		PVLINE line;
+		UINT64 temp;
 
 		max = NEGAMIN;
-		do
+		temp = moves & 0x8100000000000081;
+		while (temp)
 		{
-			/* 静的順序づけ（少ないコストで大幅に高速化するみたい） */
-			pos = GetOrderPosition(moves);
+			pos = CountBit((~temp) & (temp - 1));
 			rev = GetRev[pos](bk, wh);
-			// PV表示記憶用
-			g_pvline[g_empty - empty] = pos;
-
 			/* ターンを進めて再帰処理へ */
 			eval = -AB_Search(wh ^ rev, bk ^ ((1ULL << pos) | rev),
 				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0, &line);
@@ -1322,22 +1324,200 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 			if (eval > max)
 			{
 				max = eval;
-				if (max > alpha)
-				{
-					alpha = max;
-					if (line.cmove < 0 || line.cmove > 59)
-					{
-						line.cmove = 0;
-					}
-					pline->argmove[0] = pos;
-					memcpy(pline->argmove + 1, line.argmove, line.cmove);
-					pline->cmove = line.cmove + 1;
-				}
+				alpha = max(alpha, eval);
+			}
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x240000240000;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_Search(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0, &line);
+
+			if (beta <= eval)
+			{
+				return eval;
 			}
 
-			moves ^= 1ULL << pos;
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+			temp ^= 1ULL << pos;
+		}
 
-		} while (moves);
+		temp = moves & 0x1800008181000018;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_Search(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0, &line);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x2400810000810024;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_Search(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0, &line);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x182424180000;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_Search(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0, &line);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x18004242001800;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_Search(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0, &line);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x24420000422400;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_Search(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0, &line);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x4281000000008142;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_Search(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0, &line);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x42001818004200;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_Search(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0, &line);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
 	}
 
 	return max;
@@ -1347,12 +1527,6 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 	INT32 alpha, INT32 beta, UINT32 passed)
 {
-
-	/* アボート処理 */
-	if (g_AbortFlag)
-	{
-		return ABORT;
-	}
 
 	g_countNode++;
 
@@ -1372,13 +1546,13 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 	* Multi-Prob-Cut(MPC) フェーズ
 	*
 	*************************************************************/
-#if 0
+#if 1
 	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
 	{
 		double MPC_CUT_VAL;
 		if (empty <= 24)
 		{
-			MPC_CUT_VAL = cutval_table[5];
+			MPC_CUT_VAL = cutval_table[4];
 		}
 		else if (empty <= 36)
 		{
@@ -1409,13 +1583,13 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 #endif
 
 
-	int move_cnt;
+	UINT32 move_cnt;
 	int max;                    //現在の最高評価値
 	UINT64 rev;
 	UINT64 moves;             //合法手のリストアップ
 
 	/* 合法手生成とパスの処理 */
-	if ((moves = CreateMoves(bk, wh, (UINT32 *)(&move_cnt))) == 0)
+	if ((moves = CreateMoves(bk, wh, &move_cnt)) == 0)
 	{
 		if (passed)
 		{
@@ -1441,10 +1615,81 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 	{
 		int pos;
 		max = NEGAMIN;
-		do
+		UINT64 temp;
+		
+		temp= moves & 0x8100000000000081;
+		while (temp)
 		{
-			/* 静的順序づけ（少ないコストで大幅に高速化するみたい） */
-			pos = GetOrderPosition(moves);
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_SearchNoPV(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x240000240000;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_SearchNoPV(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x1800008181000018;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_SearchNoPV(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x2400810000810024;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
 			rev = GetRev[pos](bk, wh);
 			/* ターンを進めて再帰処理へ */
 			eval = -AB_SearchNoPV(wh ^ rev, bk ^ ((1ULL << pos) | rev),
@@ -1462,9 +1707,128 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 				alpha = max(alpha, eval);
 			}
 
-			moves ^= 1ULL << pos;
+			temp ^= 1ULL << pos;
+		}
 
-		} while (moves);
+		temp = moves & 0x182424180000;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_SearchNoPV(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x18004242001800;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_SearchNoPV(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x24420000422400;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_SearchNoPV(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x4281000000008142;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_SearchNoPV(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
+
+		temp = moves & 0x42001818004200;
+		while (temp)
+		{
+			pos = CountBit((~temp) & (temp - 1));
+			rev = GetRev[pos](bk, wh);
+			/* ターンを進めて再帰処理へ */
+			eval = -AB_SearchNoPV(wh ^ rev, bk ^ ((1ULL << pos) | rev),
+				depth - 1, empty - 1, color ^ 1, -beta, -alpha, 0);
+
+			if (beta <= eval)
+			{
+				return eval;
+			}
+
+			/* 今までより良い局面が見つかれば最善手の更新 */
+			if (eval > max)
+			{
+				max = eval;
+				alpha = max(alpha, eval);
+			}
+
+			temp ^= 1ULL << pos;
+		}
 	}
 
 	return max;

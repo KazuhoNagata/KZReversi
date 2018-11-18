@@ -33,3 +33,7 @@ INT32 get_potential_mobility(const UINT64 P, const UINT64 O);
 INT32 get_weighted_mobility(const UINT64 P, const UINT64 O);
 
 BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos);
+
+void  GenerateMoveList(MoveList *moves, UINT64 blank);
+MoveList *UpdateMoveList(MoveList *moves, INT32 pos);
+void  RestoreMoveList(MoveList *moves, INT32 pos, MoveList *idx);

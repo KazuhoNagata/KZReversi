@@ -133,6 +133,7 @@ namespace KZreversi
         private bool m_enableDetailDisplay;
         private bool m_enableResultDisplay;
 
+        GameThread hintGmt;
 
         public Form1()
         {
@@ -259,8 +260,22 @@ namespace KZreversi
             {
                 if (m_cpuFlagProperty == false)
                 {
+                    if (m_mode == ON_HINT)
+                    {
+                        hintAbort();
+                        MessageBox.Show(
+                        "ヒントの処理を中断しました。",
+                        "中断",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+
+                        toolStripStatusLabel1.Text = "";
+                        toolStripStatusLabel2.Text = "";
+                        toolStripStatusLabel3.Text = "Hint aborted.";
+                        label6.Text = "";
+                    }
                     m_mode = ON_NOTHING;
-                    if (m_mode == ON_HINT) hintAbort();
+
                     this.Cursor = Cursors.Default;
                     SetControlEnable(true);
                     panel1.Invalidate(false);
@@ -328,7 +343,7 @@ namespace KZreversi
 
         private void hintAbort()
         {
-            throw new NotImplementedException();
+            hintGmt.AbortAll();
         }
 
         private void ChangePlayer()
@@ -1183,7 +1198,7 @@ namespace KZreversi
 
                 gmt = new GameThread();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
-                gmt.m_recvcmdProperty = args;
+                gmt.RecvcmdProperty = args;
                 m_sw.Restart();
 
                 return;
@@ -1225,7 +1240,7 @@ namespace KZreversi
                 // ゲームスレッドにCPU処理リクエスト送信
                 gmt = new GameThread();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
-                gmt.m_recvcmdProperty = args;
+                gmt.RecvcmdProperty = args;
                 m_sw.Restart();
                 // 画面再描画
                 panel1.Invalidate(false);
@@ -1310,7 +1325,7 @@ namespace KZreversi
             GameThread gmt = new GameThread();
             object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
             //MessageBox.Show("ゲームスレッドにCPU処理リクエスト送信", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            gmt.m_recvcmdProperty = args;
+            gmt.RecvcmdProperty = args;
 
             toolStripStatusLabel1.Text = "";
             m_sw.Restart();
@@ -1322,9 +1337,9 @@ namespace KZreversi
             // UIを中断ボタン以外無効化
             SetControlEnable(false);
             // ゲームスレッドにヒント処理リクエストを送信
-            GameThread gmt = new GameThread();
+            hintGmt = new GameThread();
             object[] args = new object[] { GameThread.CMD_HINT, boardclass, cpuClass[nowColor], this, m_hintLevel };
-            gmt.m_recvcmdProperty = args;
+            hintGmt.RecvcmdProperty = args;
         }
 
 
@@ -1393,6 +1408,10 @@ namespace KZreversi
                 m_hintFlagProperty = false;
                 SetControlEnable(true);
                 this.Cursor = Cursors.Default;
+                toolStripStatusLabel1.Text = "";
+                toolStripStatusLabel2.Text = "";
+                toolStripStatusLabel3.Text = "Hint finished.";
+                label6.Text = "";
             }
 
             // 画面再描画
@@ -1912,7 +1931,7 @@ namespace KZreversi
         private void HintToolStripMenuItem_Click(object sender, EventArgs e)
         {
             int size = hintToolStripMenuItem.DropDownItems.Count;
-            ToolStripMenuItem stripItem = ((ToolStripMenuItem)sender);
+            ToolStripMenuItem stripItem = (ToolStripMenuItem)sender;
 
             // チェック全解除
             for (int i = 0; i < size; i++)

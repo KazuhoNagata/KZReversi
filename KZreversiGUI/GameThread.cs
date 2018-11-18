@@ -35,7 +35,7 @@ namespace KZreversi
         public const int CMD_CHK = 2;
         public const int CMD_HINT = 3;
 
-        private uint[] dcTable = { 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26 };
+        private readonly uint[] dcTable = { 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26 };
 
         private object[] _m_recvcmd;
 
@@ -45,7 +45,7 @@ namespace KZreversi
 
         private bool m_abort;
 
-        public object[] m_recvcmdProperty
+        public object[] RecvcmdProperty
         {
             get
             {
@@ -73,38 +73,35 @@ namespace KZreversi
                 handler = PropertyChangedRcvCmd;
             }
 
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(name));
-            }
+            handler?.Invoke(this, new PropertyChangedEventArgs(name));
 
         }
 
         public void PropertyChangedRcvCmd(object sender, PropertyChangedEventArgs e)
         {
-            int message = (int)m_recvcmdProperty[0];
+            int message = (int)RecvcmdProperty[0];
             if (message == CMD_CPU)
             {
-                BoardClass board = (BoardClass)m_recvcmdProperty[1];
-                CpuClass cpuClass = (CpuClass)m_recvcmdProperty[2];
-                Form1 formobj = (Form1)m_recvcmdProperty[3];
+                BoardClass board = (BoardClass)RecvcmdProperty[1];
+                CpuClass cpuClass = (CpuClass)RecvcmdProperty[2];
+                Form1 formobj = (Form1)RecvcmdProperty[3];
 
                 Thread th = new Thread(CpuThreadFunc);
-                th.Start(m_recvcmdProperty);
+                th.Start(RecvcmdProperty);
 
                 // ノード数表示用
                 Thread th2 = new Thread(GetNodeCountFunc);
-                th2.Start(m_recvcmdProperty);
+                th2.Start(RecvcmdProperty);
             }
             else if (message == CMD_HINT) 
             {
-                BoardClass board = (BoardClass)m_recvcmdProperty[1];
-                CpuClass cpuClass = (CpuClass)m_recvcmdProperty[2];
-                Form1 formobj = (Form1)m_recvcmdProperty[3];
-                uint level = (uint)m_recvcmdProperty[4];
+                BoardClass board = (BoardClass)RecvcmdProperty[1];
+                CpuClass cpuClass = (CpuClass)RecvcmdProperty[2];
+                Form1 formobj = (Form1)RecvcmdProperty[3];
+                uint level = (uint)RecvcmdProperty[4];
 
                 Thread th = new Thread(HintThreadFunc);
-                th.Start(m_recvcmdProperty);
+                th.Start(RecvcmdProperty);
             }
             else
             {
@@ -163,9 +160,11 @@ namespace KZreversi
             int ret = 0;
 
             CppWrapper cpw = new CppWrapper();
+            List<HintClass> hintList = new List<HintClass>();
 
             // 着手可能リスト取得
             ulong moves = cpw.GetEnumMove(board);
+
             // 現在のＣＰＵの設定を取得
             CpuConfig cpuConfig = SetCpuConfig(cpuClass);
             // BOOK禁止
@@ -173,8 +172,6 @@ namespace KZreversi
 
             ulong bk = board.GetBlack();
             ulong wh = board.GetWhite();
-
-            HintClass hintData = new HintClass();
 
             // 空きマス数
             int empty = cpw.CountBit(~(bk | wh));
@@ -184,69 +181,88 @@ namespace KZreversi
             cpuConfig.winLossDepth = dcTable[level - 1];
             cpuConfig.exactDepth = dcTable[level - 1] - 2;
 
+            // 着手リスト生成
+            int move;
+            List<int> moveList = new List<int>();
+            while (moves != 0)
+            {
+                HintClass hData = new HintClass();
+
+                move = cpw.CountBit((~moves) & (moves - 1));
+                hData.SetPos(move);
+                hintList.Add(hData);
+                moves ^= 1UL << move;
+            }
+
+            HintClass tempData = new HintClass();
+
             if (cpuConfig.exactDepth >= empty)
             {
-                // WLDとEXACTの前にある程度の探索を行うため0で初期化
                 cpuConfig.exactDepth = 0;
                 cpuConfig.winLossDepth = 0;
-                hintData.SetAttr(HintClass.SOLVE_MIDDLE);
                 // 反復深化探索(level - 8)
                 for (int i = 0; i < level / 2; i++)
                 {
                     cpuConfig.searchDepth = (uint)i * 2 + 2;
                     // 着手可能マスに対してそれぞれ評価値を計算
-                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                    ret = DoSearch(bk, wh, cpuConfig, hintList, formobj, HintClass.SOLVE_MIDDLE);
                     if (ret == -1) break;
                     // UIに反復x回目終了を通知
-                    hintData.SetPos(64);
-                    formobj.Invoke(formobj.hintDelegate, new object[] { hintData });
+                    tempData.SetPos(64);
+                    formobj.Invoke(formobj.hintDelegate, new object[] { tempData });
+
+                    // 評価値の高い順にソート
+                    hintList.Sort((a, b) => b.GetEval() - a.GetEval());
                 }
 
                 if (ret == 0)
                 {
-                    hintData.SetAttr(HintClass.SOLVE_EXCAT);
                     cpuConfig.exactDepth = dcTable[level - 1] - 2;
                     // 着手可能マスに対してそれぞれ評価値を計算
-                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                    ret = DoSearch(bk, wh, cpuConfig, hintList, formobj, HintClass.SOLVE_EXCAT);
                 }
             }
             else if (cpuConfig.winLossDepth >= empty)
             {
                 cpuConfig.exactDepth = 0;
                 cpuConfig.winLossDepth = 0;
-                hintData.SetAttr(HintClass.SOLVE_MIDDLE);
                 // 反復深化探索(level - 8)
                 for (int i = 0; i < level / 2; i++)
                 {
                     cpuConfig.searchDepth = (uint)i * 2 + 2;
                     // 着手可能マスに対してそれぞれ評価値を計算
-                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                    ret = DoSearch(bk, wh, cpuConfig, hintList, formobj, HintClass.SOLVE_MIDDLE);
                     if (ret == -1) break;
                     // UIに反復x回目終了を通知
-                    hintData.SetPos(64);
-                    formobj.Invoke(formobj.hintDelegate, new object[] { hintData });
+                    tempData.SetPos(64);
+                    formobj.Invoke(formobj.hintDelegate, new object[] { tempData });
+                    
+                    // 評価値の高い順にソート
+                    hintList.Sort((a, b) => b.GetEval() - a.GetEval());
                 }
+
                 if (ret == 0)
                 {
-                    hintData.SetAttr(HintClass.SOLVE_WLD);
                     cpuConfig.winLossDepth = dcTable[level - 1];
                     // 着手可能マスに対してそれぞれ評価値を計算
-                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                    ret = DoSearch(bk, wh, cpuConfig, hintList, formobj, HintClass.SOLVE_WLD);
                 }
             }
             else
             {
-                hintData.SetAttr(HintClass.SOLVE_MIDDLE);
                 // 反復深化探索
                 for (int i = 0; i < level && i <= empty; i++)
                 {
                     cpuConfig.searchDepth = (uint)i * 2 + 2;
                     // 着手可能マスに対してそれぞれ評価値を計算
-                    ret = doSearch(bk, wh, cpuConfig, moves, formobj, hintData);
+                    ret = DoSearch(bk, wh, cpuConfig, hintList, formobj, HintClass.SOLVE_MIDDLE);
                     if (ret == -1) break;
                     // UIに反復x回目終了を通知
-                    hintData.SetPos(64);
-                    formobj.Invoke(formobj.hintDelegate, new object[] { hintData });
+                    tempData.SetPos(64);
+                    formobj.Invoke(formobj.hintDelegate, new object[] { tempData });
+
+                    // 評価値の高い順にソート
+                    hintList.Sort((a, b) => b.GetEval() - a.GetEval());
                 }
             }
 
@@ -256,15 +272,15 @@ namespace KZreversi
 
 
 
-        private int doSearch(ulong bk, ulong wh, CpuConfig cpuConfig, ulong moves, Form1 formobj, HintClass hintData)
+        private int DoSearch(ulong bk, ulong wh, CpuConfig cpuConfig, List<HintClass> moveList, Form1 formobj, int attr)
         {
-            int pos;
             int ret = 0;
+            int pos;
             ulong move_bk, move_wh, rev;
 
-            for (ulong m = moves; m != 0; m ^= 1UL << pos)
+            foreach (HintClass hintData in moveList)
             {
-                pos = cpw.CountBit((~m) & (m - 1));
+                pos = hintData.GetPos();
                 if (cpuConfig.color == BoardClass.WHITE)
                 {
                     rev = cpw.GetBoardChangeInfo(bk, wh, pos);
@@ -280,8 +296,8 @@ namespace KZreversi
                 }
                 cpw.GetCpuMove(move_bk, move_wh, cpuConfig);
 
-                hintData.SetPos(pos);
                 hintData.SetEval(-cpw.GetLastEvaluation());
+                hintData.SetAttr(attr);
 
                 // UIに評価値を通知
                 formobj.Invoke(formobj.hintDelegate, new object[] { hintData });
@@ -302,17 +318,18 @@ namespace KZreversi
 
         private CpuConfig SetCpuConfig(CpuClass cpuClass)
         {
-            CpuConfig cpuConfig = new CpuConfig();
-
-            cpuConfig.bookFlag = cpuClass.GetBookFlag();
-            cpuConfig.bookVariability = cpuClass.GetBookVariability();
-            cpuConfig.casheSize = cpuClass.GetCasheSize();
-            cpuConfig.color = cpuClass.GetColor();
-            cpuConfig.exactDepth = cpuClass.GetExactDepth();
-            cpuConfig.mpcFlag = cpuClass.GetMpcFlag();
-            cpuConfig.searchDepth = cpuClass.GetSearchDepth();
-            cpuConfig.tableFlag = cpuClass.GetTableFlag();
-            cpuConfig.winLossDepth = cpuClass.GetWinLossDepth();
+            CpuConfig cpuConfig = new CpuConfig
+            {
+                bookFlag = cpuClass.GetBookFlag(),
+                bookVariability = cpuClass.GetBookVariability(),
+                casheSize = cpuClass.GetCasheSize(),
+                color = cpuClass.GetColor(),
+                exactDepth = cpuClass.GetExactDepth(),
+                mpcFlag = cpuClass.GetMpcFlag(),
+                searchDepth = cpuClass.GetSearchDepth(),
+                tableFlag = cpuClass.GetTableFlag(),
+                winLossDepth = cpuClass.GetWinLossDepth()
+            };
 
             return cpuConfig;
         }

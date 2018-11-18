@@ -154,7 +154,7 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 	{
 		eval = -GetEmpty1Score[g_solveMethod](wh ^ rev, bk ^ (pos_bit | rev), x1, -alpha, &line);
 		if (eval >= beta) return eval;
-		else if (eval > best)
+		if (eval > best)
 		{
 			best = eval;
 			if (best > alpha)
