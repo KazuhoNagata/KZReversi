@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28306.52
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KZReversiGUI", "KZreversiGUI\KZReversiGUI.csproj", "{337119D3-B174-4A9E-9ECD-D4229467B049}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -9,11 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KZReversiGUI", "KZreversiGU
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ai_core", "ai_core\ai_core.vcxproj", "{159DD7E1-D7F9-4273-AAFD-9B6047A96735}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{87A1A625-65B8-4AB2-81D8-C68D4B3ACE02}"
-	ProjectSection(SolutionItems) = preProject
-		KZreversiGUI\bin\x64\Release\KZReversi.zip = KZreversiGUI\bin\x64\Release\KZReversi.zip
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,5 +66,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B81D50C8-EA7B-402C-9BD2-8B194DEF7413}
 	EndGlobalSection
 EndGlobal
