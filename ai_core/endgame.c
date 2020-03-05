@@ -254,7 +254,7 @@ INT32 NWS_SearchDeepExact(
 	lower = alpha;
 	upper = beta;
 
-	if (g_empty > 12 && empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
+	if (empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
 	{
 		return AB_SearchExact(bk, wh, ~(bk | wh), empty,
 			color, alpha, beta, passed, parity, p_selectivity, pline);
@@ -472,7 +472,10 @@ INT32 PVS_SearchDeepExact(
 	upper = beta;
 
 	// stability cutoff
-	if (search_SC_PVS(bk, wh, empty, &alpha, &beta, &score)) return score;
+	if(g_empty >= 12)
+	{
+		if (search_SC_PVS(bk, wh, empty, &alpha, &beta, &score)) return score;
+	}
 
 	/************************************************************
 	*
@@ -483,7 +486,7 @@ INT32 PVS_SearchDeepExact(
 	key = KEY_HASH_MACRO(bk, wh, color);
 	pv_key = KEY_HASH_MACRO_PV(bk, wh, color);
 	/* transposition cutoff ? */
-	if (g_tableFlag)
+	if (g_tableFlag && g_empty >= 12)
 	{
 		hashInfo = HashGet(hash, key, bk, wh);
 		if (hashInfo && TableCutOff(hashInfo, bk, wh, color, empty, &lower, &upper, &score, &bestmove, p_selectivity))
@@ -982,7 +985,7 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, INT32 depth, UINT
 	}
 
 	// stability cutoff
-	if (search_SC_NWS(bk, wh, empty, alpha, &score))
+	if (depth != 0 && search_SC_NWS(bk, wh, empty, alpha, &score))
 	{
 		// up to max threshold
 		*p_selectivity = g_mpc_level;
@@ -998,7 +1001,7 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, INT32 depth, UINT
 	/* ÉLÅ[Çê∂ê¨ */
 	key = KEY_HASH_MACRO(bk, wh, color);
 	/* transposition cutoff ? */
-	if (g_tableFlag)
+	if (depth != 0 && g_tableFlag)
 	{
 		score = -g_infscore;
 		// îrëºèàóùäJén
@@ -1165,14 +1168,17 @@ INT32 PVS_SearchDeepWinLoss(UINT64 bk, UINT64 wh, INT32 empty, INT32 depth, UINT
 		}
 	}
 
-	/* íuä∑ï\Ç…ìoò^ */
-	HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, empty, bestmove, g_mpc_level, WIN + 1);
-	*p_selectivity = selectivity;
-
-	if (g_empty == empty)
+	if (bestscore != ABORT)
 	{
-		g_move = bestmove;
+		if (depth == 0)
+		{
+			g_move = bestmove;
+		}
+
+		/* íuä∑ï\Ç…ìoò^ */
+		HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, empty, bestmove, g_mpc_level, g_infscore);
 	}
+
 
 	return bestscore;
 }

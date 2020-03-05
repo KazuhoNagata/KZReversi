@@ -177,7 +177,7 @@ namespace KZreversi
             int empty = cpw.CountBit(~(bk | wh));
 
             // CPU設定
-            cpuConfig.color = board.GetColor();
+            //cpuConfig.color = board.GetColor();
             cpuConfig.winLossDepth = dcTable[level - 1];
             cpuConfig.exactDepth = dcTable[level - 1] - 2;
 
@@ -196,7 +196,7 @@ namespace KZreversi
 
             HintClass tempData = new HintClass();
 
-            if (cpuConfig.exactDepth >= empty)
+            if (cpuConfig.exactDepth > empty)
             {
                 cpuConfig.exactDepth = 0;
                 cpuConfig.winLossDepth = 0;
@@ -222,7 +222,7 @@ namespace KZreversi
                     ret = DoSearch(bk, wh, cpuConfig, hintList, formobj, HintClass.SOLVE_EXCAT);
                 }
             }
-            else if (cpuConfig.winLossDepth >= empty)
+            else if (cpuConfig.winLossDepth > empty)
             {
                 cpuConfig.exactDepth = 0;
                 cpuConfig.winLossDepth = 0;
@@ -280,8 +280,9 @@ namespace KZreversi
 
             foreach (HintClass hintData in moveList)
             {
+                //cpw.ClearHash();
                 pos = hintData.GetPos();
-                if (cpuConfig.color == BoardClass.WHITE)
+                if (cpuConfig.color == BoardClass.BLACK)
                 {
                     rev = cpw.GetBoardChangeInfo(bk, wh, pos);
                     move_bk = bk ^ ((1UL << pos) | rev);
@@ -292,9 +293,11 @@ namespace KZreversi
                     rev = cpw.GetBoardChangeInfo(wh, bk, pos);
                     move_wh = wh ^ ((1UL << pos) | rev);
                     move_bk = bk ^ rev;
-
                 }
+
+                cpuConfig.color ^= 1;
                 cpw.GetCpuMove(move_bk, move_wh, cpuConfig);
+                cpuConfig.color ^= 1;
 
                 hintData.SetEval(-cpw.GetLastEvaluation());
                 hintData.SetAttr(attr);

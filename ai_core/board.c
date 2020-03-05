@@ -263,6 +263,7 @@ void InitIndexBoard(UINT64 bk, UINT64 wh)
 	g_board[5] = (int)((bk & a6) >> 5) + (int)((wh & a6) >> 4);
 	g_board[6] = (int)((bk & a7) >> 6) + (int)((wh & a7) >> 5);
 	g_board[7] = (int)((bk & a8) >> 7) + (int)((wh & a8) >> 6);
+
 	g_board[8] = (int)((bk & b1) >> 8) + (int)((wh & b1) >> 7);
 	g_board[9] = (int)((bk & b2) >> 9) + (int)((wh & b2) >> 8);
 	g_board[10] = (int)((bk & b3) >> 10) + (int)((wh & b3) >> 9);
@@ -271,6 +272,7 @@ void InitIndexBoard(UINT64 bk, UINT64 wh)
 	g_board[13] = (int)((bk & b6) >> 13) + (int)((wh & b6) >> 12);
 	g_board[14] = (int)((bk & b7) >> 14) + (int)((wh & b7) >> 13);
 	g_board[15] = (int)((bk & b8) >> 15) + (int)((wh & b8) >> 14);
+
 	g_board[16] = (int)((bk & c1) >> 16) + (int)((wh & c1) >> 15);
 	g_board[17] = (int)((bk & c2) >> 17) + (int)((wh & c2) >> 16);
 	g_board[18] = (int)((bk & c3) >> 18) + (int)((wh & c3) >> 17);
@@ -279,6 +281,7 @@ void InitIndexBoard(UINT64 bk, UINT64 wh)
 	g_board[21] = (int)((bk & c6) >> 21) + (int)((wh & c6) >> 20);
 	g_board[22] = (int)((bk & c7) >> 22) + (int)((wh & c7) >> 21);
 	g_board[23] = (int)((bk & c8) >> 23) + (int)((wh & c8) >> 22);
+
 	g_board[24] = (int)((bk & d1) >> 24) + (int)((wh & d1) >> 23);
 	g_board[25] = (int)((bk & d2) >> 25) + (int)((wh & d2) >> 24);
 	g_board[26] = (int)((bk & d3) >> 26) + (int)((wh & d3) >> 25);
@@ -287,6 +290,7 @@ void InitIndexBoard(UINT64 bk, UINT64 wh)
 	g_board[29] = (int)((bk & d6) >> 29) + (int)((wh & d6) >> 28);
 	g_board[30] = (int)((bk & d7) >> 30) + (int)((wh & d7) >> 29);
 	g_board[31] = (int)((bk & d8) >> 31) + (int)((wh & d8) >> 30);
+
 	g_board[32] = (int)((bk & e1) >> 32) + (int)((wh & e1) >> 31);
 	g_board[33] = (int)((bk & e2) >> 33) + (int)((wh & e2) >> 32);
 	g_board[34] = (int)((bk & e3) >> 34) + (int)((wh & e3) >> 33);
@@ -295,6 +299,7 @@ void InitIndexBoard(UINT64 bk, UINT64 wh)
 	g_board[37] = (int)((bk & e6) >> 37) + (int)((wh & e6) >> 36);
 	g_board[38] = (int)((bk & e7) >> 38) + (int)((wh & e7) >> 37);
 	g_board[39] = (int)((bk & e8) >> 39) + (int)((wh & e8) >> 38);
+
 	g_board[40] = (int)((bk & f1) >> 40) + (int)((wh & f1) >> 39);
 	g_board[41] = (int)((bk & f2) >> 41) + (int)((wh & f2) >> 40);
 	g_board[42] = (int)((bk & f3) >> 42) + (int)((wh & f3) >> 41);
@@ -303,6 +308,7 @@ void InitIndexBoard(UINT64 bk, UINT64 wh)
 	g_board[45] = (int)((bk & f6) >> 45) + (int)((wh & f6) >> 44);
 	g_board[46] = (int)((bk & f7) >> 46) + (int)((wh & f7) >> 45);
 	g_board[47] = (int)((bk & f8) >> 47) + (int)((wh & f8) >> 46);
+
 	g_board[48] = (int)((bk & g1) >> 48) + (int)((wh & g1) >> 47);
 	g_board[49] = (int)((bk & g2) >> 49) + (int)((wh & g2) >> 48);
 	g_board[50] = (int)((bk & g3) >> 50) + (int)((wh & g3) >> 49);
@@ -311,6 +317,7 @@ void InitIndexBoard(UINT64 bk, UINT64 wh)
 	g_board[53] = (int)((bk & g6) >> 53) + (int)((wh & g6) >> 52);
 	g_board[54] = (int)((bk & g7) >> 54) + (int)((wh & g7) >> 53);
 	g_board[55] = (int)((bk & g8) >> 55) + (int)((wh & g8) >> 54);
+
 	g_board[56] = (int)((bk & h1) >> 56) + (int)((wh & h1) >> 55);
 	g_board[57] = (int)((bk & h2) >> 57) + (int)((wh & h2) >> 56);
 	g_board[58] = (int)((bk & h3) >> 58) + (int)((wh & h3) >> 57);

@@ -93,7 +93,7 @@ extern UINT64 g_countNode;
 extern HashTable *g_hash;
 extern HashTable *g_pvHash;
 extern INT32 g_key;
-
+extern INT32 g_color;
 extern BOOL g_mpcFlag;
 extern BOOL g_tableFlag;
 // CPU AIèÓïÒ

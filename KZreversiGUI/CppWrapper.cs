@@ -179,6 +179,15 @@ namespace KZreversi
         /// AIで使用するハッシュを解放する
         /// </summary>
         /// <returns></returns>
+        public void ClearHash()
+        {
+            NativeMethods.KZ_ClearHash();
+        }
+
+        /// <summary>
+        /// AIで使用するハッシュを解放する
+        /// </summary>
+        /// <returns></returns>
         public void ReleaseHash()
         {
             NativeMethods.KZ_ReleaseHash();
@@ -245,6 +254,10 @@ namespace KZreversi
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]
         public extern static void KZ_EntryFunction(IntPtr cpuMessageDelegatePtr);
+
+        [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
+        [SuppressUnmanagedCodeSecurityAttribute()]
+        public extern static void KZ_ClearHash();
 
         [DllImport("ai_core.dll", CallingConvention = CallingConvention.Cdecl)]
         [SuppressUnmanagedCodeSecurityAttribute()]

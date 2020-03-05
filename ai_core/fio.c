@@ -10,6 +10,8 @@
 
 #include "cpu.h"
 #include "fio.h"
+#include "eval.h"
+#include "zlib.h"
 
 #define BOOK_DECODE_DATA_SIZE 18160640
 #define BOOK_DATA_SIZE 10485760
@@ -75,7 +77,7 @@ int CreateHuffmanTree(TreeNode *nodes, int nodeNum)
 }
 
 /* C#版では使う事がない */
-#if 0
+#if 1
 int writeEncodeData(UCHAR *encodeData, TreeNode *nodes, int root,
 	CodeInfo *codeInfo, UCHAR *data, int dataLen){
 
@@ -174,6 +176,86 @@ int encode(UCHAR *encodeData, CodeInfo *codeInfo, UCHAR *data, int dataLen) {
 
 	return encodeDataLen;
 }
+
+
+
+// Asciiデータからテーブル作成を行う時のみ使用する
+void makeData()
+{
+
+	FILE *fp, *wfp1, *wfp2;
+	char filePath[64], lenData[4];
+	int readSize, encodeDataLen;
+
+	UCHAR *data = (UCHAR *)malloc(18160640); // 17735KB
+
+	if (fopen_s(&wfp1, "src\\books.bin", "wb") != 0) {
+		exit(1);
+	}
+
+	if (fopen_s(&wfp2, "src\\eval.bin", "wb") != 0) {
+		exit(1);
+	}
+
+	CodeInfo codeInfo[22];
+	UCHAR *encodeData = (UCHAR *)malloc(10485760); // 17735KB
+
+	for (int i = -1; i < STAGE_NUM; i++) {
+
+		if (i == -1) {
+			if (fopen_s(&fp, "src\\rawData\\books.dat", "r") != 0) {
+				exit(1);
+			}
+		}
+		else {
+			sprintf_s(filePath, sizeof(filePath), "src\\rawData\\%d.dat", i);
+			if (fopen_s(&fp, filePath, "r") != 0) {
+				exit(1);
+			}
+		}
+
+		setvbuf(fp, g_fileBuffer, _IOFBF, 16384);
+		readSize = fread(data, sizeof(UCHAR), 18160640, fp);
+
+		memset(codeInfo, 0, sizeof(CodeInfo));
+		encodeDataLen = encode(encodeData, codeInfo, data, readSize);
+
+		if (encodeDataLen == -1) {
+			return;
+		}
+
+		lenData[0] = (readSize & 0xFF000000) >> 24;
+		lenData[1] = (readSize & 0xFF0000) >> 16;
+		lenData[2] = (readSize & 0xFF00) >> 8;
+		lenData[3] = (readSize & 0xFF);
+		if (i == -1) {
+			fwrite(lenData, sizeof(UCHAR), sizeof(lenData), wfp1);
+			lenData[0] = (encodeDataLen & 0xFF000000) >> 24;
+			lenData[1] = (encodeDataLen & 0xFF0000) >> 16;
+			lenData[2] = (encodeDataLen & 0xFF00) >> 8;
+			lenData[3] = (encodeDataLen & 0xFF);
+			fwrite(lenData, sizeof(UCHAR), sizeof(lenData), wfp1);
+			fwrite(encodeData, sizeof(UCHAR), encodeDataLen, wfp1);
+			fclose(wfp1);
+		}
+		else {
+			fwrite(lenData, sizeof(UCHAR), sizeof(lenData), wfp2);
+			lenData[0] = (encodeDataLen & 0xFF000000) >> 24;
+			lenData[1] = (encodeDataLen & 0xFF0000) >> 16;
+			lenData[2] = (encodeDataLen & 0xFF00) >> 8;
+			lenData[3] = (encodeDataLen & 0xFF);
+			fwrite(lenData, sizeof(UCHAR), sizeof(lenData), wfp2);
+			fwrite(encodeData, sizeof(UCHAR), encodeDataLen, wfp2);
+		}
+
+		fclose(fp);
+	}
+
+	free(data);
+	free(encodeData);
+	fclose(wfp2);
+}
+
 #endif
 
 INT64 decode(UCHAR *decodeData, INT64 maxLen, UCHAR *data, INT64 dataLen, TreeNode *nodes, int root)
@@ -262,66 +344,6 @@ UCHAR *DecodeBookData(INT64 *decodeDataLen_p, char *filename)
 
 }
 
-UCHAR *DecodeEvalData(INT64 *decodeDataLen_p, char *filename)
-{
-	int i;
-	INT64 readSize, decodeDataLen, decodeDataLenSum;
-	UCHAR *data;
-	UCHAR *decodeData;
-	FILE *fp;
-	TreeNode nodes[43];
-
-	data = (UCHAR *)malloc(EVAL_DATA_SIZE);
-	if (data == NULL) return NULL;
-
-	decodeData = (UCHAR *)malloc(EVAL_DECODE_DATA_SIZE * 61);
-	if (decodeData == NULL) return NULL;
-
-	if (fopen_s(&fp, filename, "rb") != 0 || fp == NULL){
-		free(data);
-		free(decodeData);
-		return NULL;
-	}
-
-	i = 0;
-	decodeDataLenSum = 0;
-
-	while (i < 60){
-		readSize = fread(data, sizeof(UCHAR), 2 * sizeof(int) + 2, fp);
-		// 木データのサイズ
-		int nodesLen = (data[TREE_SIZE_ADDR] << 8)
-			+ data[TREE_SIZE_ADDR + 1];
-		// 圧縮データのサイズ
-		int evalDataLen = (data[ENCODE_SIZE_ADDR] << 24)
-			+ (data[ENCODE_SIZE_ADDR + 1] << 16)
-			+ (data[ENCODE_SIZE_ADDR + 2] << 8)
-			+ data[ENCODE_SIZE_ADDR + 3] - nodesLen - 2;
-		// 解凍データのサイズ
-		decodeDataLen = (data[DECODE_SIZE_ADDR] << 24)
-			+ (data[DECODE_SIZE_ADDR + 1] << 16)
-			+ (data[DECODE_SIZE_ADDR + 2] << 8) + data[3];
-
-		memset(nodes, 0, sizeof(nodes));
-
-		readSize = fread(nodes, sizeof(UCHAR), nodesLen, fp);
-		readSize = fread(data, sizeof(UCHAR), evalDataLen, fp);
-
-		int root = nodesLen / sizeof(TreeNode) - 1;
-		/* 復号化 */
-		decodeDataLenSum += decode(decodeData + decodeDataLenSum,
-			decodeDataLen, data, readSize, nodes, root);
-
-		i++;
-	}
-
-	fclose(fp);
-	free(data);
-
-	*decodeDataLen_p = decodeDataLenSum;
-
-	return decodeData;
-
-}
 
 BOOL OpenMpcInfoData(MPCINFO *p_info, INT32 info_len, char *filename){
 	

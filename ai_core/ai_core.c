@@ -54,6 +54,8 @@ KZ_EXPORT BOOL KZ_LibInit()
 	init_genrand((unsigned long)time(NULL));
 	//InitHashBoard();
 
+	//makeData();
+
 	return result;
 }
 
@@ -208,6 +210,18 @@ KZ_EXPORT void KZ_EntryFunction(SetMessageToGUI ptr)
 {
 	g_set_message_funcptr[g_func_count] = ptr;
 	g_func_count++;
+}
+
+/***************************************************************************
+* Name  : KZ_ClearHash
+* Brief : ハッシュテーブルを解放する
+****************************************************************************/
+KZ_EXPORT void KZ_ClearHash()
+{
+	if (g_hash != NULL)
+	{
+		HashClear(g_hash);
+	}
 }
 
 /***************************************************************************

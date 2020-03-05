@@ -269,7 +269,7 @@ void SortMoveListMiddle(
 
 			InitIndexBoard(move_w, move_b);
 
-			score = -Evaluation(g_board, move_w, move_b, color ^ 1, 59 - (empty - 1));
+			score = -Evaluation(g_board, move_w, move_b, color ^ 1, 60 - (empty - 1));
 			iter->move.score = score;
 		}
 		/* 自分の得点の多い順にソート */

@@ -39,6 +39,7 @@ INT32 g_key;
 BOOL g_AbortFlag;
 UINT64 g_countNode;
 INT32 g_move;
+INT32 g_color;
 INT32 g_infscore;
 
 HashTable *g_hash;
@@ -293,10 +294,12 @@ void CreatePVLineStrAscii(INT32 *pline, INT32 empty, INT32 score)
 INT32 GetMoveFromHash(UINT64 bk, UINT64 wh, INT32 key)
 {
 	INT32 move;
-	HashInfo *hashInfo = HashGet(g_hash, key, bk, wh);
+	//HashInfo *hashInfo = HashGet(g_hash, key, bk, wh);
 
-	if (hashInfo != NULL) move = hashInfo->bestmove;
-	else move = g_move;
+	//if (hashInfo != NULL) move = hashInfo->bestmove;
+	//else move = g_move;
+
+	move = g_move;
 
 	return move;
 }
@@ -420,6 +423,7 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	g_mpcFlag = cpuConfig->mpcFlag;
 	g_tableFlag = cpuConfig->tableFlag;
 	g_empty = (INT32)emptyNum;
+	g_color = cpuConfig->color;
 
 	// 今の局面の置換表を初期化しておく
 	int key = KEY_HASH_MACRO(bk, wh, cpuConfig->color);
@@ -439,6 +443,11 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	}
 	else
 	{
+		if (emptyNum == cpuConfig->exactDepth)
+		{
+			HashClear(g_hash);
+			HashClear(g_pvHash);
+		}
 		g_limitDepth = cpuConfig->searchDepth;
 		g_evaluation = SearchMiddle(bk, wh, emptyNum, cpuConfig->color);
 	}
@@ -447,7 +456,8 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	// 置換表から着手を取得
 	if (g_tableFlag)
 	{
-		move = 1ULL << GetMoveFromHash(bk, wh, key);
+		//move = 1ULL << GetMoveFromHash(bk, wh, key);
+		move = 1ULL << g_move;
 	}
 	else
 	{
@@ -549,17 +559,17 @@ INT32 SearchMiddle(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 
 		// UIにメッセージを送信
 		move = GetMoveFromHash(bk, wh, key);
-		CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval + (color * 17500 - ((60 - emptyNum) * 200)), move, count, ON_MIDDLE);
+		CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval, move, count, ON_MIDDLE);
 		g_set_message_funcptr[0](g_AiMsg);
 	}
 
 	// 中断されたので直近の確定評価値を返却
 	if (eval == ABORT)
 	{
-		return eval_b + (color * 17500 - ((60 - emptyNum) * 200));
+		return eval_b;
 	}
 
-	return eval + (color * 17500 - ((60 - emptyNum) * 200));
+	return eval;
 }
 
 /***************************************************************************
@@ -642,15 +652,14 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 #else
 	if (g_tableFlag && g_empty >= 12 && g_hash->attribute != HASH_ATTR_EXACT)
 	{
-		//HashClear(g_hash);
-		//HashClear(g_pvHash);
+		HashClear(g_hash);
+		HashClear(g_pvHash);
 		g_hash->attribute = HASH_ATTR_EXACT;
 		g_pvHash->attribute = HASH_ATTR_EXACT;
 	}
 	aVal = -g_infscore;
 	bVal = g_infscore;
 #endif
-
 	// PV を初期化
 	memset(g_pvline, -1, sizeof(g_pvline));
 	g_pvline_len = 0;
@@ -784,6 +793,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		g_pvHash->attribute = HASH_ATTR_EXACT;
 		// init max threshold
 		g_mpc_level = g_max_cut_table_size;
+		MPC_END_CUT_VAL = cutval_table[g_mpc_level];
 		// PVS石差探索
 		eval = PVS_SearchDeepExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, -g_infscore, g_infscore, NO_PASS, &selectivity, &line);
 
@@ -965,8 +975,9 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	{
 		pline->cmove = 0;
 		/* 葉ノード(読みの限界値のノード)の場合は評価値を算出 */
-		InitIndexBoard(bk, wh);
-		return Evaluation(g_board, bk, wh, color, 59 - empty);
+		if(color == BLACK) InitIndexBoard(bk, wh);
+		else  InitIndexBoard(wh, bk);
+		return Evaluation(g_board, bk, wh, color, STAGE_NUM - empty);
 	}
 
 	if (g_limitDepth >= DEPTH_DEEP_TO_SHALLOW_SEARCH && depth < DEPTH_DEEP_TO_SHALLOW_SEARCH)
@@ -1192,7 +1203,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 					pline->cmove = line.cmove + 1;
 					if (g_empty - empty == 0)
 					{
-						CreatePVLineStr(pline, empty, (bestscore * (1 - (2 * ((g_empty - empty) % 2))) + (color * 17500 - ((60 - empty) * 200))));
+						CreatePVLineStr(pline, empty, bestscore);
 						g_set_message_funcptr[1](g_PVLineMsg);
 					}
 				}
@@ -1223,9 +1234,10 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 	if (depth == 0)
 	{
 		pline->cmove = 0;
-		/* 葉ノード(読みの限界値のノード)の場合は評価値を算出 */
-		InitIndexBoard(bk, wh);
-		return Evaluation(g_board, bk, wh, color, 59 - empty);
+		if (color == BLACK) InitIndexBoard(bk, wh);
+		else  InitIndexBoard(wh, bk);
+
+		return Evaluation(g_board, bk, wh, color, STAGE_NUM - empty);
 	}
 
 	int eval;
@@ -1534,7 +1546,7 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 	{
 		/* 葉ノード(読みの限界値のノード)の場合は評価値を算出 */
 		InitIndexBoard(bk, wh);
-		return Evaluation(g_board, bk, wh, color, 59 - empty);
+		return Evaluation(g_board, bk, wh, color, STAGE_NUM - empty);
 	}
 
 	int eval;

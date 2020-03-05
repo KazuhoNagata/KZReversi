@@ -802,6 +802,17 @@ namespace KZreversi
                (pos % BOARD_SIZE) * m_mass_size + font_scale_y);
         }
 
+        private int getCurrentMaxEval()
+        {
+            int max = -1280000;
+            foreach(int[] list in m_hintList)
+            {
+                if(list[2] > max) max = list[2];
+            }
+
+            return max;
+        }
+
         private void dispMiddleEval(PaintEventArgs e, int pos, int eval, bool first)
         {
             int eval_t;
@@ -810,12 +821,15 @@ namespace KZreversi
             Brush brs;
 
             // ループの初回が最善手なので目立つよう表示(LightGreen)
-            if (first == true || eval >= m_hintEvalMax)
+            if (eval >= getCurrentMaxEval())
             {
                 m_hintEvalMax = eval;
                 brs = Brushes.DarkMagenta;
             }
-            else brs = Brushes.Navy;
+            else
+            {
+                brs = Brushes.Navy;
+            }
 
             // 評価値を正規化
             eval_t = (int)Math.Round(eval / 10000.0, MidpointRounding.AwayFromZero);
@@ -1400,9 +1414,16 @@ namespace KZreversi
                     // ソート処理
                     m_hintList.Sort(CompareEval);
                 }
+
+                // 画面再描画
+                panel1.Invalidate(false);
+                panel1.Update();
             }
             else
             {
+                // 画面再描画
+                panel1.Invalidate(false);
+                panel1.Update();
                 // 終了通知
                 m_hintEvalMax = -INFINITY_SCORE;
                 m_hintFlagProperty = false;
@@ -1413,10 +1434,6 @@ namespace KZreversi
                 toolStripStatusLabel3.Text = "Hint finished.";
                 label6.Text = "";
             }
-
-            // 画面再描画
-            panel1.Invalidate(false);
-            panel1.Update();
         }
 
         private int CompareEval(int[] x, int[] y)
@@ -1648,8 +1665,10 @@ namespace KZreversi
             if (sender == toolStripFFO40) 
             {
                 //FFO40
-                bk = 9158069842325798912;
-                wh = 11047339776155165;
+                bk = 206426865664;
+                wh = 61607145111552;
+                //bk = 0x9e7d233549452101;
+               // wh = 0x102dccab6badefe;
                 color = COLOR_BLACK;
             }
             else if (sender == toolStripFFO41)
@@ -1855,6 +1874,11 @@ namespace KZreversi
                 m_enableResultDisplay = true;
                 MenuResultDetail.Checked = true;
             }
+        }
+
+        private void 度回転ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
         }
 
         private void ConfigCasheToolStripMenuItem_Click(object sender, EventArgs e)

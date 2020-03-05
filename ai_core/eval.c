@@ -13,111 +13,47 @@
 #include "board.h"
 #include "fio.h"
 #include "cpu.h"
+#include "zlib.h"
 
+// inner structure
+typedef struct
+{
+	UINT32 size;
+	UINT32 decompSize;
+	UINT8  compData[512 * 1024];
+} st_eval_data;
+st_eval_data g_evalData;
 
-/* 各座標 */
-#define A1 0			/* A1 */
-#define A2 1			/* A2 */
-#define A3 2			/* A3 */
-#define A4 3			/* A4 */
-#define A5 4			/* A5 */
-#define A6 5			/* A6 */
-#define A7 6			/* A7 */
-#define A8 7			/* A8 */
-
-#define B1 8			/* B1 */
-#define B2 9			/* B2 */
-#define B3 10			/* B3 */
-#define B4 11			/* B4 */
-#define B5 12			/* B5 */
-#define B6 13			/* B6 */
-#define B7 14			/* B7 */
-#define B8 15			/* B8 */
-
-#define C1 16			/* C1 */
-#define C2 17			/* C2 */
-#define C3 18			/* C3 */
-#define C4 19			/* C4 */
-#define C5 20			/* C5 */
-#define C6 21			/* C6 */
-#define C7 22			/* C7 */
-#define C8 23			/* C8 */
-
-#define D1 24			/* D1 */
-#define D2 25			/* D2 */
-#define D3 26			/* D3 */
-#define D4 27			/* D4 */
-#define D5 28			/* D5 */
-#define D6 29			/* D6 */
-#define D7 30			/* D7 */
-#define D8 31			/* D8 */
-
-#define E1 32			/* E1 */
-#define E2 33			/* E2 */
-#define E3 34			/* E3 */
-#define E4 35			/* E4 */
-#define E5 36			/* E5 */
-#define E6 37			/* E6 */
-#define E7 38			/* E7 */
-#define E8 39			/* E8 */
-
-#define F1 40			/* F1 */
-#define F2 41			/* F2 */
-#define F3 42			/* F3 */
-#define F4 43			/* F4 */
-#define F5 44			/* F5 */
-#define F6 45			/* F6 */
-#define F7 46			/* F7 */
-#define F8 47			/* F8 */
-
-#define G1 48			/* G1 */
-#define G2 49			/* G2 */
-#define G3 50			/* G3 */
-#define G4 51			/* G4 */
-#define G5 52			/* G5 */
-#define G6 53			/* G6 */
-#define G7 54			/* G7 */
-#define G8 55			/* G8 */
-
-#define H1 56			/* H1 */
-#define H2 57			/* H2 */
-#define H3 58			/* H3 */
-#define H4 59			/* H4 */
-#define H5 60			/* H5 */
-#define H6 61			/* H6 */
-#define H7 62			/* H7 */
-#define H8 63			/* H8 */
+// テーブル本体
+st_eval  g_st_eval[2];
+INT16   *data;
 
 /* 評価パターンテーブル(現在のステージにより内容が変わるポインタ) */
-INT32 *hori_ver1;
-INT32 *hori_ver2;
-INT32 *hori_ver3;
-INT32 *dia_ver1;
-INT32 *dia_ver2;
-INT32 *dia_ver3;
-INT32 *dia_ver4;
-INT32 *edge;
-INT32 *corner5_2;
-INT32 *corner3_3;
-INT32 *triangle;
-INT32 *mobility;
-INT32 *parity;
+INT16 *hori_ver1;
+INT16 *hori_ver2;
+INT16 *hori_ver3;
+INT16 *dia_ver1;
+INT16 *dia_ver2;
+INT16 *dia_ver3;
+INT16 *dia_ver4;
+INT16 *edge;
+INT16 *corner5_2;
+INT16 *corner3_3;
+INT16 *triangle;
+INT16 *constant;
 
-/* 評価パターンテーブル(おおもと) */
-INT32 hori_ver1_data[2][60][INDEX_NUM];
-INT32 hori_ver2_data[2][60][INDEX_NUM];
-INT32 hori_ver3_data[2][60][INDEX_NUM];
-INT32 dia_ver1_data[2][60][INDEX_NUM];
-INT32 dia_ver2_data[2][60][INDEX_NUM / 3];
-INT32 dia_ver3_data[2][60][INDEX_NUM / 9];
-INT32 dia_ver4_data[2][60][INDEX_NUM / 27];
-INT32 edge_data[2][60][INDEX_NUM * 9];
-INT32 corner5_2_data[2][60][INDEX_NUM * 9];
-INT32 corner3_3_data[2][60][INDEX_NUM * 3];
-INT32 triangle_data[2][60][INDEX_NUM * 9];
-INT32 mobility_data[2][60][MOBILITY_NUM];
-INT32 parity_data[2][60][PARITY_NUM];
-//INT32 constant_data[2][60];
+// idx  : 254664 * 2 * sizeof(INT16) ≒ RAM 994KB
+UINT16 idx_hori_ver1[2][INDEX_NUM];
+UINT16 idx_hori_ver2[2][INDEX_NUM];
+UINT16 idx_hori_ver3[2][INDEX_NUM];
+UINT16 idx_diag_ver1[2][INDEX_NUM];
+UINT16 idx_diag_ver2[2][INDEX_NUM / 3];
+UINT16 idx_diag_ver3[2][INDEX_NUM / 9];
+UINT16 idx_diag_ver4[2][INDEX_NUM / 27];
+UINT16 idx_edge[2][INDEX_NUM * 9];
+UINT16 idx_corner33[2][INDEX_NUM * 3];
+UINT16 idx_corner52[2][INDEX_NUM * 9];
+UINT16 idx_triangle[2][INDEX_NUM * 9];
 
 int pow_table[10] = { 1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683 };
 
@@ -232,6 +168,165 @@ INT32(*GetEndScore[])(UINT64 bk, UINT64 wh, INT32 empty) = {
 
 
 
+static int opponent_feature(int l, int d)
+{
+	const int o[] = { 0, 2, 1 };
+	int f = o[l % 3];
+
+	if (d > 1) f += opponent_feature(l / 3, d - 1) * 3;
+
+	return f;
+}
+
+static void setEvalIndex()
+{
+	INT32 i;
+
+	// hori_ver1
+	for (i = 0; i < INDEX_NUM; i++)
+	{
+		idx_hori_ver1[0][i] = i;
+		idx_hori_ver1[1][opponent_feature(i, 8)] = i;
+	}
+	// hori_ver2
+	for (i = 0; i < INDEX_NUM; i++)
+	{
+		idx_hori_ver2[0][i] = i;
+		idx_hori_ver2[1][opponent_feature(i, 8)] = i;
+	}
+	// hori_ver3
+	for (i = 0; i < INDEX_NUM; i++)
+	{
+		idx_hori_ver2[0][i] = i;
+		idx_hori_ver2[1][opponent_feature(i, 8)] = i;
+	}
+	// diag_ver1
+	for (i = 0; i < INDEX_NUM; i++)
+	{
+		idx_diag_ver1[0][i] = i;
+		idx_diag_ver1[1][opponent_feature(i, 8)] = i;
+	}
+	// diag_ver2
+	for (i = 0; i < INDEX_NUM / 3; i++)
+	{
+		idx_diag_ver2[0][i] = i;
+		idx_diag_ver2[1][opponent_feature(i, 7)] = i;
+	}
+	// diag_ver3
+	for (i = 0; i < INDEX_NUM / 9; i++)
+	{
+		idx_diag_ver3[0][i] = i;
+		idx_diag_ver3[1][opponent_feature(i, 6)] = i;
+	}
+	// diag_ver4
+	for (i = 0; i < INDEX_NUM / 27; i++)
+	{
+		idx_diag_ver4[0][i] = i;
+		idx_diag_ver4[1][opponent_feature(i, 5)] = i;
+	}
+	// edge
+	for (i = 0; i < INDEX_NUM * 9; i++)
+	{
+		idx_edge[0][i] = i;
+		idx_edge[1][opponent_feature(i, 10)] = i;
+	}
+	// corner33
+	for (i = 0; i < INDEX_NUM * 3; i++)
+	{
+		idx_corner33[0][i] = i;
+		idx_corner33[1][opponent_feature(i, 9)] = i;
+	}
+	// corner52
+	for (i = 0; i < INDEX_NUM * 9; i++)
+	{
+		idx_corner52[0][i] = i;
+		idx_corner52[1][opponent_feature(i, 10)] = i;
+	}
+	// triangle
+	for (i = 0; i < INDEX_NUM * 9; i++)
+	{
+		idx_triangle[0][i] = i;
+		idx_triangle[1][opponent_feature(i, 10)] = i;
+	}
+}
+
+
+
+BOOL allocEvalMemory(st_eval *eval)
+{
+	INT32  i, j;
+	INT32  offset;
+
+	// allocate for st_feature.data
+	data = (INT16 *)malloc(STAGE_NUM * EVAL_FEATURE_SIZE * 2); // 13800274
+	if (data == NULL)
+	{
+		return FALSE;
+	}
+
+	// setting st_feature structure
+	for (i = 0, offset = 0; i < 2; i++)
+	{
+		for (j = 0; j < STAGE_NUM; j++)
+		{
+			// hori1
+			eval[i].feature[0].size = INDEX_NUM;
+			eval[i].feature[0].data[j] = &data[offset];
+			offset += eval[i].feature[0].size;
+			// hori2
+			eval[i].feature[1].size = INDEX_NUM;
+			eval[i].feature[1].data[j] = &data[offset];
+			offset += eval[i].feature[1].size;
+			// hori3
+			eval[i].feature[2].size = INDEX_NUM;
+			eval[i].feature[2].data[j] = &data[offset];
+			offset += eval[i].feature[2].size;
+			// diag1
+			eval[i].feature[3].size = INDEX_NUM;
+			eval[i].feature[3].data[j] = &data[offset];
+			offset += eval[i].feature[3].size;
+			// diag2
+			eval[i].feature[4].size = INDEX_NUM / 3;
+			eval[i].feature[4].data[j] = &data[offset];
+			offset += eval[i].feature[4].size;
+			// diag3
+			eval[i].feature[5].size = INDEX_NUM / 9;
+			eval[i].feature[5].data[j] = &data[offset];
+			offset += eval[i].feature[5].size;
+			// diag4
+			eval[i].feature[6].size = INDEX_NUM / 27;
+			eval[i].feature[6].data[j] = &data[offset];
+			offset += eval[i].feature[6].size;
+			// edge
+			eval[i].feature[7].size = INDEX_NUM * 9;
+			eval[i].feature[7].data[j] = &data[offset];
+			offset += eval[i].feature[7].size;
+			// corner52
+			eval[i].feature[8].size = INDEX_NUM * 9;
+			eval[i].feature[8].data[j] = &data[offset];
+			offset += eval[i].feature[8].size;
+			// corner33
+			eval[i].feature[9].size = INDEX_NUM * 3;
+			eval[i].feature[9].data[j] = &data[offset];
+			offset += eval[i].feature[9].size;
+			// triangle
+			eval[i].feature[10].size = INDEX_NUM * 9;
+			eval[i].feature[10].data[j] = &data[offset];
+			offset += eval[i].feature[10].size;
+			// constant
+			eval[i].feature[11].size = 1;
+			eval[i].feature[11].data[j] = &data[offset];
+			offset += eval[i].feature[11].size;
+
+			printf("offset = %d\n", offset);
+		}
+	}
+
+	return TRUE;
+}
+
+
+
 INT32 check_h_ver1(UINT8 *board)
 {
 	int key;
@@ -254,26 +349,26 @@ INT32 check_h_ver1(UINT8 *board)
 	eval = hori_ver1[key];
 	key_hori_ver1[0] = hori_ver1[key];
 
-	key = board[A7];
-	key += 3 * board[B7];
-	key += 9 * board[C7];
-	key += 27 * board[D7];
-	key += 81 * board[E7];
-	key += 243 * board[F7];
-	key += 729 * board[G7];
-	key += 2187 * board[H7];
+	key = board[H7];
+	key += 3 * board[G7];
+	key += 9 * board[F7];
+	key += 27 * board[E7];
+	key += 81 * board[D7];
+	key += 243 * board[C7];
+	key += 729 * board[B7];
+	key += 2187 * board[A7];
 
 	eval += hori_ver1[key];
 	key_hori_ver1[1] = hori_ver1[key];
 
-	key = board[B1];
-	key += 3 * board[B2];
-	key += 9 * board[B3];
-	key += 27 * board[B4];
-	key += 81 * board[B5];
-	key += 243 * board[B6];
-	key += 729 * board[B7];
-	key += 2187 * board[B8];
+	key = board[B8];
+	key += 3 * board[B7];
+	key += 9 * board[B6];
+	key += 27 * board[B5];
+	key += 81 * board[B4];
+	key += 243 * board[B3];
+	key += 729 * board[B2];
+	key += 2187 * board[B1];
 
 	eval += hori_ver1[key];
 	key_hori_ver1[2] = hori_ver1[key];
@@ -316,26 +411,26 @@ INT32 check_h_ver2(UINT8 *board)
 	eval = hori_ver2[key];
 	key_hori_ver2[0] = hori_ver2[key];
 
-	key = board[A6];
-	key += 3 * board[B6];
-	key += 9 * board[C6];
-	key += 27 * board[D6];
-	key += 81 * board[E6];
-	key += 243 * board[F6];
-	key += 729 * board[G6];
-	key += 2187 * board[H6];
+	key = board[H6];
+	key += 3 * board[G6];
+	key += 9 * board[F6];
+	key += 27 * board[E6];
+	key += 81 * board[D6];
+	key += 243 * board[C6];
+	key += 729 * board[B6];
+	key += 2187 * board[A6];
 
 	eval += hori_ver2[key];
 	key_hori_ver2[1] = hori_ver2[key];
 
-	key = board[C1];
-	key += 3 * board[C2];
-	key += 9 * board[C3];
-	key += 27 * board[C4];
-	key += 81 * board[C5];
-	key += 243 * board[C6];
-	key += 729 * board[C7];
-	key += 2187 * board[C8];
+	key = board[C8];
+	key += 3 * board[C7];
+	key += 9 * board[C6];
+	key += 27 * board[C5];
+	key += 81 * board[C4];
+	key += 243 * board[C3];
+	key += 729 * board[C2];
+	key += 2187 * board[C1];
 
 	eval += hori_ver2[key];
 	key_hori_ver2[2] = hori_ver2[key];
@@ -378,26 +473,26 @@ INT32 check_h_ver3(UINT8 *board)
 	eval = hori_ver3[key];
 	key_hori_ver3[0] = hori_ver3[key];
 
-	key = board[A5];
-	key += 3 * board[B5];
-	key += 9 * board[C5];
-	key += 27 * board[D5];
-	key += 81 * board[E5];
-	key += 243 * board[F5];
-	key += 729 * board[G5];
-	key += 2187 * board[H5];
+	key = board[H5];
+	key += 3 * board[G5];
+	key += 9 * board[F5];
+	key += 27 * board[E5];
+	key += 81 * board[D5];
+	key += 243 * board[C5];
+	key += 729 * board[B5];
+	key += 2187 * board[A5];
 
 	eval += hori_ver3[key];
 	key_hori_ver3[1] = hori_ver3[key];
 
-	key = board[D1];
-	key += 3 * board[D2];
-	key += 9 * board[D3];
-	key += 27 * board[D4];
-	key += 81 * board[D5];
-	key += 243 * board[D6];
-	key += 729 * board[D7];
-	key += 2187 * board[D8];
+	key = board[D8];
+	key += 3 * board[D7];
+	key += 9 * board[D6];
+	key += 27 * board[D5];
+	key += 81 * board[D4];
+	key += 243 * board[D3];
+	key += 729 * board[D2];
+	key += 2187 * board[D1];
 
 	eval += hori_ver3[key];
 	key_hori_ver3[2] = hori_ver3[key];
@@ -474,24 +569,24 @@ INT32 check_dia_ver2(UINT8 *board)
 	eval = dia_ver2[key];
 	key_dia_ver2[0] = dia_ver2[key];
 
-	key = board[B1];
-	key += 3 * board[C2];
-	key += 9 * board[D3];
+	key = board[H7];
+	key += 3 * board[G6];
+	key += 9 * board[F5];
 	key += 27 * board[E4];
-	key += 81 * board[F5];
-	key += 243 * board[G6];
-	key += 729 * board[H7];
+	key += 81 * board[D3];
+	key += 243 * board[C2];
+	key += 729 * board[B1];
 
 	eval += dia_ver2[key];
 	key_dia_ver2[1] = dia_ver2[key];
 
-	key = board[H2];
-	key += 3 * board[G3];
-	key += 9 * board[F4];
+	key = board[B8];
+	key += 3 * board[C7];
+	key += 9 * board[D6];
 	key += 27 * board[E5];
-	key += 81 * board[D6];
-	key += 243 * board[C7];
-	key += 729 * board[B8];
+	key += 81 * board[F4];
+	key += 243 * board[G3];
+	key += 729 * board[H2];
 
 	eval += dia_ver2[key];
 	key_dia_ver2[2] = dia_ver2[key];
@@ -525,22 +620,22 @@ INT32 check_dia_ver3(UINT8 *board)
 	eval = dia_ver3[key];
 	key_dia_ver3[0] = dia_ver3[key];
 
-	key = board[C1];
-	key += 3 * board[D2];
-	key += 9 * board[E3];
-	key += 27 * board[F4];
-	key += 81 * board[G5];
-	key += 243 * board[H6];
+	key = board[H6];
+	key += 3 * board[G5];
+	key += 9 * board[F4];
+	key += 27 * board[E3];
+	key += 81 * board[D2];
+	key += 243 * board[C1];
 
 	eval += dia_ver3[key];
 	key_dia_ver3[1] = dia_ver3[key];
 
-	key = board[H3];
-	key += 3 * board[G4];
-	key += 9 * board[F5];
-	key += 27 * board[E6];
-	key += 81 * board[D7];
-	key += 243 * board[C8];
+	key = board[C8];
+	key += 3 * board[D7];
+	key += 9 * board[E6];
+	key += 27 * board[F5];
+	key += 81 * board[G4];
+	key += 243 * board[H3];
 
 	eval += dia_ver3[key];
 	key_dia_ver3[2] = dia_ver3[key];
@@ -572,20 +667,20 @@ INT32 check_dia_ver4(UINT8 *board)
 	eval = dia_ver4[key];
 	key_dia_ver4[0] = dia_ver4[key];
 
-	key = board[D1];
-	key += 3 * board[E2];
+	key = board[H5];
+	key += 3 * board[G4];
 	key += 9 * board[F3];
-	key += 27 * board[G4];
-	key += 81 * board[H5];
+	key += 27 * board[E2];
+	key += 81 * board[D1];
 
 	eval += dia_ver4[key];
 	key_dia_ver4[1] = dia_ver4[key];
 
-	key = board[H4];
-	key += 3 * board[G5];
+	key = board[D8];
+	key += 3 * board[E7];
 	key += 9 * board[F6];
-	key += 27 * board[E7];
-	key += 81 * board[D8];
+	key += 27 * board[G5];
+	key += 81 * board[H4];
 
 	eval += dia_ver4[key];
 	key_dia_ver4[2] = dia_ver4[key];
@@ -621,30 +716,30 @@ INT32 check_edge(UINT8 *board)
 	eval = edge[key];
 	key_edge[0] = edge[key];
 
-	key = board[H1];
-	key += 3 * board[H2];
-	key += 9 * board[H3];
-	key += 27 * board[H4];
-	key += 81 * board[H5];
-	key += 243 * board[H6];
-	key += 729 * board[H7];
-	key += 2187 * board[H8];
-	key += 6561 * board[G2];
-	key += 19683 * board[G7];
+	key = board[H8];
+	key += 3 * board[H7];
+	key += 9 * board[H6];
+	key += 27 * board[H5];
+	key += 81 * board[H4];
+	key += 243 * board[H3];
+	key += 729 * board[H2];
+	key += 2187 * board[H1];
+	key += 6561 * board[G7];
+	key += 19683 * board[G2];
 
 	eval += edge[key];
 	key_edge[1] = edge[key];
 
-	key = board[A1];
-	key += 3 * board[B1];
-	key += 9 * board[C1];
-	key += 27 * board[D1];
-	key += 81 * board[E1];
-	key += 243 * board[F1];
-	key += 729 * board[G1];
-	key += 2187 * board[H1];
-	key += 6561 * board[B2];
-	key += 19683 * board[G2];
+	key = board[H1];
+	key += 3 * board[G1];
+	key += 9 * board[F1];
+	key += 27 * board[E1];
+	key += 81 * board[D1];
+	key += 243 * board[C1];
+	key += 729 * board[B1];
+	key += 2187 * board[A1];
+	key += 6561 * board[G2];
+	key += 19683 * board[B2];
 
 	eval += edge[key];
 	key_edge[2] = edge[key];
@@ -685,26 +780,27 @@ INT32 check_corner3_3(UINT8 *board)
 	key_corner3_3[0] = corner3_3[key];
 
 	key = board[H1];
-	key += 3 * board[H2];
-	key += 9 * board[H3];
-	key += 27 * board[G1];
+	key += 3 * board[G1];
+	key += 9 * board[F1];
+	key += 27 * board[H2];
 	key += 81 * board[G2];
-	key += 243 * board[G3];
-	key += 729 * board[F1];
-	key += 2187 * board[F2];
+	key += 243 * board[F2];
+	key += 729 * board[H3];
+	key += 2187 * board[G3];
 	key += 6561 * board[F3];
 
 	eval += corner3_3[key];
 	key_corner3_3[1] = corner3_3[key];
 
+
 	key = board[A8];
-	key += 3 * board[A7];
-	key += 9 * board[A6];
-	key += 27 * board[B8];
+	key += 3 * board[B8];
+	key += 9 * board[C8];
+	key += 27 * board[A7];
 	key += 81 * board[B7];
-	key += 243 * board[B6];
-	key += 729 * board[C8];
-	key += 2187 * board[C7];
+	key += 243 * board[C7];
+	key += 729 * board[A6];
+	key += 2187 * board[B6];
 	key += 6561 * board[C6];
 
 	eval += corner3_3[key];
@@ -866,29 +962,29 @@ INT32 check_triangle(UINT8 *board)
 	key_triangle[0] = triangle[key];
 
 	key = board[H1];
-	key += 3 * board[H2];
-	key += 9 * board[H3];
-	key += 27 * board[H4];
-	key += 81 * board[G1];
+	key += 3 * board[G1];
+	key += 9 * board[F1];
+	key += 27 * board[E1];
+	key += 81 * board[H2];
 	key += 243 * board[G2];
-	key += 729 * board[G3];
-	key += 2187 * board[F1];
-	key += 6561 * board[F2];
-	key += 19683 * board[E1];
+	key += 729 * board[F2];
+	key += 2187 * board[H3];
+	key += 6561 * board[G3];
+	key += 19683 * board[H4];
 
 	eval += triangle[key];
 	key_triangle[1] = triangle[key];
 
 	key = board[A8];
-	key += 3 * board[A7];
-	key += 9 * board[A6];
-	key += 27 * board[A5];
-	key += 81 * board[B8];
+	key += 3 * board[B8];
+	key += 9 * board[C8];
+	key += 27 * board[D8];
+	key += 81 * board[A7];
 	key += 243 * board[B7];
-	key += 729 * board[B6];
-	key += 2187 * board[C8];
-	key += 6561 * board[C7];
-	key += 19683 * board[D8];
+	key += 729 * board[C7];
+	key += 2187 * board[A6];
+	key += 6561 * board[B6];
+	key += 19683 * board[A5];
 
 	eval += triangle[key];
 	key_triangle[2] = triangle[key];
@@ -910,7 +1006,7 @@ INT32 check_triangle(UINT8 *board)
 	return eval;
 }
 
-#if 1
+#if 0
 INT32 check_parity(UINT64 blank, UINT32 color)
 {
 	int p;
@@ -1012,263 +1108,283 @@ INT32 GetWinLossScore(UINT64 bk, UINT64 wh, INT32 empty)
 
 INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 {
-	INT32 eval;
+	INT32 score;
 
 	/* 現在の色とステージでポインタを指定 */
-	hori_ver1 = hori_ver1_data[color][stage];
-	hori_ver2 = hori_ver2_data[color][stage];
-	hori_ver3 = hori_ver3_data[color][stage];
-	dia_ver1 = dia_ver1_data[color][stage];
-	dia_ver2 = dia_ver2_data[color][stage];
-	dia_ver3 = dia_ver3_data[color][stage];
-	dia_ver4 = dia_ver4_data[color][stage];
-	edge = edge_data[color][stage];
-	corner5_2 = corner5_2_data[color][stage];
-	corner3_3 = corner3_3_data[color][stage];
-	triangle = triangle_data[color][stage];
-	mobility = mobility_data[color][stage];
-	//parity = parity_data[color][stage];
+	hori_ver1 = g_st_eval[color].feature[0].data[stage];
+	hori_ver2 = g_st_eval[color].feature[1].data[stage];
+	hori_ver3 = g_st_eval[color].feature[2].data[stage];
+	dia_ver1  = g_st_eval[color].feature[3].data[stage];
+	dia_ver2  = g_st_eval[color].feature[4].data[stage];
+	dia_ver3  = g_st_eval[color].feature[5].data[stage];
+	dia_ver4  = g_st_eval[color].feature[6].data[stage];
+	edge      = g_st_eval[color].feature[7].data[stage];
+	corner5_2 = g_st_eval[color].feature[8].data[stage];
+	corner3_3 = g_st_eval[color].feature[9].data[stage];
+	triangle  = g_st_eval[color].feature[10].data[stage];
+	constant  = g_st_eval[color].feature[11].data[stage];
 
-	eval = check_h_ver1(board);
-	eval += check_h_ver2(board);
-	eval += check_h_ver3(board);
+	score = check_h_ver1(board);
+	score += check_h_ver2(board);
+	score += check_h_ver3(board);
 
-	eval += check_dia_ver1(board);
-	eval += check_dia_ver2(board);
-	eval += check_dia_ver3(board);
-	eval += check_dia_ver4(board);
+	score += check_dia_ver1(board);
+	score += check_dia_ver2(board);
+	score += check_dia_ver3(board);
+	score += check_dia_ver4(board);
 
-	eval += check_edge(board);
-	eval += check_corner5_2(board);
-	eval += check_corner3_3(board);
-	eval += check_triangle(board);
+	score += check_edge(board);
+	score += check_corner5_2(board);
+	score += check_corner3_3(board);
+	score += check_triangle(board);
 
-	eval += check_mobility(bk, wh);
-	//eval += check_parity(~(bk | wh), color);
+	score += constant[0];
 
-	eval_sum = eval;
-	return eval;
+	return score;
 
 }
-
-
-
-int opponent_feature(int l, int d)
-{
-	const int o[] = { 0, 2, 1 };
-	int f = o[l % 3];
-
-	if (l > 0 && d > 1) f += opponent_feature(l / 3, d - 1) * 3;
-
-	return f;
-}
-
 
 
 #if 1
+
+static BOOL storeEvalData(UCHAR *buf, INT32 stage)
+{
+	INT32     i;
+	INT32     offset;
+	INT16    *p_table;
+	INT16    *p_table_op;
+	UINT32    size;
+
+	size = ((UINT32)buf[0] << 24) + ((UINT32)buf[1] << 16) + ((UINT32)buf[2] << 8) + buf[3];
+
+	/* horizon_ver1 */
+	p_table = g_st_eval[0].feature[0].data[stage];
+	p_table_op = g_st_eval[1].feature[0].data[stage];
+	for (i = 0, offset = 0; i < INDEX_NUM; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM; i++) p_table[i] = p_table[idx_hori_ver1[1][i]];
+
+	/* horizon_ver2 */
+	p_table = g_st_eval[0].feature[1].data[stage];
+	p_table_op = g_st_eval[1].feature[1].data[stage];
+	for (i = 0; i < INDEX_NUM; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver2[1][i]];
+
+	/* horizon_ver3 */
+	p_table = g_st_eval[0].feature[2].data[stage];
+	p_table_op = g_st_eval[1].feature[2].data[stage];
+	for (i = 0; i < INDEX_NUM; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver3[1][i]];
+
+	/* diagram_ver1 */
+	p_table = g_st_eval[0].feature[3].data[stage];
+	p_table_op = g_st_eval[1].feature[3].data[stage];
+	for (i = 0; i < INDEX_NUM; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_diag_ver1[1][i]];
+
+	/* diagram_ver2 */
+	p_table = g_st_eval[0].feature[4].data[stage];
+	p_table_op = g_st_eval[1].feature[4].data[stage];
+	for (i = 0; i < INDEX_NUM / 3; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM / 3; i++) p_table_op[i] = p_table[idx_diag_ver2[1][i]];
+
+	/* diagram_ver3 */
+	p_table = g_st_eval[0].feature[5].data[stage];
+	p_table_op = g_st_eval[1].feature[5].data[stage];
+	for (i = 0; i < INDEX_NUM / 9; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM / 9; i++) p_table_op[i] = p_table[idx_diag_ver3[1][i]];
+
+	/* diagram_ver4 */
+	p_table = g_st_eval[0].feature[6].data[stage];
+	p_table_op = g_st_eval[1].feature[6].data[stage];
+	for (i = 0; i < INDEX_NUM / 27; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM / 27; i++) p_table_op[i] = p_table[idx_diag_ver4[1][i]];
+
+	/* edge */
+	p_table = g_st_eval[0].feature[7].data[stage];
+	p_table_op = g_st_eval[1].feature[7].data[stage];
+	for (i = 0; i < INDEX_NUM * 9; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = p_table[idx_edge[1][i]];
+
+
+	/* corner5_2 */
+	p_table = g_st_eval[0].feature[8].data[stage];
+	p_table_op = g_st_eval[1].feature[8].data[stage];
+	for (i = 0; i < INDEX_NUM * 9; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = p_table[idx_corner52[1][i]];
+
+	/* corner3_3 */
+	p_table = g_st_eval[0].feature[9].data[stage];
+	p_table_op = g_st_eval[1].feature[9].data[stage];
+	for (i = 0; i < INDEX_NUM * 3; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM * 3; i++) p_table_op[i] = p_table[idx_corner33[1][i]];
+
+	/* triangle */
+	p_table = g_st_eval[0].feature[10].data[stage];
+	p_table_op = g_st_eval[1].feature[10].data[stage];
+	for (i = 0; i < INDEX_NUM * 9; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = p_table[idx_triangle[1][i]];
+
+	/* constant */
+	p_table = g_st_eval[0].feature[10].data[stage];
+	p_table_op = g_st_eval[1].feature[10].data[stage];
+	p_table[0] = ((INT16)buf[offset] << 8) + buf[offset + 1];
+	p_table_op[0] = -p_table[0];
+	offset += 2;
+
+	// 長さチェック
+	if (offset != size) return FALSE;
+
+	return TRUE;
+}
+
+
+
+static BOOL unmarshalEvalData(UINT8 *in, UINT32 inSize, st_eval_data *evalData)
+{
+	BOOL   ret;
+	UINT32 cnt;
+
+	ret = TRUE;
+	cnt = 0;
+
+	evalData->size  = (UINT32)in[cnt++] << 24;
+	evalData->size |= (UINT32)in[cnt++] << 16;
+	evalData->size |= (UINT32)in[cnt++] << 8;
+	evalData->size |= (UINT32)in[cnt++];
+
+	evalData->decompSize = (UINT32)in[cnt++] << 24;
+	evalData->decompSize |= (UINT32)in[cnt++] << 16;
+	evalData->decompSize |= (UINT32)in[cnt++] << 8;
+	evalData->decompSize |= (UINT32)in[cnt++];
+
+	memcpy_s(evalData->compData, sizeof(evalData->compData), &in[cnt], inSize - cnt);
+	cnt += evalData->size;
+
+	return ret;
+}
+
+
+INT32 do_decompress(INT32 stage, UINT8 *in, UINT32 inSize, UINT8 *out, UINT32 outSize)        /* 展開（復元） */
+{
+	UINT32 ret;
+	int count, status;
+	z_stream z;
+
+
+	// 構造体のアンマーシャル
+	ret = unmarshalEvalData(in, inSize, &g_evalData);
+	if (ret == FALSE) return -1;
+
+
+	/* すべてのメモリ管理をライブラリに任せる */
+	z.zalloc = Z_NULL;
+	z.zfree = Z_NULL;
+	z.opaque = Z_NULL;
+
+	/* 初期化 */
+	if (inflateInit(&z) != Z_OK)
+	{
+		fprintf(stderr, "inflateInit: %s\n", (z.msg) ? z.msg : "???");
+		return -1;
+	}
+
+	z.next_in = Z_NULL;
+	z.avail_in = 0;
+	z.next_out = out;
+	z.avail_out = outSize;
+	status = Z_OK;
+
+	if (z.avail_in == 0)
+	{
+		z.avail_in = g_evalData.size;
+		z.next_in = g_evalData.compData;
+	}
+	status = inflate(&z, Z_FINISH); /* 展開 */
+	if (status == Z_STREAM_END)
+	{
+		count = outSize - z.avail_out;
+		// 評価値をメモリに書き込み
+		if (storeEvalData(out, stage) == FALSE) return -1;
+	}
+
+	/* 後始末 */
+	if (inflateEnd(&z) != Z_OK) {
+		fprintf(stderr, "inflateEnd: %s\n", (z.msg) ? z.msg : "???");
+		return -1;
+	}
+	return 0;
+}
+
+
 BOOL OpenEvalData(char *filename)
 {
-	int stage = 0;
-	int i;
-	UCHAR *buf;
-	char *line, *ctr = NULL;
-	INT32 *p_table, *p_table_op;
-	INT64 evalSize;
+	FILE *fp;
+	INT32 result;
+	INT32 stage;
+	Bytef *ibuffer, *obuffer;
+	INT32 inSize, outSize;
 
-	buf = DecodeEvalData(&evalSize, filename);
+	result = fopen_s(&fp, filename, "rb");
+	if (result != 0) return FALSE;
 
-	if (buf == NULL)
+	// インデックス値を設定
+	setEvalIndex();
+
+	// データアロケーション
+	if (allocEvalMemory(g_st_eval) == FALSE) return FALSE;
+
+	inSize = 1024 * 1024;
+	outSize = EVAL_FEATURE_SIZE + 4; // eval data + len data(4byte)
+	ibuffer = malloc(inSize);
+	obuffer = malloc(outSize);
+
+	for(stage = 0; stage < STAGE_NUM; stage++)
 	{
-		return FALSE;
+		// ヘッダ読み込み(4byte)
+		fread(&inSize, sizeof(UINT8), 4, fp);
+		inSize = fread(ibuffer, sizeof(UINT8), inSize, fp); // about 530KB
+		result = do_decompress(stage, ibuffer, inSize, obuffer, outSize);
+		if (result == -1) break;
 	}
 
-	line = strtok_s((char *)buf, "\n", &ctr);
 
-	while (stage < 60)
-	{
-		/* horizon_ver1 */
-		p_table = hori_ver1_data[0][stage];
-		p_table_op = hori_ver1_data[1][stage];
-		for (i = 0; i < 6561; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			/* opponent */
-			p_table_op[opponent_feature(i, 8)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	free(ibuffer);
+	free(obuffer);
 
-		/* horizon_ver2 */
-		p_table = hori_ver2_data[0][stage];
-		p_table_op = hori_ver2_data[1][stage];
-		for (i = 0; i < 6561; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 8)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* horizon_ver3 */
-		p_table = hori_ver3_data[0][stage];
-		p_table_op = hori_ver3_data[1][stage];
-		for (i = 0; i < 6561; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 8)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* diagram_ver1 */
-		p_table = dia_ver1_data[0][stage];
-		p_table_op = dia_ver1_data[1][stage];
-		for (i = 0; i < 6561; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 8)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* diagram_ver2 */
-		p_table = dia_ver2_data[0][stage];
-		p_table_op = dia_ver2_data[1][stage];
-		for (i = 0; i < 2187; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 7)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* diagram_ver3 */
-		p_table = dia_ver3_data[0][stage];
-		p_table_op = dia_ver3_data[1][stage];
-		for (i = 0; i < 729; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 6)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* diagram_ver4 */
-		p_table = dia_ver4_data[0][stage];
-		p_table_op = dia_ver4_data[1][stage];
-		for (i = 0; i < 243; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 5)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* edge */
-		p_table = edge_data[0][stage];
-		p_table_op = edge_data[1][stage];
-		for (i = 0; i < 59049; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 10)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* corner5 + 2X */
-		p_table = corner5_2_data[0][stage];
-		p_table_op = corner5_2_data[1][stage];
-		for (i = 0; i < 59049; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 10)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* corner3_3 */
-		p_table = corner3_3_data[0][stage];
-		p_table_op = corner3_3_data[1][stage];
-		for (i = 0; i < 19683; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 9)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* triangle */
-		p_table = triangle_data[0][stage];
-		p_table_op = triangle_data[1][stage];
-		for (i = 0; i < 59049; i++)
-		{
-#ifdef LOSSGAME
-			p_table[i] = -atoi(line);
-#else
-			p_table[i] = atoi(line);
-#endif
-			p_table_op[opponent_feature(i, 10)] = -p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-
-		/* mobility */
-		p_table = mobility_data[0][stage];
-		p_table_op = mobility_data[1][stage];
-		for (i = 0; i < MOBILITY_NUM; i++)
-		{
-			p_table[i] = atoi(line);
-			p_table_op[i] = p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-#if 0
-		/* parity */
-		p_table = parity_data[0][stage];
-		p_table_op = parity_data[1][stage];
-		for (i = 0; i < PARITY_NUM; i++)
-		{
-			p_table[i] = atoi(line);
-			p_table_op[i] = p_table[i];
-			line = strtok_s(NULL, "\n", &ctr);
-		}
-#endif
-		/* constant */
-		//constant_data[0][stage] = (float)atof(line);
-		//line = strtok_s(NULL, "\n", &ctr);
-
-		stage++;
-	}
-
-	free(buf);
+	if (result == -1) return FALSE;
 
 	return TRUE;
 }
