@@ -439,7 +439,7 @@ BookData *extract_booklist(BookData *node_list, double rate, int cnt)
 
 	extracted_list[0] = &node_list[0]; // best node
 
-	INT32 abs_threshold = (INT32)(160000.0 * rate);
+	INT32 abs_threshold = (INT32)((16.0 * EVAL_ONE_STONE) * rate);
 
 	for (i = 1; i < cnt; i++)
 	{

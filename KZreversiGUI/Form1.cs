@@ -51,7 +51,7 @@ namespace KZreversi
         private BoardClass boardclass;
         private CpuClass[] cpuClass;
 
-        private int EVAL_THRESHOLD = 10000;
+        private int EVAL_THRESHOLD = 1024;
 
         private const int ON_NOTHING = 0;
         private const int ON_GAME = 1;
@@ -832,11 +832,11 @@ namespace KZreversi
             }
 
             // 評価値を正規化
-            eval_t = (int)Math.Round(eval / 10000.0, MidpointRounding.AwayFromZero);
+            eval_t = (int)Math.Round(eval / (double)EVAL_THRESHOLD, MidpointRounding.AwayFromZero);
 
             if (eval_t >= 0) // +0 ～ +64
             {
-                if (eval / 10000.0 >= 0.0)
+                if (eval / (double)EVAL_THRESHOLD >= 0.0)
                 {
                     sign = "+";
                     font_fix_x = 3;

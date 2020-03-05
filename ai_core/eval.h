@@ -11,7 +11,7 @@
 
 #define NEGAMIN -2500000
 #define NEGAMAX 2500000
-#define EVAL_ONE_STONE 10000
+#define EVAL_ONE_STONE 1024
 #define WIN 1
 #define DRAW 0
 #define LOSS -1

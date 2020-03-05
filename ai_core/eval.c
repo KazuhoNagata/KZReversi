@@ -20,13 +20,12 @@ typedef struct
 {
 	UINT32 size;
 	UINT32 decompSize;
-	UINT8  compData[512 * 1024];
+	UINT8  compData[1024 * 512];
 } st_eval_data;
 st_eval_data g_evalData;
 
 // テーブル本体
 st_eval  g_st_eval[2];
-INT16   *data;
 
 /* 評価パターンテーブル(現在のステージにより内容が変わるポインタ) */
 INT16 *hori_ver1;
@@ -230,17 +229,17 @@ static void setEvalIndex()
 		idx_edge[0][i] = i;
 		idx_edge[1][opponent_feature(i, 10)] = i;
 	}
-	// corner33
-	for (i = 0; i < INDEX_NUM * 3; i++)
-	{
-		idx_corner33[0][i] = i;
-		idx_corner33[1][opponent_feature(i, 9)] = i;
-	}
 	// corner52
 	for (i = 0; i < INDEX_NUM * 9; i++)
 	{
 		idx_corner52[0][i] = i;
 		idx_corner52[1][opponent_feature(i, 10)] = i;
+	}
+	// corner33
+	for (i = 0; i < INDEX_NUM * 3; i++)
+	{
+		idx_corner33[0][i] = i;
+		idx_corner33[1][opponent_feature(i, 9)] = i;
 	}
 	// triangle
 	for (i = 0; i < INDEX_NUM * 9; i++)
@@ -254,8 +253,9 @@ static void setEvalIndex()
 
 BOOL allocEvalMemory(st_eval *eval)
 {
-	INT32  i, j;
-	INT32  offset;
+	INT32   i, j;
+	UINT32  offset;
+	INT16   *data;
 
 	// allocate for st_feature.data
 	data = (INT16 *)malloc(STAGE_NUM * EVAL_FEATURE_SIZE * 2); // 13800274
@@ -318,7 +318,7 @@ BOOL allocEvalMemory(st_eval *eval)
 			eval[i].feature[11].data[j] = &data[offset];
 			offset += eval[i].feature[11].size;
 
-			printf("offset = %d\n", offset);
+			//printf("offset = %d\n", offset);
 		}
 	}
 
@@ -1261,7 +1261,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table = g_st_eval[0].feature[10].data[stage];
 	p_table_op = g_st_eval[1].feature[10].data[stage];
 	p_table[0] = ((INT16)buf[offset] << 8) + buf[offset + 1];
-	p_table_op[0] = -p_table[0];
+	p_table_op[0] = p_table[0];
 	offset += 2;
 
 	// 長さチェック
@@ -1303,11 +1303,9 @@ INT32 do_decompress(INT32 stage, UINT8 *in, UINT32 inSize, UINT8 *out, UINT32 ou
 	int count, status;
 	z_stream z;
 
-
 	// 構造体のアンマーシャル
 	ret = unmarshalEvalData(in, inSize, &g_evalData);
 	if (ret == FALSE) return -1;
-
 
 	/* すべてのメモリ管理をライブラリに任せる */
 	z.zalloc = Z_NULL;
@@ -1330,7 +1328,8 @@ INT32 do_decompress(INT32 stage, UINT8 *in, UINT32 inSize, UINT8 *out, UINT32 ou
 	if (z.avail_in == 0)
 	{
 		z.avail_in = g_evalData.size;
-		z.next_in = g_evalData.compData;
+		memcpy_s(in, inSize, g_evalData.compData, g_evalData.size);
+		z.next_in = in;
 	}
 	status = inflate(&z, Z_FINISH); /* 展開 */
 	if (status == Z_STREAM_END)
@@ -1345,6 +1344,7 @@ INT32 do_decompress(INT32 stage, UINT8 *in, UINT32 inSize, UINT8 *out, UINT32 ou
 		fprintf(stderr, "inflateEnd: %s\n", (z.msg) ? z.msg : "???");
 		return -1;
 	}
+
 	return 0;
 }
 
@@ -1358,7 +1358,9 @@ BOOL OpenEvalData(char *filename)
 	INT32 inSize, outSize;
 
 	result = fopen_s(&fp, filename, "rb");
-	if (result != 0) return FALSE;
+	if (result != 0 || fp == NULL) return FALSE;
+
+	//fopen_s(&g_wfp, "error_log.txt", "w");
 
 	// インデックス値を設定
 	setEvalIndex();
@@ -1369,7 +1371,9 @@ BOOL OpenEvalData(char *filename)
 	inSize = 1024 * 1024;
 	outSize = EVAL_FEATURE_SIZE + 4; // eval data + len data(4byte)
 	ibuffer = malloc(inSize);
+	if (ibuffer == NULL) return FALSE;
 	obuffer = malloc(outSize);
+	if (obuffer == NULL) return FALSE;
 
 	for(stage = 0; stage < STAGE_NUM; stage++)
 	{
@@ -1379,7 +1383,6 @@ BOOL OpenEvalData(char *filename)
 		result = do_decompress(stage, ibuffer, inSize, obuffer, outSize);
 		if (result == -1) break;
 	}
-
 
 	free(ibuffer);
 	free(obuffer);
