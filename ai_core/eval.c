@@ -41,6 +41,22 @@ INT16 *corner3_3;
 INT16 *triangle;
 INT16 *constant;
 
+/* 評価パターンテーブル */
+INT32 hori_ver1_data[2][STAGE_NUM][INDEX_NUM];
+INT32 hori_ver2_data[2][STAGE_NUM][INDEX_NUM];
+INT32 hori_ver3_data[2][STAGE_NUM][INDEX_NUM];
+INT32 dia_ver1_data[2][STAGE_NUM][INDEX_NUM];
+INT32 dia_ver2_data[2][STAGE_NUM][INDEX_NUM / 3];
+INT32 dia_ver3_data[2][STAGE_NUM][INDEX_NUM / 9];
+INT32 dia_ver4_data[2][STAGE_NUM][INDEX_NUM / 27];
+INT32 edge_data[2][STAGE_NUM][INDEX_NUM * 9];
+INT32 corner5_2_data[2][STAGE_NUM][INDEX_NUM * 9];
+INT32 corner3_3_data[2][STAGE_NUM][INDEX_NUM * 3];
+INT32 triangle_data[2][STAGE_NUM][INDEX_NUM * 9];
+INT32 constant_data[2][STAGE_NUM][1];
+//INT32 parity_data[2][STAGE_NUM][PARITY_NUM];
+//INT32 constant_data[2][60];
+
 // idx  : 254664 * 2 * sizeof(INT16) ≒ RAM 994KB
 UINT16 idx_hori_ver1[2][INDEX_NUM];
 UINT16 idx_hori_ver2[2][INDEX_NUM];
@@ -251,11 +267,11 @@ static void setEvalIndex()
 
 
 
+INT16   *data;
 BOOL allocEvalMemory(st_eval *eval)
 {
 	INT32   i, j;
 	UINT32  offset;
-	INT16   *data;
 
 	// allocate for st_feature.data
 	data = (INT16 *)malloc(STAGE_NUM * EVAL_FEATURE_SIZE * 2); // 13800274
@@ -264,8 +280,9 @@ BOOL allocEvalMemory(st_eval *eval)
 		return FALSE;
 	}
 
+	offset = 0;
 	// setting st_feature structure
-	for (i = 0, offset = 0; i < 2; i++)
+	for (i = 0; i < 2; i++)
 	{
 		for (j = 0; j < STAGE_NUM; j++)
 		{
@@ -1157,6 +1174,107 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 
 	size = ((UINT32)buf[0] << 24) + ((UINT32)buf[1] << 16) + ((UINT32)buf[2] << 8) + buf[3];
 
+#if 1
+	while (stage < 60)
+	{
+		/* horizon_ver1 */
+		p_table = hori_ver1_data[0][stage];
+		p_table_op = hori_ver1_data[1][stage];
+		for (i = 0; i < 6561; i++)
+		{
+			p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		}
+		for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver1[1][i]];
+
+		/* horizon_ver2 */
+		p_table = hori_ver2_data[0][stage];
+		p_table_op = hori_ver2_data[1][stage];
+		for (i = 0; i < INDEX_NUM; i++)
+		{
+			p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		}
+		for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver1[1][i]];
+
+		/* horizon_ver3 */
+		p_table = hori_ver3_data[stage];
+		for (i = 0; i < 6561; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* diagram_ver1 */
+		p_table = dia_ver1_data[stage];
+		for (i = 0; i < 6561; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* diagram_ver2 */
+		p_table = dia_ver2_data[stage];
+		for (i = 0; i < 2187; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* diagram_ver3 */
+		p_table = dia_ver3_data[stage];
+		for (i = 0; i < 729; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* diagram_ver4 */
+		p_table = dia_ver4_data[stage];
+		for (i = 0; i < 243; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* edge */
+		p_table = edge_data[stage];
+		for (i = 0; i < 59049; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* corner5 + 2X */
+		p_table = corner5_2_data[stage];
+		for (i = 0; i < 59049; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* corner3_3 */
+		p_table = corner3_3_data[stage];
+		for (i = 0; i < 19683; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* triangle */
+		p_table = triangle_data[stage];
+		for (i = 0; i < 59049; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+
+		/* mobility */
+		p_table = mobility_data[stage];
+		for (i = 0; i < MOBILITY_NUM; i++)
+		{
+			p_table[i] = atof(line);
+			line = strtok_s(NULL, "\n", &ctr);
+		}
+#else
 	/* horizon_ver1 */
 	p_table = g_st_eval[0].feature[0].data[stage];
 	p_table_op = g_st_eval[1].feature[0].data[stage];
@@ -1164,7 +1282,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM; i++) p_table[i] = p_table[idx_hori_ver1[1][i]];
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver1[1][i]];
 
 	/* horizon_ver2 */
 	p_table = g_st_eval[0].feature[1].data[stage];
@@ -1263,7 +1381,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table[0] = ((INT16)buf[offset] << 8) + buf[offset + 1];
 	p_table_op[0] = p_table[0];
 	offset += 2;
-
+#endif
 	// 長さチェック
 	if (offset != size) return FALSE;
 
@@ -1366,7 +1484,7 @@ BOOL OpenEvalData(char *filename)
 	setEvalIndex();
 
 	// データアロケーション
-	if (allocEvalMemory(g_st_eval) == FALSE) return FALSE;
+	//if (allocEvalMemory(g_st_eval) == FALSE) return FALSE;
 
 	inSize = 1024 * 1024;
 	outSize = EVAL_FEATURE_SIZE + 4; // eval data + len data(4byte)

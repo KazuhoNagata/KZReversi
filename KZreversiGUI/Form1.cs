@@ -481,7 +481,7 @@ namespace KZreversi
                 }
 
                 // size(MB)--> size * 1024 * 1024 / sizeof(hash_entry) = size * 1024 * 16
-                cpuClass[i].SetCasheSize(128 * 1024 * 16); // 128MB default
+                cpuClass[i].SetCasheSize(32 * 1024 * 16); // 32MB default
                 cpuClass[i].SetSearchDepth(6);
                 cpuClass[i].SetWinLossDepth(14);
                 cpuClass[i].SetExactDepth(12);
