@@ -114,7 +114,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <StackReserveSize>8388608</StackReserveSize>
       <GenerateMapFile>true</GenerateMapFile>
-      <HeapReserveSize>1073741824</HeapReserveSize>
+      <HeapReserveSize>536870912</HeapReserveSize>
     </Link>
     <PostBuildEvent>
       <Command>copy "D:\Repos\KZReversi\ai_core\x64\Debug\ai_core.dll" "D:\Repos\KZReversi\KZreversiGUI\bin\x64\Debug\"</Command>
@@ -162,6 +162,8 @@
       <FloatingPointModel>
       </FloatingPointModel>
       <EnablePREfast>false</EnablePREfast>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -170,7 +172,7 @@
       <StackReserveSize>10485760</StackReserveSize>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <GenerateMapFile>false</GenerateMapFile>
-      <HeapReserveSize>1073741824</HeapReserveSize>
+      <HeapReserveSize>536870912</HeapReserveSize>
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
@@ -245,6 +247,14 @@
     <ClCompile Include="zlib\trees.c" />
     <ClCompile Include="zlib\zip.c" />
     <ClCompile Include="zlib\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\KZreversiGUI\bin\x64\Release\src\books.bin" />
+    <None Include="..\KZreversiGUI\bin\x64\Release\src\eval.bin" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\KZreversiGUI\bin\x64\Release\src\othello_board.png" />
+    <Image Include="..\KZreversiGUI\bin\x64\Release\src\wood_pattern.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

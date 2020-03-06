@@ -194,6 +194,8 @@ namespace KZreversi
                 moves ^= 1UL << move;
             }
 
+            cpw.ClearHash();
+
             HintClass tempData = new HintClass();
 
             if (cpuConfig.exactDepth > empty)

@@ -975,9 +975,16 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	{
 		pline->cmove = 0;
 		/* 葉ノード(読みの限界値のノード)の場合は評価値を算出 */
-		if(color == BLACK) InitIndexBoard(bk, wh);
-		else  InitIndexBoard(wh, bk);
-		return Evaluation(g_board, bk, wh, color, STAGE_NUM - empty);
+		if (color == BLACK)
+		{
+			InitIndexBoard(bk, wh);
+			return Evaluation(g_board, bk, wh, color, 60 - empty);
+		}
+		else
+		{
+			InitIndexBoard(wh, bk);
+			return -Evaluation(g_board, bk, wh, color, 60 - empty);
+		}
 	}
 
 	if (g_limitDepth >= DEPTH_DEEP_TO_SHALLOW_SEARCH && depth < DEPTH_DEEP_TO_SHALLOW_SEARCH)
@@ -1234,10 +1241,16 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 	if (depth == 0)
 	{
 		pline->cmove = 0;
-		if (color == BLACK) InitIndexBoard(bk, wh);
-		else  InitIndexBoard(wh, bk);
-
-		return Evaluation(g_board, bk, wh, color, STAGE_NUM - empty);
+		if (color == BLACK)
+		{
+			InitIndexBoard(bk, wh);
+			return Evaluation(g_board, bk, wh, color, 60 - empty);
+		}
+		else
+		{
+			InitIndexBoard(wh, bk);
+			return -Evaluation(g_board, bk, wh, color, 60 - empty);
+		}
 	}
 
 	int eval;
@@ -1545,8 +1558,16 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 	if (depth == 0)
 	{
 		/* 葉ノード(読みの限界値のノード)の場合は評価値を算出 */
-		InitIndexBoard(bk, wh);
-		return Evaluation(g_board, bk, wh, color, STAGE_NUM - empty);
+		if (color == BLACK)
+		{
+			InitIndexBoard(bk, wh);
+			return Evaluation(g_board, bk, wh, color, 60 - empty);
+		}
+		else
+		{
+			InitIndexBoard(wh, bk);
+			return -Evaluation(g_board, bk, wh, color, 60 - empty);
+		}
 	}
 
 	int eval;

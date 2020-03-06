@@ -42,33 +42,26 @@ INT16 *triangle;
 INT16 *constant;
 
 /* 評価パターンテーブル */
-INT32 hori_ver1_data[2][STAGE_NUM][INDEX_NUM];
-INT32 hori_ver2_data[2][STAGE_NUM][INDEX_NUM];
-INT32 hori_ver3_data[2][STAGE_NUM][INDEX_NUM];
-INT32 dia_ver1_data[2][STAGE_NUM][INDEX_NUM];
-INT32 dia_ver2_data[2][STAGE_NUM][INDEX_NUM / 3];
-INT32 dia_ver3_data[2][STAGE_NUM][INDEX_NUM / 9];
-INT32 dia_ver4_data[2][STAGE_NUM][INDEX_NUM / 27];
-INT32 edge_data[2][STAGE_NUM][INDEX_NUM * 9];
-INT32 corner5_2_data[2][STAGE_NUM][INDEX_NUM * 9];
-INT32 corner3_3_data[2][STAGE_NUM][INDEX_NUM * 3];
-INT32 triangle_data[2][STAGE_NUM][INDEX_NUM * 9];
-INT32 constant_data[2][STAGE_NUM][1];
-//INT32 parity_data[2][STAGE_NUM][PARITY_NUM];
-//INT32 constant_data[2][60];
+INT16 hori_ver1_data[2][STAGE_NUM][INDEX_NUM];
+INT16 hori_ver2_data[2][STAGE_NUM][INDEX_NUM];
+INT16 hori_ver3_data[2][STAGE_NUM][INDEX_NUM];
+INT16 dia_ver1_data[2][STAGE_NUM][INDEX_NUM];
+INT16 dia_ver2_data[2][STAGE_NUM][INDEX_NUM / 3];
+INT16 dia_ver3_data[2][STAGE_NUM][INDEX_NUM / 9];
+INT16 dia_ver4_data[2][STAGE_NUM][INDEX_NUM / 27];
+INT16 edge_data[2][STAGE_NUM][INDEX_NUM * 9];
+INT16 corner5_2_data[2][STAGE_NUM][INDEX_NUM * 9];
+INT16 corner3_3_data[2][STAGE_NUM][INDEX_NUM * 3];
+INT16 triangle_data[2][STAGE_NUM][INDEX_NUM * 9];
+INT16 constant_data[2][STAGE_NUM][1];
 
 // idx  : 254664 * 2 * sizeof(INT16) ≒ RAM 994KB
-UINT16 idx_hori_ver1[2][INDEX_NUM];
-UINT16 idx_hori_ver2[2][INDEX_NUM];
-UINT16 idx_hori_ver3[2][INDEX_NUM];
-UINT16 idx_diag_ver1[2][INDEX_NUM];
-UINT16 idx_diag_ver2[2][INDEX_NUM / 3];
-UINT16 idx_diag_ver3[2][INDEX_NUM / 9];
-UINT16 idx_diag_ver4[2][INDEX_NUM / 27];
-UINT16 idx_edge[2][INDEX_NUM * 9];
-UINT16 idx_corner33[2][INDEX_NUM * 3];
-UINT16 idx_corner52[2][INDEX_NUM * 9];
-UINT16 idx_triangle[2][INDEX_NUM * 9];
+UINT16 idx_op_5[2][INDEX_NUM / 27];
+UINT16 idx_op_6[2][INDEX_NUM / 9];
+UINT16 idx_op_7[2][INDEX_NUM / 3];
+UINT16 idx_op_8[2][INDEX_NUM];
+UINT16 idx_op_9[2][INDEX_NUM * 9];
+UINT16 idx_op_10[2][INDEX_NUM * 3];
 
 int pow_table[10] = { 1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683 };
 
@@ -197,142 +190,125 @@ static void setEvalIndex()
 {
 	INT32 i;
 
-	// hori_ver1
+	// idx8(hori, diag1)
 	for (i = 0; i < INDEX_NUM; i++)
 	{
-		idx_hori_ver1[0][i] = i;
-		idx_hori_ver1[1][opponent_feature(i, 8)] = i;
+		idx_op_8[0][i] = i;
+		idx_op_8[1][opponent_feature(i, 8)] = i;
 	}
-	// hori_ver2
-	for (i = 0; i < INDEX_NUM; i++)
-	{
-		idx_hori_ver2[0][i] = i;
-		idx_hori_ver2[1][opponent_feature(i, 8)] = i;
-	}
-	// hori_ver3
-	for (i = 0; i < INDEX_NUM; i++)
-	{
-		idx_hori_ver2[0][i] = i;
-		idx_hori_ver2[1][opponent_feature(i, 8)] = i;
-	}
-	// diag_ver1
-	for (i = 0; i < INDEX_NUM; i++)
-	{
-		idx_diag_ver1[0][i] = i;
-		idx_diag_ver1[1][opponent_feature(i, 8)] = i;
-	}
-	// diag_ver2
+	// idx7(diag2)
 	for (i = 0; i < INDEX_NUM / 3; i++)
 	{
-		idx_diag_ver2[0][i] = i;
-		idx_diag_ver2[1][opponent_feature(i, 7)] = i;
+		idx_op_7[0][i] = i;
+		idx_op_7[1][opponent_feature(i, 7)] = i;
 	}
-	// diag_ver3
+	// idx6(diag3)
 	for (i = 0; i < INDEX_NUM / 9; i++)
 	{
-		idx_diag_ver3[0][i] = i;
-		idx_diag_ver3[1][opponent_feature(i, 6)] = i;
+		idx_op_6[0][i] = i;
+		idx_op_6[1][opponent_feature(i, 6)] = i;
 	}
-	// diag_ver4
+	// idx6(diag4)
 	for (i = 0; i < INDEX_NUM / 27; i++)
 	{
-		idx_diag_ver4[0][i] = i;
-		idx_diag_ver4[1][opponent_feature(i, 5)] = i;
+		idx_op_5[0][i] = i;
+		idx_op_5[1][opponent_feature(i, 5)] = i;
 	}
-	// edge
-	for (i = 0; i < INDEX_NUM * 9; i++)
-	{
-		idx_edge[0][i] = i;
-		idx_edge[1][opponent_feature(i, 10)] = i;
-	}
-	// corner52
-	for (i = 0; i < INDEX_NUM * 9; i++)
-	{
-		idx_corner52[0][i] = i;
-		idx_corner52[1][opponent_feature(i, 10)] = i;
-	}
-	// corner33
+	// idx9(corner33)
 	for (i = 0; i < INDEX_NUM * 3; i++)
 	{
-		idx_corner33[0][i] = i;
-		idx_corner33[1][opponent_feature(i, 9)] = i;
+		idx_op_9[0][i] = i;
+		idx_op_9[1][opponent_feature(i, 9)] = i;
 	}
-	// triangle
+	// idx10(edge, corner52, triangle)
 	for (i = 0; i < INDEX_NUM * 9; i++)
 	{
-		idx_triangle[0][i] = i;
-		idx_triangle[1][opponent_feature(i, 10)] = i;
+		idx_op_10[0][i] = i;
+		idx_op_10[1][opponent_feature(i, 10)] = i;
 	}
 }
 
 
 
-INT16   *data;
+INT16   **edata;
 BOOL allocEvalMemory(st_eval *eval)
 {
 	INT32   i, j;
 	UINT32  offset;
 
 	// allocate for st_feature.data
-	data = (INT16 *)malloc(STAGE_NUM * EVAL_FEATURE_SIZE * 2); // 13800274
-	if (data == NULL)
+	edata = (INT16 **)malloc(sizeof(INT16 *) * 2);
+	if (edata == NULL)
 	{
 		return FALSE;
 	}
+	edata[0] = (INT16 *)malloc(STAGE_NUM * EVAL_FEATURE_SIZE); // 13800274
+	if (edata[0] == NULL)
+	{
+		free(edata);
+		return FALSE;
+	}
+	edata[1] = (INT16 *)malloc(STAGE_NUM * EVAL_FEATURE_SIZE); // 13800274
+	if (edata[1] == NULL)
+	{
+		free(edata[0]);
+		free(edata);
+		return FALSE;
+	}
 
-	offset = 0;
 	// setting st_feature structure
 	for (i = 0; i < 2; i++)
 	{
+		offset = 0;
 		for (j = 0; j < STAGE_NUM; j++)
 		{
 			// hori1
 			eval[i].feature[0].size = INDEX_NUM;
-			eval[i].feature[0].data[j] = &data[offset];
+			eval[i].feature[0].data[j] = &edata[i][offset];
 			offset += eval[i].feature[0].size;
 			// hori2
 			eval[i].feature[1].size = INDEX_NUM;
-			eval[i].feature[1].data[j] = &data[offset];
+			eval[i].feature[1].data[j] = &edata[i][offset];
 			offset += eval[i].feature[1].size;
 			// hori3
 			eval[i].feature[2].size = INDEX_NUM;
-			eval[i].feature[2].data[j] = &data[offset];
+			eval[i].feature[2].data[j] = &edata[i][offset];
 			offset += eval[i].feature[2].size;
 			// diag1
 			eval[i].feature[3].size = INDEX_NUM;
-			eval[i].feature[3].data[j] = &data[offset];
+			eval[i].feature[3].data[j] = &edata[i][offset];
 			offset += eval[i].feature[3].size;
 			// diag2
 			eval[i].feature[4].size = INDEX_NUM / 3;
-			eval[i].feature[4].data[j] = &data[offset];
+			eval[i].feature[4].data[j] = &edata[i][offset];
 			offset += eval[i].feature[4].size;
 			// diag3
 			eval[i].feature[5].size = INDEX_NUM / 9;
-			eval[i].feature[5].data[j] = &data[offset];
+			eval[i].feature[5].data[j] = &edata[i][offset];
 			offset += eval[i].feature[5].size;
 			// diag4
 			eval[i].feature[6].size = INDEX_NUM / 27;
-			eval[i].feature[6].data[j] = &data[offset];
+			eval[i].feature[6].data[j] = &edata[i][offset];
 			offset += eval[i].feature[6].size;
 			// edge
 			eval[i].feature[7].size = INDEX_NUM * 9;
-			eval[i].feature[7].data[j] = &data[offset];
+			eval[i].feature[7].data[j] = &edata[i][offset];
 			offset += eval[i].feature[7].size;
 			// corner52
 			eval[i].feature[8].size = INDEX_NUM * 9;
-			eval[i].feature[8].data[j] = &data[offset];
+			eval[i].feature[8].data[j] = &edata[i][offset];
 			offset += eval[i].feature[8].size;
 			// corner33
 			eval[i].feature[9].size = INDEX_NUM * 3;
-			eval[i].feature[9].data[j] = &data[offset];
+			eval[i].feature[9].data[j] = &edata[i][offset];
 			offset += eval[i].feature[9].size;
 			// triangle
 			eval[i].feature[10].size = INDEX_NUM * 9;
-			eval[i].feature[10].data[j] = &data[offset];
+			eval[i].feature[10].data[j] = &edata[i][offset];
 			offset += eval[i].feature[10].size;
 			// constant
 			eval[i].feature[11].size = 1;
-			eval[i].feature[11].data[j] = &data[offset];
+			eval[i].feature[11].data[j] = &edata[i][offset];
 			offset += eval[i].feature[11].size;
 
 			//printf("offset = %d\n", offset);
@@ -1128,6 +1104,21 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	INT32 score;
 
 	/* 現在の色とステージでポインタを指定 */
+#if 1
+	color = 0;
+	hori_ver1 = hori_ver1_data[color][stage];
+	hori_ver2 = hori_ver2_data[color][stage];
+	hori_ver3 = hori_ver3_data[color][stage];
+	dia_ver1 = dia_ver1_data[color][stage];
+	dia_ver2 = dia_ver2_data[color][stage];
+	dia_ver3 = dia_ver3_data[color][stage];
+	dia_ver4 = dia_ver4_data[color][stage];
+	edge = edge_data[color][stage];
+	corner5_2 = corner5_2_data[color][stage];
+	corner3_3 = corner3_3_data[color][stage];
+	triangle = triangle_data[color][stage];
+	constant = constant_data[color][stage];
+#else
 	hori_ver1 = g_st_eval[color].feature[0].data[stage];
 	hori_ver2 = g_st_eval[color].feature[1].data[stage];
 	hori_ver3 = g_st_eval[color].feature[2].data[stage];
@@ -1140,7 +1131,7 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 	corner3_3 = g_st_eval[color].feature[9].data[stage];
 	triangle  = g_st_eval[color].feature[10].data[stage];
 	constant  = g_st_eval[color].feature[11].data[stage];
-
+#endif
 	score = check_h_ver1(board);
 	score += check_h_ver2(board);
 	score += check_h_ver3(board);
@@ -1174,113 +1165,120 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 
 	size = ((UINT32)buf[0] << 24) + ((UINT32)buf[1] << 16) + ((UINT32)buf[2] << 8) + buf[3];
 
+	offset = 4; // skip length data
 #if 1
-	while (stage < 60)
+	/* horizon_ver1 */
+	p_table = hori_ver1_data[0][stage];
+	p_table_op = hori_ver1_data[1][stage];
+	for (i = 0; i < INDEX_NUM; i++, offset += 2)
 	{
-		/* horizon_ver1 */
-		p_table = hori_ver1_data[0][stage];
-		p_table_op = hori_ver1_data[1][stage];
-		for (i = 0; i < 6561; i++)
-		{
-			p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
-		}
-		for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver1[1][i]];
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
 
-		/* horizon_ver2 */
-		p_table = hori_ver2_data[0][stage];
-		p_table_op = hori_ver2_data[1][stage];
-		for (i = 0; i < INDEX_NUM; i++)
-		{
-			p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
-		}
-		for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver1[1][i]];
+	/* horizon_ver2 */
+	p_table = hori_ver2_data[0][stage];
+	p_table_op = hori_ver2_data[1][stage];
+	for (i = 0; i < INDEX_NUM; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
 
-		/* horizon_ver3 */
-		p_table = hori_ver3_data[stage];
-		for (i = 0; i < 6561; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	/* horizon_ver3 */
+	p_table = hori_ver3_data[0][stage];
+	p_table_op = hori_ver3_data[1][stage];
+	for (i = 0; i < INDEX_NUM; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
 
-		/* diagram_ver1 */
-		p_table = dia_ver1_data[stage];
-		for (i = 0; i < 6561; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	/* diagram_ver1 */
+	p_table = dia_ver1_data[0][stage];
+	p_table_op = dia_ver1_data[1][stage];
+	for (i = 0; i < INDEX_NUM; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
 
-		/* diagram_ver2 */
-		p_table = dia_ver2_data[stage];
-		for (i = 0; i < 2187; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	/* diagram_ver2 */
+	p_table = dia_ver2_data[0][stage];
+	p_table_op = dia_ver2_data[1][stage];
+	for (i = 0; i < INDEX_NUM / 3; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM / 3; i++) p_table_op[i] = -p_table[idx_op_7[1][i]];
+	
+	/* diagram_ver3 */
+	p_table = dia_ver3_data[0][stage];
+	p_table_op = dia_ver3_data[1][stage];
+	for (i = 0; i < INDEX_NUM / 9; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM / 9; i++) p_table_op[i] = -p_table[idx_op_6[1][i]];
 
-		/* diagram_ver3 */
-		p_table = dia_ver3_data[stage];
-		for (i = 0; i < 729; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	/* diagram_ver4 */
+	p_table = dia_ver4_data[0][stage];
+	p_table_op = dia_ver4_data[1][stage];
+	for (i = 0; i < INDEX_NUM / 27; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM / 27; i++) p_table_op[i] = -p_table[idx_op_5[1][i]];
 
-		/* diagram_ver4 */
-		p_table = dia_ver4_data[stage];
-		for (i = 0; i < 243; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	/* edge */
+	p_table = edge_data[0][stage];
+	p_table_op = edge_data[1][stage];
+	for (i = 0; i < INDEX_NUM * 9; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = -p_table[idx_op_10[1][i]];
 
-		/* edge */
-		p_table = edge_data[stage];
-		for (i = 0; i < 59049; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	/* corner5 + 2X */
+	p_table = corner5_2_data[0][stage];
+	p_table_op = corner5_2_data[1][stage];
+	for (i = 0; i < INDEX_NUM * 9; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = -p_table[idx_op_10[1][i]];
 
-		/* corner5 + 2X */
-		p_table = corner5_2_data[stage];
-		for (i = 0; i < 59049; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	/* corner3_3 */
+	p_table = corner3_3_data[0][stage];
+	p_table_op = corner3_3_data[1][stage];
+	for (i = 0; i < INDEX_NUM * 3; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM * 3; i++) p_table_op[i] = -p_table[idx_op_9[1][i]];
 
-		/* corner3_3 */
-		p_table = corner3_3_data[stage];
-		for (i = 0; i < 19683; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	/* triangle */
+	p_table = triangle_data[0][stage];
+	p_table_op = triangle_data[1][stage];
+	for (i = 0; i < INDEX_NUM * 9; i++, offset += 2)
+	{
+		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	}
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = -p_table[idx_op_10[1][i]];
 
-		/* triangle */
-		p_table = triangle_data[stage];
-		for (i = 0; i < 59049; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
+	p_table = constant_data[0][stage];
+	p_table_op = constant_data[1][stage];
+	p_table[0] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+	p_table_op[0] = -p_table[0];
+	offset += 2;
 
-		/* mobility */
-		p_table = mobility_data[stage];
-		for (i = 0; i < MOBILITY_NUM; i++)
-		{
-			p_table[i] = atof(line);
-			line = strtok_s(NULL, "\n", &ctr);
-		}
 #else
 	/* horizon_ver1 */
 	p_table = g_st_eval[0].feature[0].data[stage];
 	p_table_op = g_st_eval[1].feature[0].data[stage];
 	for (i = 0, offset = 0; i < INDEX_NUM; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset] << 8) + buf[offset + 1];
 	}
 	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver1[1][i]];
 
@@ -1289,7 +1287,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[1].data[stage];
 	for (i = 0; i < INDEX_NUM; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver2[1][i]];
 
@@ -1298,7 +1296,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[2].data[stage];
 	for (i = 0; i < INDEX_NUM; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_hori_ver3[1][i]];
 
@@ -1307,7 +1305,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[3].data[stage];
 	for (i = 0; i < INDEX_NUM; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_diag_ver1[1][i]];
 
@@ -1316,7 +1314,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[4].data[stage];
 	for (i = 0; i < INDEX_NUM / 3; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM / 3; i++) p_table_op[i] = p_table[idx_diag_ver2[1][i]];
 
@@ -1325,7 +1323,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[5].data[stage];
 	for (i = 0; i < INDEX_NUM / 9; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM / 9; i++) p_table_op[i] = p_table[idx_diag_ver3[1][i]];
 
@@ -1334,7 +1332,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[6].data[stage];
 	for (i = 0; i < INDEX_NUM / 27; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM / 27; i++) p_table_op[i] = p_table[idx_diag_ver4[1][i]];
 
@@ -1343,7 +1341,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[7].data[stage];
 	for (i = 0; i < INDEX_NUM * 9; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = p_table[idx_edge[1][i]];
 
@@ -1353,7 +1351,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[8].data[stage];
 	for (i = 0; i < INDEX_NUM * 9; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = p_table[idx_corner52[1][i]];
 
@@ -1362,7 +1360,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[9].data[stage];
 	for (i = 0; i < INDEX_NUM * 3; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM * 3; i++) p_table_op[i] = p_table[idx_corner33[1][i]];
 
@@ -1371,19 +1369,19 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	p_table_op = g_st_eval[1].feature[10].data[stage];
 	for (i = 0; i < INDEX_NUM * 9; i++, offset += 2)
 	{
-		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
+		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
 	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = p_table[idx_triangle[1][i]];
 
 	/* constant */
 	p_table = g_st_eval[0].feature[10].data[stage];
 	p_table_op = g_st_eval[1].feature[10].data[stage];
-	p_table[0] = ((INT16)buf[offset] << 8) + buf[offset + 1];
+	p_table[0] = ((UINT16)buf[offset] << 8) + buf[offset + 1];
 	p_table_op[0] = p_table[0];
 	offset += 2;
 #endif
 	// 長さチェック
-	if (offset != size) return FALSE;
+	if (offset != size + 4) return FALSE;
 
 	return TRUE;
 }
@@ -1484,7 +1482,7 @@ BOOL OpenEvalData(char *filename)
 	setEvalIndex();
 
 	// データアロケーション
-	//if (allocEvalMemory(g_st_eval) == FALSE) return FALSE;
+	if (allocEvalMemory(g_st_eval) == FALSE) return FALSE;
 
 	inSize = 1024 * 1024;
 	outSize = EVAL_FEATURE_SIZE + 4; // eval data + len data(4byte)
@@ -1504,6 +1502,7 @@ BOOL OpenEvalData(char *filename)
 
 	free(ibuffer);
 	free(obuffer);
+	fclose(fp);
 
 	if (result == -1) return FALSE;
 
