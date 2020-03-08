@@ -301,7 +301,7 @@ namespace KZreversi
                 cpw.GetCpuMove(move_bk, move_wh, cpuConfig);
                 cpuConfig.color ^= 1;
 
-                hintData.SetEval(-cpw.GetLastEvaluation());
+                hintData.SetEval(-cpw.GetLastEvaluation() / 1024);
                 hintData.SetAttr(attr);
 
                 // UIに評価値を通知

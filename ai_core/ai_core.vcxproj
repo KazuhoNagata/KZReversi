@@ -251,6 +251,8 @@
   <ItemGroup>
     <None Include="..\KZreversiGUI\bin\x64\Release\src\books.bin" />
     <None Include="..\KZreversiGUI\bin\x64\Release\src\eval.bin" />
+    <None Include="..\KZreversiGUI\bin\x64\Release\src\mpc.dat" />
+    <None Include="..\KZreversiGUI\bin\x64\Release\src\mpc_end.dat" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\KZreversiGUI\bin\x64\Release\src\othello_board.png" />

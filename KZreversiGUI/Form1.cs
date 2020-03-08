@@ -815,7 +815,6 @@ namespace KZreversi
 
         private void dispMiddleEval(PaintEventArgs e, int pos, int eval, bool first)
         {
-            int eval_t;
             string sign;
             float font_fix_x;
             Brush brs;
@@ -830,17 +829,13 @@ namespace KZreversi
             {
                 brs = Brushes.Navy;
             }
-
-            // 評価値を正規化
-            eval_t = (int)Math.Round(eval / (double)EVAL_THRESHOLD, MidpointRounding.AwayFromZero);
-
-            if (eval_t >= 0) // +0 ～ +64
+            if (eval >= 0) // +0 ～ +64
             {
-                if (eval / (double)EVAL_THRESHOLD >= 0.0)
+                if (eval >= 0.0)
                 {
                     sign = "+";
                     font_fix_x = 3;
-                    if (eval_t >= 10) // +10 ～ +64
+                    if (eval >= 10) // +10 ～ +64
                     {
                         font_fix_x = 0;
                     }
@@ -853,7 +848,7 @@ namespace KZreversi
             }
             else
             {
-                if (eval_t <= -10) // -10 ～ -64
+                if (eval <= -10) // -10 ～ -64
                 {
                     sign = "";
                     font_fix_x = 2;
@@ -868,7 +863,7 @@ namespace KZreversi
             font_fix_x *= m_scale;
 
             // 該当のマスに描画
-            e.Graphics.DrawString(sign + eval_t, m_ft3, brs,
+            e.Graphics.DrawString(sign + eval, m_ft3, brs,
                (pos / BOARD_SIZE) * m_mass_size + font_scale_x + font_fix_x,
                (pos % BOARD_SIZE) * m_mass_size + font_scale_y);
         }

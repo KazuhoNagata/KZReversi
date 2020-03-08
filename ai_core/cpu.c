@@ -1099,25 +1099,25 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 		if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
 		{
 			INT32 mpc_level;
-			double MPC_CUT_VAL;
+			double mpc_value;
 			if (empty <= 24)
 			{
-				MPC_CUT_VAL = cutval_table[4];
+				mpc_value = cutval_table[4];
 				mpc_level = 4;
 			}
 			else if (empty <= 36)
 			{
-				MPC_CUT_VAL = cutval_table[4];
+				mpc_value = cutval_table[3];
 				mpc_level = 3;
 			}
 			else
 			{
-				MPC_CUT_VAL = cutval_table[3];
+				mpc_value = cutval_table[3];
 				mpc_level = 3;
 			}
 
 			MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
-			INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+			INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * mpc_value) - mpcInfo_p->offset);
 			if (value < NEGAMIN + 1) value = NEGAMIN + 1;
 			score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed, pline);
 			if (score < value)
@@ -1127,7 +1127,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 				return alpha;
 			}
 
-			value = (INT32)(beta + (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+			value = (INT32)(beta + (mpcInfo_p->deviation * mpc_value) - mpcInfo_p->offset);
 			if (value > NEGAMAX - 1) value = NEGAMAX - 1;
 			score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, pline);
 			if (score > value)
@@ -1265,23 +1265,23 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 #if 1
 	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
 	{
-		double MPC_CUT_VAL;
+		double mpc_value;
 		if (empty <= 24)
 		{
-			MPC_CUT_VAL = cutval_table[4];
+			mpc_value = cutval_table[4];
 		}
 		else if (empty <= 36)
 		{
-			MPC_CUT_VAL = cutval_table[4];
+			mpc_value = cutval_table[3];
 		}
 		else
 		{
-			MPC_CUT_VAL = cutval_table[3];
+			mpc_value = cutval_table[3];
 		}
 
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
-		INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+		INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * mpc_value) - mpcInfo_p->offset);
 		if (value < NEGAMIN + 1) value = NEGAMIN + 1;
 		INT32 eval = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed, pline);
 		if (eval < value)
@@ -1289,7 +1289,7 @@ INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
 			return alpha;
 		}
 
-		value = (INT32)(beta + (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+		value = (INT32)(beta + (mpcInfo_p->deviation * mpc_value) - mpcInfo_p->offset);
 		if (value > NEGAMAX - 1) value = NEGAMAX - 1;
 		eval = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, pline);
 		if (eval > value)
@@ -1582,22 +1582,22 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 #if 1
 	if (g_mpcFlag && depth >= MPC_MIN_DEPTH && depth <= 24)
 	{
-		double MPC_CUT_VAL;
+		double mpc_value;
 		if (empty <= 24)
 		{
-			MPC_CUT_VAL = cutval_table[4];
+			mpc_value = cutval_table[4];
 		}
 		else if (empty <= 36)
 		{
-			MPC_CUT_VAL = cutval_table[4];
+			mpc_value = cutval_table[3];
 		}
 		else
 		{
-			MPC_CUT_VAL = cutval_table[3];
+			mpc_value = cutval_table[3];
 		}
 
 		MPCINFO *mpcInfo_p = &mpcInfo[depth - MPC_MIN_DEPTH];
-		INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+		INT32 value = (INT32)(alpha - (mpcInfo_p->deviation * mpc_value) - mpcInfo_p->offset);
 		if (value < NEGAMIN + 1) value = NEGAMIN + 1;
 		INT32 eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed);
 		if (eval < value)
@@ -1605,7 +1605,7 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 			return alpha;
 		}
 
-		value = (INT32)(beta + (mpcInfo_p->deviation * MPC_CUT_VAL) - mpcInfo_p->offset);
+		value = (INT32)(beta + (mpcInfo_p->deviation * mpc_value) - mpcInfo_p->offset);
 		if (value > NEGAMAX - 1) value = NEGAMAX - 1;
 		eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed);
 		if (eval > value)

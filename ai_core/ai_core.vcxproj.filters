@@ -19,7 +19,7 @@
     <Filter Include="ヘッダー ファイル\zlib">
       <UniqueIdentifier>{8ec60b59-6ec5-4e55-bcc4-3ac04cc61918}</UniqueIdentifier>
     </Filter>
-    <Filter Include="assets">
+    <Filter Include="src">
       <UniqueIdentifier>{d5d06218-ce54-4d9a-8abb-e0d36c081868}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -203,18 +203,24 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\KZreversiGUI\bin\x64\Release\src\books.bin">
-      <Filter>assets</Filter>
+      <Filter>src</Filter>
     </None>
     <None Include="..\KZreversiGUI\bin\x64\Release\src\eval.bin">
-      <Filter>assets</Filter>
+      <Filter>src</Filter>
+    </None>
+    <None Include="..\KZreversiGUI\bin\x64\Release\src\mpc.dat">
+      <Filter>src</Filter>
+    </None>
+    <None Include="..\KZreversiGUI\bin\x64\Release\src\mpc_end.dat">
+      <Filter>src</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\KZreversiGUI\bin\x64\Release\src\othello_board.png">
-      <Filter>assets</Filter>
+      <Filter>src</Filter>
     </Image>
     <Image Include="..\KZreversiGUI\bin\x64\Release\src\wood_pattern.png">
-      <Filter>assets</Filter>
+      <Filter>src</Filter>
     </Image>
   </ItemGroup>
 </Project>
