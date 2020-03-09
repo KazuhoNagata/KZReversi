@@ -75,7 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)$(TargetName)\$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>D:\Repos\KZReversi\ai_core\zlib;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -87,7 +87,7 @@
     <OutDir>$(SolutionDir)$(TargetName)\$(Platform)\$(Configuration)\</OutDir>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <IncludePath>D:\Repos\KZReversi\ai_core\zlib;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)zlib;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -119,7 +119,7 @@
       <HeapReserveSize>536870912</HeapReserveSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy "D:\Repos\KZReversi\ai_core\x64\Debug\ai_core.dll" "D:\Repos\KZReversi\KZreversiGUI\bin\x64\Debug\"</Command>
+      <Command>copy $(TargetPath) $(SolutionDir)$(SolutionName)\bin\$(IntDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -178,7 +178,7 @@
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
-      <Command>copy "D:\Repos\KZReversi\ai_core\x64\Release\ai_core.dll" "D:\Repos\KZReversi\KZreversiGUI\bin\x64\Release\"</Command>
+      <Command>copy $(TargetPath) $(SolutionDir)$(SolutionName)\bin\$(IntDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
