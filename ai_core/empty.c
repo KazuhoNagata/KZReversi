@@ -87,8 +87,8 @@ INT32 SearchEmptyWLD_1(UINT64 bk, UINT64 wh, INT32 pos, INT32 beta, PVLINE *plin
 	if (n_flips)
 	{
 		score += n_flips + 2;
-		pline->argmove[0] = pos;
-		pline->cmove = 1;
+		//pline->argmove[0] = pos;
+		//pline->cmove = 1;
 	}
 	else
 	{
@@ -97,12 +97,12 @@ INT32 SearchEmptyWLD_1(UINT64 bk, UINT64 wh, INT32 pos, INT32 beta, PVLINE *plin
 		if (n_flips)
 		{
 			score -= n_flips;
-			pline->argmove[0] = pos;
-			pline->cmove = 1;
+			//pline->argmove[0] = pos;
+			//pline->cmove = 1;
 		}
 		else
 		{
-			pline->cmove = 0;
+			//pline->cmove = 0;
 		}
 	}
 
@@ -141,9 +141,9 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 		if (best > alpha)
 		{
 			alpha = best;
-			pline->argmove[0] = x1;
-			memcpy(pline->argmove + 1, line.argmove, line.cmove);
-			pline->cmove = line.cmove + 1;
+			//pline->argmove[0] = x1;
+			//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+			//pline->cmove = line.cmove + 1;
 		}
 	}
 	else best = -g_infscore;
@@ -160,9 +160,9 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x2;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
+				//pline->argmove[0] = x2;
+				//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+				//pline->cmove = line.cmove + 1;
 			}
 		}
 	}
@@ -223,9 +223,9 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 		if (best > alpha)
 		{
 			alpha = best;
-			pline->argmove[0] = x1;
-			memcpy(pline->argmove + 1, line.argmove, line.cmove);
-			pline->cmove = line.cmove + 1;
+			//pline->argmove[0] = x1;
+			//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+			//pline->cmove = line.cmove + 1;
 		}
 	}
 	else best = -g_infscore;
@@ -242,9 +242,9 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x2;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
+				//pline->argmove[0] = x2;
+				//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+				//pline->cmove = line.cmove + 1;
 			}
 		}
 	}
@@ -261,9 +261,9 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x3;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
+				//pline->argmove[0] = x3;
+				//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+				//pline->cmove = line.cmove + 1;
 			}
 		}
 	}
@@ -353,9 +353,9 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 		if (best > alpha)
 		{
 			alpha = best;
-			pline->argmove[0] = x1;
-			memcpy(pline->argmove + 1, line.argmove, line.cmove);
-			pline->cmove = line.cmove + 1;
+			//pline->argmove[0] = x1;
+			//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+			//pline->cmove = line.cmove + 1;
 		}
 	}
 	else best = -g_infscore;
@@ -373,9 +373,9 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x2;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
+				//pline->argmove[0] = x2;
+				//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+				//pline->cmove = line.cmove + 1;
 			}
 		}
 	}
@@ -393,9 +393,9 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x3;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
+				//pline->argmove[0] = x3;
+				//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+				//pline->cmove = line.cmove + 1;
 			}
 		}
 	}
@@ -413,9 +413,9 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x4;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
+				//pline->argmove[0] = x4;
+				//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+				//pline->cmove = line.cmove + 1;
 			}
 		}
 	}

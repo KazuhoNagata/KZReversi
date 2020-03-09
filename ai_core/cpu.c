@@ -438,7 +438,7 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 	else if (emptyNum <= cpuConfig->winLossDepth)
 	{
 		g_limitDepth = emptyNum;
-		g_infscore = WIN + 1;
+		g_infscore = WIN;
 		g_evaluation = SearchWinLoss(bk, wh, emptyNum, cpuConfig->color);
 	}
 	else
@@ -714,7 +714,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 					}
 					// PVSÎ·’Tõ
 					selectivity = lv;
-					eval = PVS_SearchDeepExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, bVal - 1, bVal, NO_PASS, &selectivity, &line);
+					eval = PVS_SearchExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, bVal - 1, bVal, NO_PASS, &selectivity, &line);
 
 					// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
 					if (g_AbortFlag == TRUE)
@@ -744,7 +744,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 				g_set_message_funcptr[0](g_AiMsg);
 
 				selectivity = lv;
-				eval = PVS_SearchDeepExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, aVal, bVal, NO_PASS, &selectivity, &line);
+				eval = PVS_SearchExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, aVal, bVal, NO_PASS, &selectivity, &line);
 
 				// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
 				if (g_AbortFlag == TRUE)
@@ -795,7 +795,7 @@ INT32 SearchExact(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		g_mpc_level = g_max_cut_table_size;
 		MPC_END_CUT_VAL = cutval_table[g_mpc_level];
 		// PVSÎ·’Tõ
-		eval = PVS_SearchDeepExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, -g_infscore, g_infscore, NO_PASS, &selectivity, &line);
+		eval = PVS_SearchExact(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, -g_infscore, g_infscore, NO_PASS, &selectivity, &line);
 
 		move = GetMoveFromHash(bk, wh, key);
 	}
@@ -880,6 +880,13 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 		g_key = key;
 	}
 
+	// PV ‚ğ‰Šú‰»
+	memset(g_pvline, -1, sizeof(g_pvline));
+	g_pvline_len = 0;
+
+	HashClear(g_pvHash);
+	g_hash->attribute = HASH_ATTR_WLD;
+	g_pvHash->attribute = HASH_ATTR_WLD;
 #else
 	HashClear(g_hash);
 #endif
@@ -887,6 +894,7 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	PVLINE line;
 	INT32 selectivity;
 	char *wld_str[] = {"LOSS", "DRAW", "WIN"};
+	INT32 lower, upper;
 
 	// ƒOƒ[ƒoƒ‹•Ï”‰Šú‰»
 	g_solveMethod = SOLVE_WLD;
@@ -894,12 +902,21 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 	g_empty = emptyNum;
 
 	// PVƒ‰ƒCƒ“•\¦–³Œø
-	g_set_message_funcptr[1]("");
+	//g_set_message_funcptr[1]("");
+
+	UINT64 blank = ~(bk | wh);
+	INT32 parity =
+		((CountBit(blank & quad_parity_bitmask[3]) % 2) << 3) |
+		((CountBit(blank & quad_parity_bitmask[2]) % 2) << 2) |
+		((CountBit(blank & quad_parity_bitmask[1]) % 2) << 1) |
+		(CountBit(blank & quad_parity_bitmask[0]) % 2);
+
+	INT32 aVal = -g_infscore;
+	INT32 bVal = g_infscore;
 
 	// I”ÕMPC’Tõ(0.25ƒĞ`3.0ƒĞ)
 	for (INT32 lv = 0; lv < g_max_cut_table_size + 1; lv++)
 	{
-		selectivity = lv;
 		g_mpc_level = lv;
 		// Abort‚Ì‚½‚ß‚É’¼‘O‚Ì•]‰¿Œ‹‰Ê‚ğ•Û‘¶
 		eval_b = eval;
@@ -907,18 +924,83 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 
 		MPC_END_CUT_VAL = cutval_table[g_mpc_level];
 
-		// PVSÎ·’Tõ
-		eval = PVS_SearchDeepWinLoss(bk, wh, emptyNum, 0, color, g_hash, LOSS, WIN, NO_PASS, &selectivity, &line);
-
-		// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
-		if (g_AbortFlag == TRUE)
+		if (lv == g_max_cut_table_size)
 		{
-			sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.");
+			strcpy_s(g_AiMsg, sizeof(g_AiMsg), "Performing MTD-f proccess...");
 			g_set_message_funcptr[0](g_AiMsg);
-			g_hash->entry[key].deepest.bestmove = move_b;
-			return eval_b;
-		}
 
+			lower = -g_infscore;
+			upper = g_infscore;
+
+			while (lower < upper)
+			{
+				if (eval == lower)
+				{
+					bVal = eval + 1;
+				}
+				else
+				{
+					bVal = eval;
+				}
+				// PVSÎ·’Tõ
+				selectivity = lv;
+				eval = PVS_SearchWinLoss(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, bVal - 1, bVal, NO_PASS, &selectivity, &line);
+
+				// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
+				if (g_AbortFlag == TRUE)
+				{
+					sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.");
+					g_set_message_funcptr[0](g_AiMsg);
+					g_hash->entry[key].deepest.bestmove = move_b;
+					return eval_b;
+				}
+
+				if (eval < bVal) upper = eval;
+				else lower = eval;
+
+				// ’uŠ·•\‚©‚çÅ‘Pè‚ğæ“¾
+				move = GetMoveFromHash(bk, wh, key);
+
+				sprintf_s(g_AiMsg, sizeof(g_AiMsg), "[%s] : %s @ %d%%", g_cordinates_table[move], wld_str[eval + 1], cutval_table_percent[lv]);
+				g_set_message_funcptr[2](g_AiMsg);
+
+				//CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval, move, -2, ON_EXACT);
+				//g_set_message_funcptr[0](g_AiMsg);
+			}
+		}
+		else
+		{
+			strcpy_s(g_AiMsg, sizeof(g_AiMsg), "Performing MPC proccess...");
+			g_set_message_funcptr[0](g_AiMsg);
+
+			selectivity = lv;
+			eval = PVS_SearchWinLoss(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, aVal, bVal, NO_PASS, &selectivity, &line);
+
+			// ’†’f‚³‚ê‚½‚Ì‚Å’¼‹ß‚ÌŠm’è•]‰¿’l‚ğ•Ô‹p
+			if (g_AbortFlag == TRUE)
+			{
+				sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.");
+				g_set_message_funcptr[0](g_AiMsg);
+				g_hash->entry[key].deepest.bestmove = move_b;
+				return eval_b;
+			}
+
+			if (eval == WIN)
+			{
+				aVal = DRAW;
+				bVal = WIN;
+			}
+			else if (eval == LOSS)
+			{
+				aVal = LOSS;
+				bVal = DRAW;
+			}
+			else
+			{
+				aVal = LOSS;
+				bVal = WIN;
+			}
+		}
 		// ’uŠ·•\‚©‚çÅ‘Pè‚ğæ“¾
 		move = GetMoveFromHash(bk, wh, key);
 

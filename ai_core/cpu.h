@@ -134,23 +134,6 @@ INT32 PVS_SearchDeep(
 );
 
 /***************************************************************************
-* Name  : PVS_SearchShallow
-* Brief : PV Search を行い、評価値を基に最善手を取得
-* Args  : bk        : 黒のビット列
-*         wh        : 白のビット列
-*         depth     : 読む深さ
-*         empty     : 空きマス数
-*         alpha     : このノードにおける下限値
-*         beta      : このノードにおける上限値
-*         color     : CPUの色
-*         hash      : 置換表の先頭ポインタ
-*         pass_cnt  : 今までのパスの数(２カウントで終了とみなす)
-* Return: 着手可能位置のビット列
-****************************************************************************/
-INT32 PVS_SearchShallow(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
-	HashTable *hash, INT32 alpha, INT32 beta, UINT32 passed, INT32 *p_selectivity);
-
-/***************************************************************************
 * Name  : AB_SearchNoPV
 * Brief : 単純なαβ探索によって手を決定する
 * Args  : bk        : 黒のビット列

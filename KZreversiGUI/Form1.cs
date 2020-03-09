@@ -1660,10 +1660,8 @@ namespace KZreversi
             if (sender == toolStripFFO40) 
             {
                 //FFO40
-                bk = 206426865664;
-                wh = 61607145111552;
-                //bk = 0x9e7d233549452101;
-               // wh = 0x102dccab6badefe;
+                bk = 9158069842325798912;
+                wh = 11047339776155165;
                 color = COLOR_BLACK;
             }
             else if (sender == toolStripFFO41)
