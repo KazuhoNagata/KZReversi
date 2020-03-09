@@ -5,6 +5,7 @@
 ****************************************************************************/
 #include "stdafx.h"
 #include <intrin.h>
+#include <nmmintrin.h>
 #include "bit64.h"
 
 
@@ -37,10 +38,13 @@ const unsigned long long X_TO_BIT[] = {
 ****************************************************************************/
 INT32 CountBit(UINT64 bit)
 {
-	///int l_moves = bit & 0x00000000FFFFFFFF;
-	///int h_moves = (bit & 0xFFFFFFFF00000000) >> 32;
-
+#if defined (_M_X64)
 	INT32 count = (INT32)_mm_popcnt_u64(bit);
-
+#else
+	UINT32 l_bits = bit & 0x00000000FFFFFFFF;
+	UINT32 h_bits = (UINT32)((bit & 0xFFFFFFFF00000000) >> 32);
+	INT32 count = _mm_popcnt_u32(l_bits);
+	count += _mm_popcnt_u32(h_bits);
+#endif
 	return count;
 }
