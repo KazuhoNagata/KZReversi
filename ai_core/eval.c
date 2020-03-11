@@ -1496,7 +1496,7 @@ BOOL OpenEvalData(char *filename)
 	{
 		// ÉwÉbÉ_ì«Ç›çûÇ›(4byte)
 		fread(&inSize, sizeof(UINT8), 4, fp);
-		inSize = fread(ibuffer, sizeof(UINT8), inSize, fp); // about 530KB
+		inSize = (INT32)fread(ibuffer, sizeof(UINT8), inSize, fp); // about 530KB
 		result = do_decompress(stage, ibuffer, inSize, obuffer, outSize);
 		if (result == -1) break;
 	}

@@ -297,6 +297,11 @@ INT32 NWS_SearchExact(
 	lower = alpha;
 	upper = beta;
 
+	if (empty <= 4)
+	{
+		pline->cmove = 0;
+		return SearchEmpty_4(bk, wh, ~(bk | wh), empty, parity, alpha, beta, passed, pline);
+	}
 	if (empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
 	{
 		pline->cmove = 0;

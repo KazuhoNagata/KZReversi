@@ -122,15 +122,21 @@ INT32 SearchEmptyWLD_1(UINT64 bk, UINT64 wh, INT32 pos, INT32 beta, PVLINE *plin
 
 
 
-INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
+INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2, INT32 empty,
 	INT32 alpha, INT32 beta, INT32 passed, PVLINE *pline)
 {
-	g_countNode++;
-
 	INT32 eval, best;
 	UINT64 pos_bit;
 	UINT64 rev;
 	PVLINE line;
+
+	if (empty == 1)
+	{
+		pline->cmove = 0;
+		return SearchEmpty_1(bk, wh, x1, -beta, pline);
+	}
+
+	g_countNode++;
 
 	pos_bit = 1ULL << x1;
 	rev = GetRev[x1](bk, wh);
@@ -177,7 +183,7 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 		}
 		else
 		{
-			best = -SearchEmpty_2(wh, bk, x1, x2, -beta, -alpha, 1, pline);
+			best = -SearchEmpty_2(wh, bk, x1, x2, empty, -beta, -alpha, 1, pline);
 		}
 	}
 
@@ -187,7 +193,7 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2,
 
 
 
-INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
+INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 parity,
 	INT32 alpha, INT32 beta, INT32 passed, PVLINE *pline)
 {
 	UINT64 pos_bit, rev;
@@ -205,6 +211,12 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 	temp_moves ^= (1ULL << x2);
 	int x3 = CountBit((~temp_moves) & (temp_moves - 1));
 
+	if (empty == 2)
+	{
+		pline->cmove = 0;
+		return SearchEmpty_2(bk, wh, x1, x2, empty, -beta, -alpha, 0, pline);
+	}
+
 	if (!(parity & board_parity_bit[x1])) {
 		if (parity & board_parity_bit[x2]) { // case 1(x2) 2(x1 x3)
 			int tmp = x1; x1 = x2; x2 = tmp;
@@ -218,7 +230,7 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 	rev = GetRev[x1](bk, wh);
 	if (rev)
 	{
-		best = -SearchEmpty_2(wh ^ rev, bk ^ (pos_bit | rev), x2, x3, -beta, -alpha, 0, &line);
+		best = -SearchEmpty_2(wh ^ rev, bk ^ (pos_bit | rev), x2, x3, empty - 1, -beta, -alpha, 0, &line);
 		if (best >= beta) return best;
 		if (best > alpha)
 		{
@@ -234,7 +246,7 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 	rev = GetRev[x2](bk, wh);
 	if (rev)
 	{
-		eval = -SearchEmpty_2(wh ^ rev, bk ^ (pos_bit | rev), x1, x3, -beta, -alpha, 0, &line);
+		eval = -SearchEmpty_2(wh ^ rev, bk ^ (pos_bit | rev), x1, x3, empty - 1, -beta, -alpha, 0, &line);
 		if (eval >= beta) return eval;
 		else if (eval > best)
 		{
@@ -253,7 +265,7 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 	rev = GetRev[x3](bk, wh);
 	if (rev)
 	{
-		eval = -SearchEmpty_2(wh ^ rev, bk ^ (pos_bit | rev), x1, x2, -beta, -alpha, 0, &line);
+		eval = -SearchEmpty_2(wh ^ rev, bk ^ (pos_bit | rev), x1, x2, empty - 1, -beta, -alpha, 0, &line);
 		if (eval >= beta) return eval;
 		else if (eval > best)
 		{
@@ -278,7 +290,7 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, UINT32 parity,
 		}
 		else
 		{
-			best = -SearchEmpty_3(wh, bk, blank, parity, -beta, -alpha, 1, pline);
+			best = -SearchEmpty_3(wh, bk, blank, empty, parity, -beta, -alpha, 1, pline);
 		}
 	}
 
@@ -299,6 +311,12 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	PVLINE line;
 
 	g_countNode++;
+
+	if(empty == 3)
+	{
+		pline->cmove = 0;
+		return SearchEmpty_3(bk, wh, blank, empty, parity, -beta, -alpha, 0, pline);
+	}
 
 	// stability cutoff
 	if (search_SC_NWS(bk, wh, empty, alpha, &best))
@@ -347,8 +365,8 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	rev = GetRev[x1](bk, wh);
 	if (rev)
 	{
-		best = -SearchEmpty_3(wh ^ rev, bk ^ (pos_bit | rev),
-			blank ^ pos_bit, parity ^ board_parity_bit[x1], -beta, -alpha, 0, &line);
+		best = -SearchEmpty_3(wh ^ rev, bk ^ (pos_bit | rev), blank ^ pos_bit, 
+			empty - 1, parity ^ board_parity_bit[x1], -beta, -alpha, 0, &line);
 		if (best >= beta) return best;
 		if (best > alpha)
 		{
@@ -364,8 +382,8 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	rev = GetRev[x2](bk, wh);
 	if (rev)
 	{
-		eval = -SearchEmpty_3(wh ^ rev, bk ^ (pos_bit | rev),
-			blank ^ pos_bit, parity ^ board_parity_bit[x2], -beta, -alpha, 0, &line);
+		eval = -SearchEmpty_3(wh ^ rev, bk ^ (pos_bit | rev), blank ^ pos_bit,
+			empty - 1, parity ^ board_parity_bit[x2], -beta, -alpha, 0, &line);
 		if (eval >= beta) return eval;
 		else if (eval > best)
 		{
@@ -384,7 +402,7 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	rev = GetRev[x3](bk, wh);
 	if (rev)
 	{
-		eval = -SearchEmpty_3(wh ^ rev, bk ^ (pos_bit | rev), blank ^ pos_bit,
+		eval = -SearchEmpty_3(wh ^ rev, bk ^ (pos_bit | rev), blank ^ pos_bit, empty - 1,
 			parity ^ board_parity_bit[x3], -beta, -alpha, 0, &line);
 		if (eval >= beta) return eval;
 		else if (eval > best)
@@ -404,8 +422,8 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	rev = GetRev[x4](bk, wh);
 	if (rev)
 	{
-		eval = -SearchEmpty_3(wh ^ rev, bk ^ (pos_bit | rev),
-			blank ^ pos_bit, parity ^ board_parity_bit[x4], -beta, -alpha, 0, &line);
+		eval = -SearchEmpty_3(wh ^ rev, bk ^ (pos_bit | rev), blank ^ pos_bit, 
+			empty - 1, parity ^ board_parity_bit[x4], -beta, -alpha, 0, &line);
 		if (eval >= beta) return eval;
 		else if (eval > best)
 		{

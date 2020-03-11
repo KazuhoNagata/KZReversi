@@ -215,7 +215,7 @@ void makeData()
 		}
 
 		setvbuf(fp, g_fileBuffer, _IOFBF, 16384);
-		readSize = fread(data, sizeof(UCHAR), 18160640, fp);
+		readSize = (INT32)fread(data, sizeof(UCHAR), 18160640, fp);
 
 		memset(codeInfo, 0, sizeof(CodeInfo));
 		encodeDataLen = encode(encodeData, codeInfo, data, readSize);
