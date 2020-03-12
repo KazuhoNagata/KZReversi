@@ -103,6 +103,19 @@ extern char g_AiMsg[128];
 extern char g_PVLineMsg[256];
 extern SetMessageToGUI g_set_message_funcptr[3];
 
+typedef struct
+{
+	UINT64     bk;
+	UINT64     wh;
+	INT32      depth;
+	INT32      empty;
+	UINT32     color;
+	HashTable *hash;
+	HashTable *pvHash;
+	INT32      selectivity;
+} SearchParm;
+
+
 /***************************************************************************
 * Name  : GetMoveFromAI
 * Brief : CPU‚Ì’…è‚ğ’Tõ‚É‚æ‚Á‚ÄŒˆ’è‚·‚é

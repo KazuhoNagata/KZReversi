@@ -933,41 +933,27 @@ INT32 SearchWinLoss(UINT64 bk, UINT64 wh, UINT32 emptyNum, UINT32 color)
 				lower = -g_infscore;
 				upper = g_infscore;
 
-				while (lower < upper)
+				// PVSêŒç∑íTçı
+				selectivity = lv;
+				eval = PVS_SearchWinLoss(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, lower, upper, NO_PASS, &selectivity, &line);
+
+				// íÜífÇ≥ÇÍÇΩÇÃÇ≈íºãﬂÇÃämíËï]âøílÇï‘ãp
+				if (g_AbortFlag == TRUE)
 				{
-					if (eval == lower)
-					{
-						bVal = eval + 1;
-					}
-					else
-					{
-						bVal = eval;
-					}
-					// PVSêŒç∑íTçı
-					selectivity = lv;
-					eval = PVS_SearchWinLoss(bk, wh, emptyNum, 0, parity, color, g_hash, g_pvHash, bVal - 1, bVal, NO_PASS, &selectivity, &line);
-
-					// íÜífÇ≥ÇÍÇΩÇÃÇ≈íºãﬂÇÃämíËï]âøílÇï‘ãp
-					if (g_AbortFlag == TRUE)
-					{
-						sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.");
-						g_set_message_funcptr[0](g_AiMsg);
-						g_hash->entry[key].deepest.bestmove = move_b;
-						return eval_b;
-					}
-
-					if (eval < bVal) upper = eval;
-					else lower = eval;
-
-					// íuä∑ï\Ç©ÇÁç≈ëPéËÇéÊìæ
-					move = GetMoveFromHash(bk, wh, key);
-
-					sprintf_s(g_AiMsg, sizeof(g_AiMsg), "[%s] : %s @ %d%%", g_cordinates_table[move], wld_str[eval + 1], cutval_table_percent[lv]);
-					g_set_message_funcptr[2](g_AiMsg);
-
-					//CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval, move, -2, ON_EXACT);
-					//g_set_message_funcptr[0](g_AiMsg);
+					sprintf_s(g_AiMsg, sizeof(g_AiMsg), "Aborted Solver.");
+					g_set_message_funcptr[0](g_AiMsg);
+					g_hash->entry[key].deepest.bestmove = move_b;
+					return eval_b;
 				}
+
+				// íuä∑ï\Ç©ÇÁç≈ëPéËÇéÊìæ
+				move = GetMoveFromHash(bk, wh, key);
+
+				sprintf_s(g_AiMsg, sizeof(g_AiMsg), "[%s] : %s @ %d%%", g_cordinates_table[move], wld_str[eval + 1], cutval_table_percent[lv]);
+				g_set_message_funcptr[2](g_AiMsg);
+
+				//CreateCpuMessage(g_AiMsg, sizeof(g_AiMsg), eval, move, -2, ON_EXACT);
+				//g_set_message_funcptr[0](g_AiMsg);
 			}
 			else
 			{

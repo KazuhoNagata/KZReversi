@@ -1008,47 +1008,44 @@ namespace KZreversi
 
         private void setNodeCount(ulong nodeCount)
         {
-            if (m_enableDetailDisplay)
+            StringBuilder timerSb = new StringBuilder(256);
+            string temp;
+
+            // 探索済みノード数
+            timerSb.Append("node:");
+
+            if (nodeCount >= 1000000000)  // Gn
             {
-                StringBuilder timerSb = new StringBuilder(256);
-                string temp;
-
-                // 探索済みノード数
-                timerSb.Append("node:");
-
-                if (nodeCount >= 1000000000)  // Gn
-                {
-                    timerSb.Append((nodeCount / (double)1000000000).ToString("f2"));
-                    timerSb.Append("[Gn]");
-                }
-                else if (nodeCount >= 1000000) // Mn
-                {
-                    timerSb.Append((nodeCount / (double)1000000).ToString("f2"));
-                    timerSb.Append("[Mn]");
-                }
-                else if (nodeCount >= 1000) // Kn
-                {
-                    timerSb.Append((nodeCount / (double)1000).ToString("f2"));
-                    timerSb.Append("[Kn]");
-                }
-                else
-                {
-                    timerSb.Append(nodeCount);
-                    timerSb.Append("[n]");
-                }
-
-                // 経過時間
-                timerSb.Append(" time:");
-                timerSb.Append((m_sw.ElapsedMilliseconds / (double)1000).ToString("f2"));
-
-                // NPS(node per second)
-                timerSb.Append(" nps:");
-                temp = ((nodeCount / (m_sw.ElapsedMilliseconds / (double)1000)) / 1000).ToString("f0");
-                timerSb.Append(temp);
-                timerSb.Append("[Knps]");
-
-                toolStripStatusLabel1.Text = timerSb.ToString();
+                timerSb.Append((nodeCount / (double)1000000000).ToString("f2"));
+                timerSb.Append("[Gn]");
             }
+            else if (nodeCount >= 1000000) // Mn
+            {
+                timerSb.Append((nodeCount / (double)1000000).ToString("f2"));
+                timerSb.Append("[Mn]");
+            }
+            else if (nodeCount >= 1000) // Kn
+            {
+                timerSb.Append((nodeCount / (double)1000).ToString("f2"));
+                timerSb.Append("[Kn]");
+            }
+            else
+            {
+                timerSb.Append(nodeCount);
+                timerSb.Append("[n]");
+            }
+
+            // 経過時間
+            timerSb.Append(" time:");
+            timerSb.Append((m_sw.ElapsedMilliseconds / (double)1000).ToString("f2"));
+
+            // NPS(node per second)
+            timerSb.Append(" nps:");
+            temp = ((nodeCount / (m_sw.ElapsedMilliseconds / (double)1000)) / 1000).ToString("f0");
+            timerSb.Append(temp);
+            timerSb.Append("[Knps]");
+
+            toolStripStatusLabel1.Text = timerSb.ToString();
         }
 
         private void SetCpuMessage(string cpuMessage)

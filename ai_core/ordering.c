@@ -267,9 +267,17 @@ void SortMoveListMiddle(
 			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 			move_w = wh ^ (iter->move.rev);
 
-			InitIndexBoard(move_w, move_b);
+			if (color == BLACK)
+			{
+				InitIndexBoard(move_w, move_b);
+				score = -Evaluation(g_board, move_w, move_b, color ^ 1, 60 - (empty - 1));
+			}
+			else
+			{
+				InitIndexBoard(move_b, move_w);
+				score = Evaluation(g_board, move_w, move_b, color ^ 1, 60 - (empty - 1));
+			}
 
-			score = -Evaluation(g_board, move_w, move_b, color ^ 1, 60 - (empty - 1));
 			iter->move.score = score;
 		}
 		/* 自分の得点の多い順にソート */
@@ -540,7 +548,6 @@ void SortMoveListEnd(
 			// 相手の潜在的着手可能数(開放度理論)
 			iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b))) * (1ULL << 2);
 		}
-		
 	}
 
 	/* 得点の高い順にソート */

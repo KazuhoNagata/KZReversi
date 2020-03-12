@@ -279,6 +279,7 @@ namespace KZreversi
             int ret = 0;
             int pos;
             ulong move_bk, move_wh, rev;
+            int empty;
 
             foreach (HintClass hintData in moveList)
             {
@@ -301,7 +302,10 @@ namespace KZreversi
                 cpw.GetCpuMove(move_bk, move_wh, cpuConfig);
                 cpuConfig.color ^= 1;
 
-                hintData.SetEval(-cpw.GetLastEvaluation() / 1024);
+                empty = cpw.CountBit(~(bk | wh));
+                if(empty <= cpuConfig.exactDepth) hintData.SetEval(-cpw.GetLastEvaluation());
+                else if(empty <= cpuConfig.winLossDepth) hintData.SetEval(-cpw.GetLastEvaluation());
+                else hintData.SetEval(-cpw.GetLastEvaluation() / 1024);
                 hintData.SetAttr(attr);
 
                 // UIに評価値を通知

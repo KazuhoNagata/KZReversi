@@ -9,9 +9,9 @@
 
 #pragma once
 
-#define NEGAMIN -2500000
-#define NEGAMAX 2500000
 #define EVAL_ONE_STONE 1024
+#define NEGAMIN (-65 * EVAL_ONE_STONE)
+#define NEGAMAX (65 * EVAL_ONE_STONE)
 #define WIN 1
 #define DRAW 0
 #define LOSS -1
