@@ -130,12 +130,6 @@ INT32 SearchEmpty_2(UINT64 bk, UINT64 wh, INT32 x1, INT32 x2, INT32 empty,
 	UINT64 rev;
 	PVLINE line;
 
-	if (empty == 1)
-	{
-		pline->cmove = 0;
-		return SearchEmpty_1(bk, wh, x1, -beta, pline);
-	}
-
 	g_countNode++;
 
 	pos_bit = 1ULL << x1;
@@ -210,12 +204,6 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 pari
 	int x2 = CountBit((~temp_moves) & (temp_moves - 1));
 	temp_moves ^= (1ULL << x2);
 	int x3 = CountBit((~temp_moves) & (temp_moves - 1));
-
-	if (empty == 2)
-	{
-		pline->cmove = 0;
-		return SearchEmpty_2(bk, wh, x1, x2, empty, -beta, -alpha, 0, pline);
-	}
 
 	if (!(parity & board_parity_bit[x1])) {
 		if (parity & board_parity_bit[x2]) { // case 1(x2) 2(x1 x3)
@@ -304,19 +292,13 @@ INT32 SearchEmpty_3(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 pari
 INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	UINT32 parity, INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline)
 {
-	INT32 best;
-	INT32 eval;
+	INT32  best;
+	INT32  eval;
 	UINT64 temp_moves;
 	UINT64 pos_bit, rev;
 	PVLINE line;
 
 	g_countNode++;
-
-	if(empty == 3)
-	{
-		pline->cmove = 0;
-		return SearchEmpty_3(bk, wh, blank, empty, parity, -beta, -alpha, 0, pline);
-	}
 
 	// stability cutoff
 	if (search_SC_NWS(bk, wh, empty, alpha, &best))

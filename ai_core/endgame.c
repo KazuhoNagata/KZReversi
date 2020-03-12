@@ -297,11 +297,6 @@ INT32 NWS_SearchExact(
 	lower = alpha;
 	upper = beta;
 
-	if (empty <= 4)
-	{
-		pline->cmove = 0;
-		return SearchEmpty_4(bk, wh, ~(bk | wh), empty, parity, alpha, beta, passed, pline);
-	}
 	if (empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
 	{
 		pline->cmove = 0;
@@ -840,13 +835,6 @@ INT32 AB_SearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 col
 		return ABORT;
 	}
 
-	// parity moving
-	if (empty == 4)
-	{
-		*p_selectivity = g_mpc_level;
-		return SearchEmpty_4(bk, wh, blank, empty, quad_parity, alpha, beta, 0, pline);
-	}
-
 	g_countNode++;
 
 	pline->cmove = 0;
@@ -857,8 +845,14 @@ INT32 AB_SearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 col
 		return max;
 	}
 
-	max = -g_infscore;
+	// parity moving
+	if (empty == 4)
+	{
+		*p_selectivity = g_mpc_level;
+		return SearchEmpty_4(bk, wh, blank, empty, quad_parity, alpha, beta, 0, pline);
+	}
 
+	max = -g_infscore;
 
 	// first move odd parity
 	moves = blank;
@@ -1691,13 +1685,6 @@ INT32 AB_SearchWinLoss(
 	INT32 eval;                   //•]‰¿’l‚Ì•Û‘¶
 	INT32 pos;
 	UINT64 pos_bit, rev;
-
-	// parity moving
-	if (empty == 4)
-	{
-		*p_selectivity = g_mpc_level;
-		return SearchEmpty_4(bk, wh, blank, empty, quad_parity, alpha, beta, 0, pline);
-	}
 
 	g_countNode++;
 
