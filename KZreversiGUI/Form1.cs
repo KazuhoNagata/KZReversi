@@ -229,7 +229,7 @@ namespace KZreversi
                 panel1.Invalidate(false);
                 panel1.Update();
             }
-            else if (sender == this.button5) // ゲーム再開ボタン
+            else if (m_mode == ON_NOTHING && sender == this.button5) // ゲーム再開ボタン
             {
                 m_mode = ON_GAME;
                 toolStripStatusLabel1.Text = "";
@@ -904,6 +904,10 @@ namespace KZreversi
                         {
                             // CPUモードに移行(ハンドラコール)
                             m_cpuFlagProperty = true;
+                            toolStripStatusLabel1.Text = "";
+                            toolStripStatusLabel2.Text = "";
+                            toolStripStatusLabel3.Text = "";
+                            SetlabelText("");
                             return;
                         }
 
@@ -1055,7 +1059,7 @@ namespace KZreversi
 
         private void SetlabelText(string text) 
         {
-            label6.Text = text;    
+            label6.Text = text;
         }
         private void SetPVLine(string cpuMessage)
         {

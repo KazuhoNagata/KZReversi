@@ -31,6 +31,12 @@ typedef struct _EmptyList
 	struct _EmptyList *next;
 } EmptyList;
 
+typedef struct __Board
+{
+	UINT64 bk;
+	UINT64 wh;
+} Board;
+
 extern UCHAR g_board[64];
 
 void edge_stability_init(void);

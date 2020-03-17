@@ -408,7 +408,7 @@
             // 変化なしToolStripMenuItem
             // 
             this.変化なしToolStripMenuItem.Name = "変化なしToolStripMenuItem";
-            this.変化なしToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
+            this.変化なしToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.変化なしToolStripMenuItem.Text = "変化なし";
             this.変化なしToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
@@ -417,28 +417,28 @@
             this.変化小ToolStripMenuItem.Checked = true;
             this.変化小ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.変化小ToolStripMenuItem.Name = "変化小ToolStripMenuItem";
-            this.変化小ToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
+            this.変化小ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.変化小ToolStripMenuItem.Text = "変化(小)";
             this.変化小ToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
             // 変化中ToolStripMenuItem
             // 
             this.変化中ToolStripMenuItem.Name = "変化中ToolStripMenuItem";
-            this.変化中ToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
+            this.変化中ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.変化中ToolStripMenuItem.Text = "変化(中)";
             this.変化中ToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
             // 変化大ToolStripMenuItem
             // 
             this.変化大ToolStripMenuItem.Name = "変化大ToolStripMenuItem";
-            this.変化大ToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
+            this.変化大ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.変化大ToolStripMenuItem.Text = "変化(大)";
             this.変化大ToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
             // ランダムToolStripMenuItem
             // 
             this.ランダムToolStripMenuItem.Name = "ランダムToolStripMenuItem";
-            this.ランダムToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
+            this.ランダムToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.ランダムToolStripMenuItem.Text = "ランダム";
             this.ランダムToolStripMenuItem.Click += new System.EventHandler(this.OnChangeBookToolStripMenuItem_Click);
             // 
@@ -459,16 +459,14 @@
             this.MenuResultDetail.Checked = true;
             this.MenuResultDetail.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MenuResultDetail.Name = "MenuResultDetail";
-            this.MenuResultDetail.Size = new System.Drawing.Size(155, 22);
+            this.MenuResultDetail.Size = new System.Drawing.Size(180, 22);
             this.MenuResultDetail.Text = "詳細結果を表示";
             this.MenuResultDetail.Click += new System.EventHandler(this.詳細結果の表示ToolStripMenuItem_Click);
             // 
             // MenuDisplayPV
             // 
-            this.MenuDisplayPV.Checked = true;
-            this.MenuDisplayPV.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MenuDisplayPV.Name = "MenuDisplayPV";
-            this.MenuDisplayPV.Size = new System.Drawing.Size(155, 22);
+            this.MenuDisplayPV.Size = new System.Drawing.Size(180, 22);
             this.MenuDisplayPV.Text = "PVを表示";
             this.MenuDisplayPV.Click += new System.EventHandler(this.bestlineの表示ToolStripMenuItem_Click);
             // 
@@ -477,7 +475,7 @@
             this.MenuAIThinking.Checked = true;
             this.MenuAIThinking.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MenuAIThinking.Name = "MenuAIThinking";
-            this.MenuAIThinking.Size = new System.Drawing.Size(155, 22);
+            this.MenuAIThinking.Size = new System.Drawing.Size(180, 22);
             this.MenuAIThinking.Text = "思考過程を表示";
             this.MenuAIThinking.Click += new System.EventHandler(this.思考過程を表示ToolStripMenuItem_Click);
             // 
@@ -486,7 +484,7 @@
             this.MenuUseTable.Checked = true;
             this.MenuUseTable.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MenuUseTable.Name = "MenuUseTable";
-            this.MenuUseTable.Size = new System.Drawing.Size(155, 22);
+            this.MenuUseTable.Size = new System.Drawing.Size(180, 22);
             this.MenuUseTable.Text = "置換表を使用";
             this.MenuUseTable.Click += new System.EventHandler(this.置換表を使うToolStripMenuItem_Click);
             // 
@@ -495,7 +493,7 @@
             this.MenuUseMPC.Checked = true;
             this.MenuUseMPC.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MenuUseMPC.Name = "MenuUseMPC";
-            this.MenuUseMPC.Size = new System.Drawing.Size(155, 22);
+            this.MenuUseMPC.Size = new System.Drawing.Size(180, 22);
             this.MenuUseMPC.Text = "MPCを使用";
             this.MenuUseMPC.Click += new System.EventHandler(this.mPC探索を行うToolStripMenuItem_Click);
             // 
@@ -516,21 +514,21 @@
             // mBToolStripMenuItem
             // 
             this.mBToolStripMenuItem.Name = "mBToolStripMenuItem";
-            this.mBToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.mBToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem.Text = "4MB";
             this.mBToolStripMenuItem.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem1
             // 
             this.mBToolStripMenuItem1.Name = "mBToolStripMenuItem1";
-            this.mBToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.mBToolStripMenuItem1.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem1.Text = "8MB";
             this.mBToolStripMenuItem1.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem2
             // 
             this.mBToolStripMenuItem2.Name = "mBToolStripMenuItem2";
-            this.mBToolStripMenuItem2.Size = new System.Drawing.Size(180, 22);
+            this.mBToolStripMenuItem2.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem2.Text = "16MB";
             this.mBToolStripMenuItem2.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
@@ -539,28 +537,28 @@
             this.mBToolStripMenuItem3.Checked = true;
             this.mBToolStripMenuItem3.CheckState = System.Windows.Forms.CheckState.Checked;
             this.mBToolStripMenuItem3.Name = "mBToolStripMenuItem3";
-            this.mBToolStripMenuItem3.Size = new System.Drawing.Size(180, 22);
+            this.mBToolStripMenuItem3.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem3.Text = "32MB";
             this.mBToolStripMenuItem3.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem4
             // 
             this.mBToolStripMenuItem4.Name = "mBToolStripMenuItem4";
-            this.mBToolStripMenuItem4.Size = new System.Drawing.Size(180, 22);
+            this.mBToolStripMenuItem4.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem4.Text = "64MB";
             this.mBToolStripMenuItem4.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem5
             // 
             this.mBToolStripMenuItem5.Name = "mBToolStripMenuItem5";
-            this.mBToolStripMenuItem5.Size = new System.Drawing.Size(180, 22);
+            this.mBToolStripMenuItem5.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem5.Text = "128MB";
             this.mBToolStripMenuItem5.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 
             // mBToolStripMenuItem6
             // 
             this.mBToolStripMenuItem6.Name = "mBToolStripMenuItem6";
-            this.mBToolStripMenuItem6.Size = new System.Drawing.Size(180, 22);
+            this.mBToolStripMenuItem6.Size = new System.Drawing.Size(110, 22);
             this.mBToolStripMenuItem6.Text = "256MB";
             this.mBToolStripMenuItem6.Click += new System.EventHandler(this.ConfigCasheToolStripMenuItem_Click);
             // 

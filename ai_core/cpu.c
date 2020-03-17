@@ -1207,7 +1207,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 			score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed, pline);
 			if (score < value)
 			{
-				HashUpdate(hash, key, bk, wh, alpha, beta, alpha, depth, NOMOVE, mpc_level, NEGAMAX);
+				//HashUpdate(hash, key, bk, wh, alpha, beta, alpha, depth, NOMOVE, mpc_level, NEGAMAX);
 				*p_selectivity = mpc_level; // store selectivity
 				return alpha;
 			}
@@ -1217,7 +1217,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 			score = AB_Search(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, pline);
 			if (score > value)
 			{
-				HashUpdate(hash, key, bk, wh, alpha, beta, beta, depth, NOMOVE, mpc_level, NEGAMAX);
+				//HashUpdate(hash, key, bk, wh, alpha, beta, beta, depth, NOMOVE, mpc_level, NEGAMAX);
 				*p_selectivity = mpc_level; // store selectivity
 				return beta;
 			}
@@ -1310,7 +1310,7 @@ INT32 PVS_SearchDeep(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 colo
 	}
 
 	HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, depth, bestmove, g_max_cut_table_size, NEGAMAX);
-	//*p_selectivity = g_max_cut_table_size; // store selectivity
+	*p_selectivity = g_max_cut_table_size; // store selectivity
 
 	return bestscore;
 }

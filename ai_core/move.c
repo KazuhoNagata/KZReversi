@@ -49,6 +49,38 @@ BOOL AlocMobilityFunc()
 ****************************************************************************/
 UINT64 CreateMoves(UINT64 bk_p, UINT64 wh_p, UINT32 *p_count_p)
 {
+#ifdef __AVX2__	
+	UINT64 moves;
+	__m256i	PP, mOO, MM, flip_l, flip_r, pre_l, pre_r, shift2;
+	__m128i	M;
+	const __m256i shift1897 = _mm256_set_epi64x(7, 9, 8, 1);
+	const __m256i mflipH = _mm256_set_epi64x(0x7e7e7e7e7e7e7e7e, 0x7e7e7e7e7e7e7e7e, -1, 0x7e7e7e7e7e7e7e7e);
+
+	PP = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(bk_p));
+	mOO = _mm256_and_si256(_mm256_broadcastq_epi64(_mm_cvtsi64_si128(wh_p)), mflipH);
+
+	flip_l = _mm256_and_si256(mOO, _mm256_sllv_epi64(PP, shift1897));
+	flip_r = _mm256_and_si256(mOO, _mm256_srlv_epi64(PP, shift1897));
+	flip_l = _mm256_or_si256(flip_l, _mm256_and_si256(mOO, _mm256_sllv_epi64(flip_l, shift1897)));
+	flip_r = _mm256_or_si256(flip_r, _mm256_and_si256(mOO, _mm256_srlv_epi64(flip_r, shift1897)));
+	pre_l = _mm256_and_si256(mOO, _mm256_sllv_epi64(mOO, shift1897));
+	pre_r = _mm256_srlv_epi64(pre_l, shift1897);
+	shift2 = _mm256_add_epi64(shift1897, shift1897);
+	flip_l = _mm256_or_si256(flip_l, _mm256_and_si256(pre_l, _mm256_sllv_epi64(flip_l, shift2)));
+	flip_r = _mm256_or_si256(flip_r, _mm256_and_si256(pre_r, _mm256_srlv_epi64(flip_r, shift2)));
+	flip_l = _mm256_or_si256(flip_l, _mm256_and_si256(pre_l, _mm256_sllv_epi64(flip_l, shift2)));
+	flip_r = _mm256_or_si256(flip_r, _mm256_and_si256(pre_r, _mm256_srlv_epi64(flip_r, shift2)));
+	MM = _mm256_sllv_epi64(flip_l, shift1897);
+	MM = _mm256_or_si256(MM, _mm256_srlv_epi64(flip_r, shift1897));
+
+	M = _mm_or_si128(_mm256_castsi256_si128(MM), _mm256_extracti128_si256(MM, 1));
+	M = _mm_or_si128(M, _mm_unpackhi_epi64(M, M));
+	moves = _mm_cvtsi128_si64(M) & ~(bk_p | wh_p);
+	*p_count_p = CountBit(moves);
+
+	return moves;
+
+#else
 	UINT64 moves;
 
 	g_stbit_bk.high = (bk_p >> 32);
@@ -58,8 +90,8 @@ UINT64 CreateMoves(UINT64 bk_p, UINT64 wh_p, UINT32 *p_count_p)
 	g_stbit_wh.low = (wh_p & 0xffffffff);
 
 	*p_count_p = g_bit_mob(g_stbit_bk, g_stbit_wh, &moves);
-
 	return moves;
+#endif
 
 }
 
@@ -73,7 +105,7 @@ void StoreMovelist(MoveList *start, UINT64 bk, UINT64 wh, UINT64 moves)
 	while (moves)
 	{
 		list->move.pos = CountBit((~moves) & (moves - 1));
-		list->move.rev = GetRev[list->move.pos](bk, wh);
+		list->move.rev = get_rev(bk, wh, list->move.pos);
 		previous = previous->next = list;
 		moves ^= 1ULL << list->move.pos;
 		list++;
@@ -158,7 +190,7 @@ BOOL boardMoves(UINT64 *bk, UINT64 *wh, UINT64 move, INT32 pos)
 		return FALSE;
 	}
 
-	UINT64 rev = GetRev[pos](*bk, *wh);
+	UINT64 rev = get_rev(*bk, *wh, pos);
 
 	if (rev == 0)
 	{

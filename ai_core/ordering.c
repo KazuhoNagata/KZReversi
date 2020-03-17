@@ -193,7 +193,8 @@ void SortFastfirst(MoveList *movelist, UINT64 bk, UINT64 wh)
 
 	for (iter = movelist->next; iter != NULL; iter = iter->next)
 	{
-		iter->move.rev = GetRev[iter->move.pos](bk, wh);
+		
+		iter->move.rev = get_rev(bk, wh, iter->move.pos);
 		move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 		move_w = wh ^ (iter->move.rev);
 		CreateMoves(move_w, move_b, &n_moves_wh);
@@ -557,7 +558,7 @@ void SortMoveListEnd(
 #endif
 
 /*  終盤用 move ordering */
-char MoveOrderingEnd(MOVELIST *pos_list, UINT64 b_board, UINT64 w_board, UINT64 moves)
+char MoveOrderingEnd(MOVELIST *pos_list, UINT64 bk, UINT64 wh, UINT64 moves)
 {
 	char cnt = 0;
 	int pos = 0;
@@ -571,10 +572,10 @@ char MoveOrderingEnd(MOVELIST *pos_list, UINT64 b_board, UINT64 w_board, UINT64 
 		score;
 		pos = CountBit((moves & (-(INT64)moves)) - 1);
 		/* 反転データ取得 */
-		rev = GetRev[pos](b_board, w_board);
+		rev = get_rev(bk, wh, pos);
 
-		move_b = b_board ^ ((1ULL << pos) | rev);
-		move_w = w_board^rev;
+		move_b = bk ^ ((1ULL << pos) | rev);
+		move_w = wh^rev;
 
 		ligal_move_w = CreateMoves(move_w, move_b, &move_cnt);
 

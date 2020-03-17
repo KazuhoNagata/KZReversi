@@ -17,8 +17,6 @@
 
 #define KZ_EXPORT __declspec(dllexport)
 
-KZ_EXPORT void KZ_ReleaseBook();
-
 BOOL m_BookFlag;
 int g_func_count = 0;
 
@@ -76,7 +74,7 @@ KZ_EXPORT UINT64 KZ_GetEnumMove(UINT64 bk_p, UINT64 wh_p, UINT32 *p_count_p)
 ****************************************************************************/
 KZ_EXPORT UINT64 KZ_GetBoardChangeInfo(UINT64 bk, UINT64 wh, INT32 move)
 {
-	return GetRev[move](bk, wh);
+	return get_rev(bk, wh, move);
 }
 
 /***************************************************************************
@@ -222,6 +220,10 @@ KZ_EXPORT void KZ_ClearHash()
 	{
 		HashClear(g_hash);
 	}
+	if (g_pvHash != NULL)
+	{
+		HashClear(g_pvHash);
+	}
 }
 
 /***************************************************************************
@@ -235,6 +237,12 @@ KZ_EXPORT void KZ_ReleaseHash()
 		HashClear(g_hash);
 		HashDelete(g_hash);
 		g_hash = NULL;
+	}
+	if (g_pvHash != NULL)
+	{
+		HashClear(g_pvHash);
+		HashDelete(g_pvHash);
+		g_pvHash = NULL;
 	}
 }
 

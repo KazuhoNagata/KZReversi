@@ -8,4 +8,13 @@
 
 #pragma once
 
+#if 0 // Ryzen zen2 ÇæÇ∆ê´î\í·â∫ÇµÇΩÇÃÇ≈Ç¢Ç¡ÇΩÇÒñﬂÇµ
+
+UINT64 get_rev(const UINT64 bk, const UINT64 wh, const int x);
+
+#else
+
 extern UINT64(*GetRev[64])(UINT64, UINT64);
+#define get_rev(bk, wh, pos) GetRev[pos](bk, wh) 
+
+#endif

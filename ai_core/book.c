@@ -622,14 +622,16 @@ BooksNode *StructionBookTree(BooksNode *head, INT32 *new_eval_p, char *line_data
 		if ((child_node->depth % 2) != 0)
 		{
 			// •”Ô
-			rev = GetRev[head->move](head->bk, head->wh);
+			
+			rev = get_rev(head->bk, head->wh, head->move);
 			child_node->bk = head->bk ^ (rev | (1ULL << head->move));
 			child_node->wh = head->wh ^ rev;
 		}
 		else
 		{
 			// ”’”Ô
-			rev = GetRev[head->move](head->wh, head->bk);
+			
+			rev = get_rev(head->wh, head->bk, head->move);
 			child_node->wh = head->wh ^ (rev | (1ULL << head->move));
 			child_node->bk = head->bk ^ rev;
 		}
@@ -666,14 +668,14 @@ BooksNode *StructionBookTree(BooksNode *head, INT32 *new_eval_p, char *line_data
 			if ((next_node->depth % 2) != 0)
 			{
 				// •”Ô
-				rev = GetRev[head->move](head->bk, head->wh);
+				rev = get_rev(head->bk, head->wh, head->move);
 				next_node->bk = head->bk ^ (rev | (1ULL << head->move));
 				next_node->wh = head->wh ^ rev;
 			}
 			else
 			{
 				// ”’”Ô
-				rev = GetRev[head->move](head->wh, head->bk);
+				rev = get_rev(head->wh, head->bk, head->move);
 				next_node->wh = head->wh ^ (rev | (1ULL << head->move));
 				next_node->bk = head->bk ^ rev;
 			}
