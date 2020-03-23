@@ -236,7 +236,8 @@ void SortMoveListMiddle(
 	INT32      depth,
 	INT32      alpha, 
 	INT32      beta,
-	UINT32     color
+	UINT32     color,
+	UINT32     mpc_count
 )
 {
 #if 1
@@ -245,30 +246,30 @@ void SortMoveListMiddle(
 	UINT32 move_cnt, cnt = 0;
 	UINT64 n_moves_wh, move_b, move_w;
 	UINT32 key;
-	INT32 searched = depth;
+	INT32 searched = g_limitDepth / 4 - depth;
 
-	if (searched < 6 && g_limitDepth >= 16)
+	if (searched > 0 && g_limitDepth >= 16)
 	{
 		for (iter = movelist->next; iter != NULL; iter = iter->next)
 		{
 			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 			move_w = wh ^ (iter->move.rev);
 			
-			score = -AB_SearchNoPV(move_w, move_b, 6 - searched, empty - 1, color ^ 1,
-				-NEGAMAX, -NEGAMIN, 0);
+			score = -AB_SearchNoPV(move_w, move_b, searched, empty - 1, color ^ 1,
+				-NEGAMAX, -NEGAMIN, 0, mpc_count);
 			iter->move.score = score;
 		}
 		/* 自分の得点の多い順にソート */
 		sort_movelist_score_descending(movelist);
 	}
-	else if (searched == 6 && g_limitDepth >= 16)
+	else if (searched == 0 && g_limitDepth >= 16)
 	{
 		for (iter = movelist->next; iter != NULL; iter = iter->next)
 		{
 			move_b = bk ^ ((1ULL << (iter->move.pos)) | iter->move.rev);
 			move_w = wh ^ (iter->move.rev);
 
-			if (color == BLACK)
+			if (color == WHITE)
 			{
 				InitIndexBoard(move_w, move_b);
 				score = -Evaluation(g_board, move_w, move_b, color ^ 1, 60 - (empty - 1));
@@ -302,7 +303,7 @@ void SortMoveListMiddle(
 				if (CheckTableCutOff(hash, &key, move_w, move_b, color ^ 1, empty - 1, -beta, -alpha, &score) ||
 					CheckTableCutOff_PV(pvHash, &key, move_w, move_b, color ^ 1, empty - 1, -beta, -alpha, &score))
 				{
-					iter->move.score -= (1ULL << 29) - score;
+					iter->move.score -= (1ULL << 16) - score;
 				}
 				else
 				{
@@ -313,6 +314,7 @@ void SortMoveListMiddle(
 					//score -= posEval[iter->move.pos] << 2;
 					//score += CountBit(iter->move.rev) << 4;
 					/* 敵の着手可能数を取得 */
+
 					score += ((move_cnt + CountBit(n_moves_wh & 0x8100000000000081)) << 2)
 						- get_corner_stability(move_b);
 					score += CountBit(GetPotentialMoves(move_w, move_b)) << 1;
@@ -547,7 +549,7 @@ void SortMoveListEnd(
 			// 自分の４隅における安定度
 			iter->move.score -= (get_edge_stability(move_w, move_b)) * (1ULL << 2);
 			// 相手の潜在的着手可能数(開放度理論)
-			iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b))) * (1ULL << 2);
+			iter->move.score -= (CountBit(GetPotentialMoves(move_w, move_b))) * (1ULL << 1);
 		}
 	}
 

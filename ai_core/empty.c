@@ -298,13 +298,13 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	UINT64 pos_bit, rev;
 	PVLINE line;
 
-	g_countNode++;
-
 	// stability cutoff
 	if (search_SC_NWS(bk, wh, empty, alpha, &best))
 	{
 		return best;
 	}
+
+	g_countNode++;
 
 	// 4 empties parity
 	temp_moves = blank;
@@ -442,14 +442,15 @@ INT32 SearchEmpty_4(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 	UINT32 parity, INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline)
 {
-	g_countNode++;
 
 	INT32 best;
+
 	// stability cutoff
 	if (search_SC_NWS(bk, wh, empty, alpha, &best))
 	{
 		return best;
 	}
+	g_countNode++;
 
 	// 4 empties parity
 	UINT64 temp_moves = blank;
@@ -557,8 +558,6 @@ INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 					}
 				}
 			}
-
-
 		}
 	}
 	else if (!(parity & board_parity_bit[x2])) {      // x2 = even?
@@ -649,9 +648,6 @@ INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 		if (best > alpha)
 		{
 			alpha = best;
-			pline->argmove[0] = x1;
-			memcpy(pline->argmove + 1, line.argmove, line.cmove);
-			pline->cmove = line.cmove + 1;
 		}
 	}
 	else best = -g_infscore;
@@ -669,9 +665,6 @@ INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x2;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
 			}
 		}
 	}
@@ -689,9 +682,6 @@ INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x3;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
 			}
 		}
 	}
@@ -709,9 +699,6 @@ INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x4;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
 			}
 		}
 	}
@@ -728,9 +715,6 @@ INT32 SearchEmpty_5(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty,
 			if (best > alpha)
 			{
 				alpha = best;
-				pline->argmove[0] = x5;
-				memcpy(pline->argmove + 1, line.argmove, line.cmove);
-				pline->cmove = line.cmove + 1;
 			}
 		}
 

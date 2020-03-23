@@ -60,8 +60,8 @@ UINT16 idx_op_5[2][INDEX_NUM / 27];
 UINT16 idx_op_6[2][INDEX_NUM / 9];
 UINT16 idx_op_7[2][INDEX_NUM / 3];
 UINT16 idx_op_8[2][INDEX_NUM];
-UINT16 idx_op_9[2][INDEX_NUM * 9];
-UINT16 idx_op_10[2][INDEX_NUM * 3];
+UINT16 idx_op_9[2][INDEX_NUM * 3];
+UINT16 idx_op_10[2][INDEX_NUM * 9];
 
 int pow_table[10] = { 1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683 };
 
@@ -1175,7 +1175,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[idx_op_8[1][i]] = -p_table[i];
 
 	/* horizon_ver2 */
 	p_table = hori_ver2_data[0][stage];
@@ -1184,7 +1184,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[idx_op_8[1][i]] = -p_table[i];
 
 	/* horizon_ver3 */
 	p_table = hori_ver3_data[0][stage];
@@ -1193,7 +1193,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[idx_op_8[1][i]] = -p_table[i];
 
 	/* diagram_ver1 */
 	p_table = dia_ver1_data[0][stage];
@@ -1202,7 +1202,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[idx_op_8[1][i]] = -p_table[i];
 
 	/* diagram_ver2 */
 	p_table = dia_ver2_data[0][stage];
@@ -1211,7 +1211,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM / 3; i++) p_table_op[i] = -p_table[idx_op_7[1][i]];
+	for (i = 0; i < INDEX_NUM / 3; i++) p_table_op[idx_op_7[1][i]] = -p_table[i];
 	
 	/* diagram_ver3 */
 	p_table = dia_ver3_data[0][stage];
@@ -1220,7 +1220,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM / 9; i++) p_table_op[i] = -p_table[idx_op_6[1][i]];
+	for (i = 0; i < INDEX_NUM / 9; i++) p_table_op[idx_op_6[1][i]] = -p_table[i];
 
 	/* diagram_ver4 */
 	p_table = dia_ver4_data[0][stage];
@@ -1229,7 +1229,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM / 27; i++) p_table_op[i] = -p_table[idx_op_5[1][i]];
+	for (i = 0; i < INDEX_NUM / 27; i++) p_table_op[idx_op_5[1][i]] = -p_table[i];
 
 	/* edge */
 	p_table = edge_data[0][stage];
@@ -1238,7 +1238,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = -p_table[idx_op_10[1][i]];
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[idx_op_10[1][i]] = -p_table[i];
 
 	/* corner5 + 2X */
 	p_table = corner5_2_data[0][stage];
@@ -1247,7 +1247,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = -p_table[idx_op_10[1][i]];
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[idx_op_10[1][i]] = -p_table[i];
 
 	/* corner3_3 */
 	p_table = corner3_3_data[0][stage];
@@ -1256,7 +1256,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM * 3; i++) p_table_op[i] = -p_table[idx_op_9[1][i]];
+	for (i = 0; i < INDEX_NUM * 3; i++) p_table_op[idx_op_9[1][i]] = -p_table[i];
 
 	/* triangle */
 	p_table = triangle_data[0][stage];
@@ -1265,7 +1265,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((INT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = -p_table[idx_op_10[1][i]];
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[idx_op_10[1][i]] = -p_table[i];
 
 	p_table = constant_data[0][stage];
 	p_table_op = constant_data[1][stage];
@@ -1281,7 +1281,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset] << 8) + buf[offset + 1];
 	}
-	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_op_8[1][i]];
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
 
 	/* horizon_ver2 */
 	p_table = g_st_eval[0].feature[1].data[stage];
@@ -1290,7 +1290,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_op_8[1][i]];
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
 
 	/* horizon_ver3 */
 	p_table = g_st_eval[0].feature[2].data[stage];
@@ -1299,7 +1299,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_op_8[1][i]];
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
 
 	/* diagram_ver1 */
 	p_table = g_st_eval[0].feature[3].data[stage];
@@ -1308,7 +1308,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = p_table[idx_op_8[1][i]];
+	for (i = 0; i < INDEX_NUM; i++) p_table_op[i] = -p_table[idx_op_8[1][i]];
 
 	/* diagram_ver2 */
 	p_table = g_st_eval[0].feature[4].data[stage];
@@ -1317,7 +1317,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM / 3; i++) p_table_op[i] = p_table[idx_op_7[1][i]];
+	for (i = 0; i < INDEX_NUM / 3; i++) p_table_op[i] = -p_table[idx_op_7[1][i]];
 
 	/* diagram_ver3 */
 	p_table = g_st_eval[0].feature[5].data[stage];
@@ -1326,7 +1326,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM / 9; i++) p_table_op[i] = p_table[idx_op_6[1][i]];
+	for (i = 0; i < INDEX_NUM / 9; i++) p_table_op[i] = -p_table[idx_op_6[1][i]];
 
 	/* diagram_ver4 */
 	p_table = g_st_eval[0].feature[6].data[stage];
@@ -1335,7 +1335,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM / 27; i++) p_table_op[i] = p_table[idx_op_5[1][i]];
+	for (i = 0; i < INDEX_NUM / 27; i++) p_table_op[i] = -p_table[idx_op_5[1][i]];
 
 	/* edge */
 	p_table = g_st_eval[0].feature[7].data[stage];
@@ -1344,7 +1344,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = p_table[idx_op_10[1][i]];
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = -p_table[idx_op_10[1][i]];
 
 
 	/* corner5_2 */
@@ -1354,7 +1354,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = p_table[idx_op_10[1][i]];
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = -p_table[idx_op_10[1][i]];
 
 	/* corner3_3 */
 	p_table = g_st_eval[0].feature[9].data[stage];
@@ -1363,7 +1363,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM * 3; i++) p_table_op[i] = p_table[idx_op_9[1][i]];
+	for (i = 0; i < INDEX_NUM * 3; i++) p_table_op[i] = -p_table[idx_op_9[1][i]];
 
 	/* triangle */
 	p_table = g_st_eval[0].feature[10].data[stage];
@@ -1372,7 +1372,7 @@ static BOOL storeEvalData(UCHAR *buf, INT32 stage)
 	{
 		p_table[i] = ((UINT16)buf[offset + 1] << 8) + buf[offset];
 	}
-	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = p_table[idx_op_10[1][i]];
+	for (i = 0; i < INDEX_NUM * 9; i++) p_table_op[i] = -p_table[idx_op_10[1][i]];
 
 	/* constant */
 	p_table = g_st_eval[0].feature[10].data[stage];
@@ -1515,6 +1515,8 @@ BOOL OpenEvalData(char *filename)
 BOOL LoadData()
 {
 	BOOL result;
+	char filename[32];
+
 	/* 定石データの読み込み */
 #if 1
 	result = OpenBook("src\\books.bin");
@@ -1532,13 +1534,18 @@ BOOL LoadData()
 	}
 
 	/* MPCテーブルの読み込み */
-	result = OpenMpcInfoData(mpcInfo, 22, "src\\mpc.dat");
-	if (result == FALSE)
+	for(int i = 0; i < 56; i++)
 	{
-		return result;
+		sprintf_s(filename, sizeof(filename), "src\\mpc%d.dat", i);
+		result = OpenMpcInfoData(mpcInfo[i], filename);
+		if (result == FALSE)
+		{
+			return result;
+		}
 	}
+	
 
-	result = OpenMpcInfoData(mpcInfo_end, 25, "src\\mpc_end.dat");
+	result = OpenMpcInfoData(mpcInfo_end, "src\\mpc_end.dat");
 
 	return result;
 }

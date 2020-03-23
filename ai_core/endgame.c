@@ -83,15 +83,15 @@ BOOL TableCutOff (HashInfo *hashInfo, UINT64 bk, UINT64 wh, UINT32 color, INT32 
 
 
 
-BOOL CheckTableCutOff(
+HashInfo *CheckTableCutOff(
 	HashTable *hash, UINT32 *key, UINT64 bk, UINT64 wh, UINT32 color, INT32 empty,
 	INT32 alpha, INT32 beta, INT32 *score
 )
 {
-	BOOL      ret;
+	HashInfo *ret;
 	HashInfo *hashInfo;
 
-	ret = FALSE;
+	ret = NULL;
 	*key = KEY_HASH_MACRO(bk, wh, color);
 	hashInfo = HashGet(hash, *key, bk, wh);
 	if (hashInfo != NULL)
@@ -102,19 +102,19 @@ BOOL CheckTableCutOff(
 			{
 				// transposition table cutoff
 				*score = hashInfo->upper;
-				ret = TRUE;
+				ret = hashInfo;
 			}
 			else if (hashInfo->lower >= beta)
 			{
 				// transposition table cutoff
 				*score = hashInfo->lower;
-				ret = TRUE;
+				ret = hashInfo;
 			}
 			else if (hashInfo->lower == hashInfo->upper)
 			{
 				// transposition table cutoff
 				*score = hashInfo->lower;
-				ret = TRUE;
+				ret = hashInfo;
 			}
 		}
 	}
@@ -124,15 +124,15 @@ BOOL CheckTableCutOff(
 
 
 
-BOOL CheckTableCutOff_PV(
+HashInfo *CheckTableCutOff_PV(
 	HashTable *hash, UINT32 *key, UINT64 bk, UINT64 wh, UINT32 color, INT32 empty, 
 	INT32 alpha, INT32 beta, INT32 *score
 )
 {
-	BOOL      ret;
+	HashInfo *ret;
 	HashInfo *hashInfo;
 
-	ret = FALSE;
+	ret = NULL;
 	*key = KEY_HASH_MACRO_PV(bk, wh, color);
 	hashInfo = HashGet(hash, *key, bk, wh);
 	if (hashInfo != NULL)
@@ -143,19 +143,19 @@ BOOL CheckTableCutOff_PV(
 			{
 				// transposition table cutoff
 				*score = hashInfo->upper;
-				ret = TRUE;
+				ret = hashInfo;
 			}
 			else if (hashInfo->lower >= beta)
 			{
 				// transposition table cutoff
 				*score = hashInfo->lower;
-				ret = TRUE;
+				ret = hashInfo;
 			}
 			else if (hashInfo->lower == hashInfo->upper)
 			{
 				// transposition table cutoff
 				*score = hashInfo->lower;
-				ret = TRUE;
+				ret = hashInfo;
 			}
 		}
 	}
@@ -173,19 +173,22 @@ BOOL ProbCutOffEnd(
 	INT32      alpha,
 	INT32      beta,
 	UINT32     passed,
-	INT32     *score
+	INT32     *score,
+	UINT32     mpc_count
 )
 {
 	MPCINFO *mpcInfo_p;
 	INT32    value;
 	INT32    eval;
+	UINT32   ofs;
 
-	mpcInfo_p = &mpcInfo_end[empty - MPC_END_MIN_DEPTH];
+	ofs = empty;
+	if (ofs > 30) ofs = 30;
+	mpcInfo_p = &mpcInfo_end[ofs - MPC_END_MIN_DEPTH];
 	value = (INT32)((alpha * EVAL_ONE_STONE) - (mpcInfo_p->deviation * MPC_END_CUT_VAL) - mpcInfo_p->offset);
 	if (value < NEGAMIN + 1) value = NEGAMIN + 1;
 
-	eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed);
-
+	eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed, mpc_count + 1);
 	if (eval < value)
 	{
 		*score = alpha;
@@ -194,7 +197,7 @@ BOOL ProbCutOffEnd(
 
 	value = (INT32)((beta * EVAL_ONE_STONE) + (mpcInfo_p->deviation * MPC_END_CUT_VAL) - mpcInfo_p->offset);
 	if (value > NEGAMAX - 1) value = NEGAMAX - 1;
-	eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed);
+	eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, mpc_count + 1);
 
 	if (eval > value)
 	{
@@ -214,7 +217,8 @@ BOOL ProbCutOffEndWinLoss(
 	INT32      alpha,
 	INT32      beta,
 	UINT32     passed,
-	INT32     *score
+	INT32     *score,
+	UINT32     mpc_count
 )
 {
 	MPCINFO *mpcInfo_p;
@@ -226,7 +230,7 @@ BOOL ProbCutOffEndWinLoss(
 	if (value < -g_infscore) value = -g_infscore;
 
 	value *= EVAL_ONE_STONE;
-	eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed);
+	eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value - 1, value, passed, mpc_count + 1);
 
 	if (eval < value)
 	{
@@ -237,7 +241,7 @@ BOOL ProbCutOffEndWinLoss(
 	value = (INT32)((beta * EVAL_ONE_STONE) + (mpcInfo_p->deviation * MPC_END_CUT_VAL) - mpcInfo_p->offset);
 	if (value > g_infscore) value = g_infscore;
 	value *= EVAL_ONE_STONE;
-	eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed);
+	eval = AB_SearchNoPV(bk, wh, mpcInfo_p->depth, empty, color, value, value + 1, passed, mpc_count + 1);
 
 	if (eval > value)
 	{
@@ -275,12 +279,13 @@ INT32 NWS_SearchExact(
 	INT32      alpha, 
 	UINT32     passed, 
 	INT32     *p_selectivity, 
-	PVLINE    *pline
+	PVLINE    *pline,
+	UINT32     mpc_count
 )
 {
 	INT32 score, bestscore, lower, upper, bestmove;
 	UINT32 key;
-	MoveList movelist[36], *iter;
+	MoveList movelist[32], *iter;
 	Move *move;
 	const INT32 beta = alpha + 1;
 	HashInfo *hashInfo;
@@ -291,27 +296,27 @@ INT32 NWS_SearchExact(
 		return ABORT;
 	}
 
-	g_countNode++;
-
 	bestmove = NOMOVE;
 	lower = alpha;
 	upper = beta;
-
-	if (empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
-	{
-		pline->cmove = 0;
-		return AB_SearchExact(bk, wh, ~(bk | wh), empty,
-			color, alpha, beta, passed, parity, p_selectivity, pline);
-	}
 
 	// stability cutoff
 	if (search_SC_NWS(bk, wh, empty, alpha, &score))
 	{
 		// up to max threshold
-		*p_selectivity = g_mpc_level;
-		pline->cmove = 0;
+		*p_selectivity = g_max_cut_table_size;
+		//pline->cmove = 0;
 		return score;
 	}
+
+	if (empty <= EMPTIES_DEEP_TO_SHALLOW_SEARCH)
+	{
+		//pline->cmove = 0;
+		return AB_SearchExact(bk, wh, ~(bk | wh), empty,
+			color, alpha, beta, passed, parity, p_selectivity, pline);
+	}
+
+	g_countNode++;
 
 	/************************************************************
 	*
@@ -349,12 +354,12 @@ INT32 NWS_SearchExact(
 			// game end...
 			bestscore = GetEndScore[g_solveMethod](bk, wh, empty);
 			bestmove = NOMOVE;
-			pline->cmove = 0;
-			*p_selectivity = g_mpc_level;
+			//pline->cmove = 0;
+			*p_selectivity = g_max_cut_table_size;
 		}
 		else
 		{
-			bestscore = -NWS_SearchExact(wh, bk, empty, depth, parity, color ^ 1, hash, -upper, 1, p_selectivity, pline);
+			bestscore = -NWS_SearchExact(wh, bk, empty, depth, parity, color ^ 1, hash, -upper, 1, p_selectivity, pline, mpc_count);
 			bestmove = NOMOVE;
 		}
 	}
@@ -367,14 +372,14 @@ INT32 NWS_SearchExact(
 		*************************************************************/
 #if 1
 		if (g_mpcFlag && g_mpc_level < g_max_cut_table_size &&
-			empty >= MPC_END_MIN_DEPTH && empty <= MPC_END_MAX_DEPTH)
+			empty >= MPC_END_MIN_DEPTH)
 		{
-			if (ProbCutOffEnd(bk, wh, empty, color, alpha, beta, passed, &score))
+			if (ProbCutOffEnd(bk, wh, empty, color, alpha, beta, passed, &score, mpc_count))
 			{
-				HashUpdate(hash, key, bk, wh, alpha, beta, score, empty, NOMOVE, g_mpc_level, g_infscore);
+				//HashUpdate(hash, key, bk, wh, alpha, beta, score, empty, NOMOVE, g_mpc_level, g_infscore);
 				// store cutoff level
 				*p_selectivity = g_mpc_level;
-				pline->cmove = 0;
+				//pline->cmove = 0;
 				return score;
 			}
 		}
@@ -382,12 +387,11 @@ INT32 NWS_SearchExact(
 		// 着手のflip-bitを求めてmove構造体に保存
 		StoreMovelist(movelist, bk, wh, moves);
 
-		BOOL pv_flag = TRUE;
 		if (moveCount > 1)
 		{
-			if (depth <= 16)
+			if (empty > 14)
 			{
-				SortMoveListMiddle(movelist, bk, wh, hash, NULL, empty, depth, alpha, beta, color);
+				SortMoveListMiddle(movelist, bk, wh, hash, NULL, empty, depth, alpha, beta, color, mpc_count);
 			}
 			else
 			{
@@ -415,35 +419,20 @@ INT32 NWS_SearchExact(
 			g_pvline[g_empty - empty] = move->pos;
 			
 			score = -NWS_SearchExact(move_w, move_b, empty - 1, depth + 1, parity ^ board_parity_bit[move->pos],
-				color ^ 1, hash, -lower - 1, 0, &selectivity, &line);
+				color ^ 1, hash, -beta, 0, &selectivity, &line, mpc_count);
 
 			if (score >= upper)
 			{
 				bestscore = score;
 				bestmove = move->pos;
-				pline->cmove = 0;
+				//pline->cmove = 0;
 				break;
 			}
 
-			if (score > bestscore) {
+			if (score > bestscore)
+			{
 				bestscore = score;
 				bestmove = move->pos;
-				if (score > lower)
-				{
-					lower = score;
-					if (line.cmove < 0 || line.cmove > 63)
-					{
-						line.cmove = 0;
-					}
-					pline->argmove[0] = bestmove;
-					memcpy(pline->argmove + 1, line.argmove, line.cmove);
-					pline->cmove = line.cmove + 1;
-					if (g_empty - empty <= 4 && g_mpc_level >= 4)
-					{
-						CreatePVLineStr(pline, empty, bestscore * (1 - (2 * ((g_empty - empty) % 2))));
-						g_set_message_funcptr[1](g_PVLineMsg);
-					}
-				}
 			}
 
 		}
@@ -485,7 +474,8 @@ INT32 PVS_SearchExact(
 	INT32      beta, 
 	UINT32     passed, 
 	INT32     *p_selectivity, 
-	PVLINE    *pline
+	PVLINE    *pline,
+	UINT32     mpc_count
 )
 {
 	INT32 score;
@@ -495,7 +485,7 @@ INT32 PVS_SearchExact(
 	INT32 bestmove;
 	UINT32 key;
 	UINT32 pv_key;
-	MoveList movelist[36], *iter;
+	MoveList movelist[32], *iter;
 	Move *move;
 	HashInfo *hashInfo;
 	UINT32 moveCount;
@@ -509,47 +499,54 @@ INT32 PVS_SearchExact(
 		return ABORT;
 	}
 
-	g_countNode++;
 
 	bestmove = NOMOVE;
 	lower = alpha;
 	upper = beta;
 
 	// stability cutoff
-	if(g_empty >= 12)
+	if (g_empty >= 12)
 	{
-		if (search_SC_PVS(bk, wh, empty, &alpha, &beta, &score)) return score;
+		if (search_SC_PVS(bk, wh, empty, &alpha, &beta, &score))
+		{
+			*p_selectivity = g_max_cut_table_size;
+			return score;
+		}
 	}
 
+	g_countNode++;
+
+	key = KEY_HASH_MACRO(bk, wh, color);
+	pv_key = KEY_HASH_MACRO_PV(bk, wh, color);
+#if 1
 	/************************************************************
 	*
 	* 置換表カットオフフェーズ
 	*
 	*************************************************************/
 
-	key = KEY_HASH_MACRO(bk, wh, color);
-	pv_key = KEY_HASH_MACRO_PV(bk, wh, color);
 	/* transposition cutoff ? */
 	if (g_tableFlag && g_empty >= 12)
 	{
-		hashInfo = HashGet(hash, key, bk, wh);
+		// PVノードハッシュ
+		hashInfo = HashGet(pvHash, pv_key, bk, wh);
 		if (hashInfo && TableCutOff(hashInfo, bk, wh, color, empty, &lower, &upper, &score, &bestmove, p_selectivity))
 		{
 			pline->cmove = 0;
 			return score;
 		}
-
 		if (hashInfo == NULL)
-		{
-			hashInfo = HashGet(pvHash, pv_key, bk, wh);
+		{// ノーマルハッシュ
+			hashInfo = HashGet(hash, key, bk, wh);
 			if (hashInfo && TableCutOff(hashInfo, bk, wh, color, empty, &lower, &upper, &score, &bestmove, p_selectivity))
 			{
 				pline->cmove = 0;
 				return score;
 			}
+			
 		}
 	}
-
+#endif
 	/************************************************************
 	*
 	* Principal Variation Search(PVS) フェーズ
@@ -559,16 +556,16 @@ INT32 PVS_SearchExact(
 	moves = CreateMoves(bk, wh, &moveCount);
 	if (moveCount == 0)
 	{
-		if (passed) 
+		if (passed)
 		{
 			// game end...
 			bestscore = GetEndScore[g_solveMethod](bk, wh, empty);
 			bestmove = NOMOVE;
-			*p_selectivity = g_mpc_level;
+			*p_selectivity = g_max_cut_table_size;
 		}
 		else
 		{
-			bestscore = -PVS_SearchExact(wh, bk, empty, depth, parity, color ^ 1, hash, pvHash, -upper, -lower, 1, p_selectivity, pline);
+			bestscore = -PVS_SearchExact(wh, bk, empty, depth, parity, color ^ 1, hash, pvHash, -upper, -lower, 1, p_selectivity, pline, mpc_count);
 			bestmove = NOMOVE;
 		}
 	}
@@ -579,13 +576,13 @@ INT32 PVS_SearchExact(
 		* Multi-Prob-Cut(MPC) フェーズ
 		*
 		*************************************************************/
-#if 1
+#if 0
 		if (g_mpcFlag && g_mpc_level < g_max_cut_table_size &&
 			empty >= MPC_END_MIN_DEPTH && empty <= MPC_END_MAX_DEPTH)
 		{
-			if (ProbCutOffEnd(bk, wh, empty, color, alpha, beta, passed, &score))
+			if (ProbCutOffEnd(bk, wh, empty, color, alpha, beta, passed, &score, mpc_count))
 			{
-				HashUpdate(hash, key, bk, wh, alpha, beta, score, empty, NOMOVE, g_mpc_level, g_infscore);
+				//HashUpdate(hash, key, bk, wh, alpha, beta, score, empty, NOMOVE, g_mpc_level, g_infscore);
 				// store cutoff level
 				*p_selectivity = g_mpc_level;
 				pline->cmove = 0;
@@ -598,15 +595,7 @@ INT32 PVS_SearchExact(
 
 		if (moveCount > 1)
 		{
-			if (depth <= 16)
-			{
-				SortMoveListMiddle(movelist, bk, wh, hash, pvHash, empty, depth, alpha, beta, color);
-			}
-			else
-			{
-				// 手の並べ替え
-				SortMoveListEnd(movelist, bk, wh, hash, empty, alpha, beta, color);
-			}
+			SortMoveListMiddle(movelist, bk, wh, hash, pvHash, empty, depth, alpha, beta, color, mpc_count);
 		}
 
 		/* 置換表で参照出来た手から先に着手するためにソート */
@@ -624,24 +613,22 @@ INT32 PVS_SearchExact(
 			move_b = bk ^ ((1ULL << move->pos) | move->rev);
 			move_w = wh ^ move->rev;
 			// PV表示記憶用
-			g_pvline[g_empty - empty] = move->pos;
+			//g_pvline[g_empty - empty] = move->pos;
 
 			if (pv_flag)
 			{
 				score = -PVS_SearchExact(move_w, move_b, empty - 1, depth + 1, parity ^ board_parity_bit[move->pos],
-					color ^ 1, hash, pvHash, -upper, -lower, 0, p_selectivity, &line);
-				pv_flag = FALSE;
+					color ^ 1, hash, pvHash, -upper, -lower, 0, p_selectivity, &line, mpc_count);
 			}
 			else
 			{
 				score = -NWS_SearchExact(move_w, move_b, empty - 1, depth + 1, parity ^ board_parity_bit[move->pos],
-					color ^ 1, hash, -lower - 1, 0, p_selectivity, &line);
+					color ^ 1, hash, -lower - 1, 0, p_selectivity, &line, mpc_count);
 
 				if (lower < score && score < upper)
 				{
-					lower = score;
 					score = -PVS_SearchExact(move_w, move_b, empty - 1, depth + 1, parity ^ board_parity_bit[move->pos],
-						color ^ 1, hash, pvHash, -upper, -lower, 0, p_selectivity, &line);
+						color ^ 1, hash, pvHash, -upper, -score, 0, p_selectivity, &line, mpc_count);
 				}
 			}
 
@@ -649,29 +636,18 @@ INT32 PVS_SearchExact(
 			{
 				bestscore = score;
 				bestmove = move->pos;
-				pline->cmove = 0;
+				//pline->cmove = 0;
 				break;
 			}
 
 			if (score > bestscore)
 			{
+				pv_flag = FALSE;
 				bestscore = score;
 				bestmove = move->pos;
 				if (score > lower)
 				{
 					lower = score;
-					if (line.cmove < 0 || line.cmove > 63)
-					{
-						line.cmove = 0;
-					}
-					pline->argmove[0] = bestmove;
-					memcpy(pline->argmove + 1, line.argmove, line.cmove);
-					pline->cmove = line.cmove + 1;
-					if (g_empty - empty <= 4 && g_mpc_level >= 4)
-					{
-						CreatePVLineStr(pline, empty, bestscore * (1 - (2 * ((g_empty - empty) % 2))));
-						g_set_message_funcptr[1](g_PVLineMsg);
-					}
 				}
 			}
 			
@@ -686,7 +662,7 @@ INT32 PVS_SearchExact(
 		}
 
 		/* 置換表に登録 */
-		if (bestscore > alpha && bestscore < beta) HashUpdate(pvHash, pv_key, bk, wh, alpha, beta, bestscore, empty, bestmove, g_mpc_level, g_infscore);
+		if(bestscore > alpha && bestscore < beta) HashUpdate(pvHash, pv_key, bk, wh, alpha, beta, bestscore, empty, bestmove, g_mpc_level, g_infscore);
 		else HashUpdate(hash, key, bk, wh, alpha, beta, bestscore, empty, bestmove, g_mpc_level, g_infscore);
 	}
 
@@ -835,23 +811,22 @@ INT32 AB_SearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 col
 		return ABORT;
 	}
 
-	g_countNode++;
-
 	pline->cmove = 0;
 	// stability cutoff
 	if (search_SC_NWS(bk, wh, empty, alpha, &max))
 	{
-		*p_selectivity = g_mpc_level;
+		*p_selectivity = g_max_cut_table_size;
 		return max;
 	}
 
 	// parity moving
 	if (empty == 4)
 	{
-		*p_selectivity = g_mpc_level;
+		*p_selectivity = g_max_cut_table_size;
 		return SearchEmpty_4(bk, wh, blank, empty, quad_parity, alpha, beta, 0, pline);
 	}
 
+	g_countNode++;
 	max = -g_infscore;
 
 	// first move odd parity
@@ -900,28 +875,25 @@ INT32 AB_SearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 col
 		{
 			pos_bit = moves & (-(INT64)moves);
 			pos = CountBit(pos_bit - 1);
-			if ((quad_parity & board_parity_bit[pos]) == 0)
+			if ((rev = GetRev[pos](bk, wh)) != 0)
 			{
-				if ((rev = GetRev[pos](bk, wh)) != 0)
-				{
-					eval = -AB_SearchExact(wh ^ rev, bk ^ (pos_bit | rev), blank ^ pos_bit,
-						empty - 1, color ^ 1, -beta, -alpha, 0, quad_parity ^ board_parity_bit[pos], p_selectivity, &line);
+				eval = -AB_SearchExact(wh ^ rev, bk ^ (pos_bit | rev), blank ^ pos_bit,
+					empty - 1, color ^ 1, -beta, -alpha, 0, quad_parity ^ board_parity_bit[pos], p_selectivity, &line);
 
-					if (beta <= eval)
+				if (beta <= eval)
+				{
+					return eval;
+				}
+				/* 今までより良い局面が見つかれば最善手の更新 */
+				if (eval > max)
+				{
+					max = eval;
+					if (max > alpha)
 					{
-						return eval;
-					}
-					/* 今までより良い局面が見つかれば最善手の更新 */
-					if (eval > max)
-					{
-						max = eval;
-						if (max > alpha)
-						{
-							alpha = max;
-							//pline->argmove[0] = pos;
-							//memcpy(pline->argmove + 1, line.argmove, line.cmove);
-							//pline->cmove = line.cmove + 1;
-						}
+						alpha = max;
+						//pline->argmove[0] = pos;
+						//memcpy(pline->argmove + 1, line.argmove, line.cmove);
+						//pline->cmove = line.cmove + 1;
 					}
 				}
 			}
@@ -967,7 +939,7 @@ INT32 AB_SearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 col
 		if (passed)
 		{
 			max = GetEndScore[g_solveMethod](bk, wh, empty);
-			*p_selectivity = g_mpc_level;
+			*p_selectivity = g_max_cut_table_size;
 		}
 		else
 		{
@@ -1008,7 +980,8 @@ INT32 NWS_SearchWinLoss(
 	INT32      alpha,
 	UINT32     passed,
 	INT32     *p_selectivity,
-	PVLINE    *pline
+	PVLINE    *pline,
+	UINT32     mpc_count
 )
 {
 	INT32 score, bestscore, lower, upper, bestmove;
@@ -1087,7 +1060,7 @@ INT32 NWS_SearchWinLoss(
 		}
 		else
 		{
-			bestscore = -NWS_SearchWinLoss(wh, bk, empty, depth, parity, color ^ 1, hash, -upper, 1, p_selectivity, pline);
+			bestscore = -NWS_SearchWinLoss(wh, bk, empty, depth, parity, color ^ 1, hash, -upper, 1, p_selectivity, pline, mpc_count);
 			bestmove = NOMOVE;
 		}
 	}
@@ -1102,9 +1075,9 @@ INT32 NWS_SearchWinLoss(
 		if (g_mpcFlag && g_mpc_level < g_max_cut_table_size &&
 			empty >= MPC_END_MIN_DEPTH && empty <= MPC_END_MAX_DEPTH)
 		{
-			if (ProbCutOffEnd(bk, wh, empty, color, alpha, beta, passed, &score))
+			if (ProbCutOffEnd(bk, wh, empty, color, alpha, beta, passed, &score, mpc_count))
 			{
-				HashUpdate(hash, key, bk, wh, alpha, beta, score, empty, NOMOVE, g_mpc_level, g_infscore);
+				//(hash, key, bk, wh, alpha, beta, score, empty, NOMOVE, g_mpc_level, g_infscore);
 				// store cutoff level
 				*p_selectivity = g_mpc_level;
 				pline->cmove = 0;
@@ -1120,7 +1093,7 @@ INT32 NWS_SearchWinLoss(
 		{
 			if (depth <= 16)
 			{
-				SortMoveListMiddle(movelist, bk, wh, hash, NULL, empty, depth, alpha, beta, color);
+				SortMoveListMiddle(movelist, bk, wh, hash, NULL, empty, depth, alpha, beta, color, mpc_count);
 			}
 			else
 			{
@@ -1148,7 +1121,7 @@ INT32 NWS_SearchWinLoss(
 			g_pvline[g_empty - empty] = move->pos;
 
 			score = -NWS_SearchWinLoss(move_w, move_b, empty - 1, depth + 1, parity ^ board_parity_bit[move->pos],
-				color ^ 1, hash, -lower - 1, 0, &selectivity, &line);
+				color ^ 1, hash, -lower - 1, 0, &selectivity, &line, mpc_count);
 
 			if (score >= upper)
 			{
@@ -1173,8 +1146,8 @@ INT32 NWS_SearchWinLoss(
 					pline->cmove = line.cmove + 1;
 					if (g_empty - empty <= 4 && g_mpc_level >= 4)
 					{
-						CreatePVLineStr(pline, empty, bestscore * (1 - (2 * ((g_empty - empty) % 2))));
-						g_set_message_funcptr[1](g_PVLineMsg);
+						//CreatePVLineStr(pline, empty, bestscore * (1 - (2 * ((g_empty - empty) % 2))));
+						//g_set_message_funcptr[1](g_PVLineMsg);
 					}
 				}
 			}
@@ -1314,13 +1287,13 @@ INT32 PVS_SearchWinLoss(
 		* Multi-Prob-Cut(MPC) フェーズ
 		*
 		*************************************************************/
-#if 1
+#if 0
 		if (g_mpcFlag && g_mpc_level < g_max_cut_table_size &&
 			empty >= MPC_END_MIN_DEPTH && empty <= MPC_END_MAX_DEPTH && empty < g_empty)
 		{
-			if (ProbCutOffEndWinLoss(bk, wh, empty, color, alpha, beta, passed, &score))
+			if (ProbCutOffEndWinLoss(bk, wh, empty, color, alpha, beta, passed, &score, 0))
 			{
-				HashUpdate(hash, key, bk, wh, alpha, beta, score, empty, NOMOVE, g_mpc_level, g_infscore);
+				//HashUpdate(hash, key, bk, wh, alpha, beta, score, empty, NOMOVE, g_mpc_level, g_infscore);
 				// store cutoff level
 				*p_selectivity = g_mpc_level;
 				pline->cmove = 0;
@@ -1335,7 +1308,7 @@ INT32 PVS_SearchWinLoss(
 		{
 			if (depth <= 16)
 			{
-				SortMoveListMiddle(movelist, bk, wh, hash, pvHash, empty, depth, alpha, beta, color);
+				SortMoveListMiddle(movelist, bk, wh, hash, pvHash, empty, depth, alpha, beta, color, 0);
 			}
 			else
 			{
@@ -1370,7 +1343,7 @@ INT32 PVS_SearchWinLoss(
 			else
 			{
 				score = -NWS_SearchWinLoss(move_w, move_b, empty - 1, depth + 1, parity ^ board_parity_bit[move->pos],
-					color ^ 1, hash, -lower - 1, 0, p_selectivity, &line);
+					color ^ 1, hash, -lower - 1, 0, p_selectivity, &line, 0);
 
 				if (lower < score && score < upper)
 				{
@@ -1404,8 +1377,8 @@ INT32 PVS_SearchWinLoss(
 					pline->cmove = line.cmove + 1;
 					if (g_empty - empty <= 4 && g_mpc_level >= 4)
 					{
-						CreatePVLineStr(pline, empty, bestscore * (1 - (2 * ((g_empty - empty) % 2))));
-						g_set_message_funcptr[1](g_PVLineMsg);
+						//CreatePVLineStr(pline, empty, bestscore * (1 - (2 * ((g_empty - empty) % 2))));
+						//g_set_message_funcptr[1](g_PVLineMsg);
 					}
 				}
 			}

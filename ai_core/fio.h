@@ -23,4 +23,4 @@ typedef struct{
 
 UCHAR *DecodeBookData(INT64 *decodeDataLen_p, char *filename);
 UCHAR *DecodeEvalData(INT64 *decodeDataLen_p, char *filename);
-BOOL OpenMpcInfoData(MPCINFO *p_info, INT32 info_len, char *filename);
+BOOL OpenMpcInfoData(MPCINFO *p_info, char *filename);

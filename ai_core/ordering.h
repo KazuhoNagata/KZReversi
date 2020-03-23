@@ -44,7 +44,8 @@ void SortMoveListMiddle(
 	INT32      depth,
 	INT32      alpha,
 	INT32      beta,
-	UINT32     color
+	UINT32     color,
+	UINT32     mpc_count
 );
 
 void SortMoveListEnd(
@@ -54,3 +55,13 @@ void SortMoveListEnd(
 	UINT32 empty,
 	INT32 alpha, INT32 beta,
 	UINT32 color);
+
+void SortMoveListEndShallow(
+	MoveList *movelist,
+	UINT64 bk,
+	UINT64 wh,
+	UINT32 empty,
+	INT32 alpha,
+	INT32 beta,
+	UINT32 color
+);

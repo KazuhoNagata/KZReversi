@@ -39,11 +39,10 @@ namespace KZreversi
 
         private object[] _m_recvcmd;
 
-        private bool m_onAi;
+        private volatile bool m_onAi;
+        private volatile bool m_abort;
 
         CppWrapper cpw;
-
-        private bool m_abort;
 
         public object[] RecvcmdProperty
         {
@@ -60,7 +59,7 @@ namespace KZreversi
 
         public GameThread()
         {
-            cpw = new CppWrapper();
+            cpw = CppWrapper.getInstance();
             m_abort = false;
         }
 
@@ -159,7 +158,7 @@ namespace KZreversi
             uint level = (uint)argsarray[4];
             int ret = 0;
 
-            CppWrapper cpw = new CppWrapper();
+            CppWrapper cpw = CppWrapper.getInstance();
             List<HintClass> hintList = new List<HintClass>();
 
             // 着手可能リスト取得
@@ -203,7 +202,8 @@ namespace KZreversi
                 cpuConfig.exactDepth = 0;
                 cpuConfig.winLossDepth = 0;
                 // 反復深化探索(level - 8)
-                for (int i = 0; i < level / 2; i++)
+
+                for (int i = 0; i < 4; i++)
                 {
                     cpuConfig.searchDepth = (uint)i * 2 + 2;
                     // 着手可能マスに対してそれぞれ評価値を計算
@@ -229,7 +229,7 @@ namespace KZreversi
                 cpuConfig.exactDepth = 0;
                 cpuConfig.winLossDepth = 0;
                 // 反復深化探索(level - 8)
-                for (int i = 0; i < level / 2; i++)
+                for (int i = 0; i < 4; i++)
                 {
                     cpuConfig.searchDepth = (uint)i * 2 + 2;
                     // 着手可能マスに対してそれぞれ評価値を計算
@@ -253,9 +253,11 @@ namespace KZreversi
             else
             {
                 // 反復深化探索
+                cpuConfig.exactDepth = 0;
+                cpuConfig.winLossDepth = 0;
                 for (int i = 0; i < level && i <= empty; i++)
                 {
-                    cpuConfig.searchDepth = (uint)i * 2 + 2;
+                    cpuConfig.searchDepth = (uint)(i + 1) * 2;
                     // 着手可能マスに対してそれぞれ評価値を計算
                     ret = DoSearch(bk, wh, cpuConfig, hintList, formobj, HintClass.SOLVE_MIDDLE);
                     if (ret == -1) break;
@@ -270,6 +272,11 @@ namespace KZreversi
 
             // UIに探索終了を通知
             formobj.Invoke(formobj.hintDelegate, new object[] { null });
+
+            if (m_abort == true)
+            {
+                m_abort = false;
+            }
         }
 
 
@@ -302,6 +309,13 @@ namespace KZreversi
                 cpw.GetCpuMove(move_bk, move_wh, cpuConfig);
                 cpuConfig.color ^= 1;
 
+                // 中断処理
+                if (m_abort == true)
+                {
+                    ret = -1;
+                    break;
+                }
+
                 empty = cpw.CountBit(~(bk | wh));
                 if(empty <= cpuConfig.exactDepth) hintData.SetEval(-cpw.GetLastEvaluation());
                 else if(empty <= cpuConfig.winLossDepth) hintData.SetEval(-cpw.GetLastEvaluation());
@@ -311,13 +325,6 @@ namespace KZreversi
                 // UIに評価値を通知
                 formobj.Invoke(formobj.hintDelegate, new object[] { hintData });
 
-                // 中断処理
-                if (m_abort == true)
-                {
-                    m_abort = false;
-                    ret = -1; 
-                    break;
-                }
             }
 
             return ret;
@@ -347,6 +354,11 @@ namespace KZreversi
         public void AbortAll()
         {
             m_abort = true;
+            if (cpw.GetIsAbort() == true)
+            {
+                cpw.SendAbort();
+                while (cpw.GetIsAbort() == true);
+            }
         }
     }
 }

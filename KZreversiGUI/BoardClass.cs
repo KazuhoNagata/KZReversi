@@ -73,7 +73,7 @@ namespace KZreversi
         public bool move(int pos)
         {
             UInt64 rev;
-            CppWrapper cppWrapper = new CppWrapper();
+            CppWrapper cppWrapper = CppWrapper.getInstance();
 
             black = GetBlack();
             white = GetWhite();

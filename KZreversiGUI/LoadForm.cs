@@ -29,7 +29,7 @@ namespace KZreversi
         private void LoadData(object obj)
         {
             // ラッパークラスの初期化とDLLのロード
-            ((Form1)this.Owner).cppWrapper = new CppWrapper();
+            ((Form1)this.Owner).cppWrapper = CppWrapper.getInstance();
             ((Form1)this.Owner).loadResult = ((Form1)this.Owner).cppWrapper.LibInit();
             // フォームを閉じる
             Invoke(new FormCloseDedigate(Close));

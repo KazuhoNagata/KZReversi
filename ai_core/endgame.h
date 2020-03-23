@@ -1,5 +1,6 @@
 #include "stdafx.h"
 
+#pragma once
 
 BOOL search_SC_NWS(UINT64 bk, UINT64 wh, INT32 empty, INT32 alpha, INT32 *score);
 
@@ -19,7 +20,8 @@ INT32 PVS_SearchExact(
 	INT32      beta,
 	UINT32     passed,
 	INT32     *p_selectivity,
-	PVLINE    *pline
+	PVLINE    *pline,
+	UINT32     mpc_count
 );
 
 INT32 AB_SearchExact(UINT64 bk, UINT64 wh, UINT64 blank, INT32 empty, UINT32 color, 
@@ -59,12 +61,12 @@ BOOL TableCutOff(HashInfo *hashInfo, UINT64 bk, UINT64 wh, UINT32 color, INT32 e
 	INT32 *alpha, INT32 *beta, INT32 *score, INT32 *bestmove, INT32 *selectivity
 );
 
-BOOL CheckTableCutOff(
+HashInfo *CheckTableCutOff(
 	HashTable *hash, UINT32 *key, UINT64 bk, UINT64 wh, UINT32 color, INT32 empty,
 	INT32 alpha, INT32 beta, INT32 *score
 );
 
-BOOL CheckTableCutOff_PV(
+HashInfo *CheckTableCutOff_PV(
 	HashTable *hash, UINT32 *key, UINT64 bk, UINT64 wh, UINT32 color, INT32 empty,
 	INT32 alpha, INT32 beta, INT32 *score
 );
@@ -77,5 +79,6 @@ BOOL ProbCutOffEnd(
 	INT32      alpha,
 	INT32      beta,
 	UINT32     passed,
-	INT32     *score
+	INT32     *score,
+	UINT32     mpc_count
 );

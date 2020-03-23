@@ -345,13 +345,15 @@ UCHAR *DecodeBookData(INT64 *decodeDataLen_p, char *filename)
 }
 
 
-BOOL OpenMpcInfoData(MPCINFO *p_info, INT32 info_len, char *filename){
+BOOL OpenMpcInfoData(MPCINFO *p_info, char *filename){
 	
 	FILE *fp;
+	INT32 info_len;
 
 	if (fopen_s(&fp, filename, "r") || fp == NULL){
 		return FALSE;
 	}
+	fscanf_s(fp, "%d", &info_len);
 
 	memset(p_info, 0, info_len);
 

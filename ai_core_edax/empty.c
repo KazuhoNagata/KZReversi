@@ -1,0 +1,12 @@
+#include "stdafx.h"
+#include "bit64.h"
+#include "board.h"
+#include "move.h"
+#include "rev.h"
+#include "cpu.h"
+#include "endgame.h"
+#include "hash.h"
+#include "eval.h"
+#include "ordering.h"
+
+#include "count_last_flip_carry_64.h"

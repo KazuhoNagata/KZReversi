@@ -82,7 +82,7 @@ extern INT32 g_move;
 extern UINT64 g_casheSize;
 extern UINT64 g_pvCasheSize;
 extern INT32 g_infscore;
-extern MPCINFO mpcInfo[22];
+extern MPCINFO mpcInfo[61 - MPC_MIN_DEPTH][22];
 extern MPCINFO mpcInfo_end[26];
 extern double MPC_CUT_VAL;
 extern double MPC_END_CUT_VAL;
@@ -142,8 +142,18 @@ UINT64 GetMoveFromAI(UINT64 bk, UINT64 wh, UINT32 emptyNum, CPUCONFIG *cpuConfig
 * Return: 着手可能位置のビット列
 ****************************************************************************/
 INT32 PVS_SearchDeep(
-	UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
-	HashTable *hash, INT32 alpha, INT32 beta, UINT32 passed, INT32 *p_selectivity, PVLINE *pline
+	UINT64 bk, 
+	UINT64 wh, 
+	INT32 depth, 
+	INT32 empty, 
+	UINT32 color,
+	HashTable *hash, 
+	INT32 alpha, 
+	INT32 beta, 
+	UINT32 passed, 
+	INT32 *p_selectivity,
+	PVLINE *pline, 
+	UINT32 mpc_count
 );
 
 /***************************************************************************
@@ -160,7 +170,7 @@ INT32 PVS_SearchDeep(
 * Return: 評価値
 ****************************************************************************/
 INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
-	INT32 alpha, INT32 beta, UINT32 passed);
+	INT32 alpha, INT32 beta, UINT32 passed, UINT32 mpc_count);
 
 /***************************************************************************
 * Name  : AlphaBetaSearch
@@ -176,7 +186,7 @@ INT32 AB_SearchNoPV(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color
 * Return: 評価値
 ****************************************************************************/
 INT32 AB_Search(UINT64 bk, UINT64 wh, INT32 depth, INT32 empty, UINT32 color,
-	INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline);
+	INT32 alpha, INT32 beta, UINT32 passed, PVLINE *pline, UINT32 mpc_count);
 
 /***************************************************************************
 * Name  : SetAbortFlag
@@ -188,15 +198,14 @@ BOOL search_SC_PVS(UINT64 bk, UINT64 wh, INT32 empty,
 	volatile INT32 *alpha, volatile INT32 *beta, INT32 *score);
 void CreatePVLineStr(PVLINE *pline, INT32 empty, INT32 score);
 
-INT32 ProbCutOff(
+BOOL ProbCutOffEnd(
 	UINT64     bk,
 	UINT64     wh,
 	INT32      empty,
-	INT32      depth,
 	UINT32     color,
 	INT32      alpha,
 	INT32      beta,
 	UINT32     passed,
 	INT32     *score,
-	INT32     *serchDepth
+	UINT32     mpc_count
 );

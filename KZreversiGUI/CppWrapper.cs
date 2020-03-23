@@ -35,6 +35,19 @@ namespace KZreversi
     /// </summary>
     public class CppWrapper
     {
+
+        private static CppWrapper cpw = new CppWrapper();
+        private volatile bool mutex;
+
+        public static CppWrapper getInstance()
+        {
+            return cpw;
+        }
+
+        private CppWrapper()
+        {
+        }
+
         /// <summary>
         /// DLLや各種データの読み込みと初期化を行います
         /// </summary>
@@ -81,13 +94,16 @@ namespace KZreversi
         {
             ulong moveBit;
 
+            while (mutex == true);
+            mutex = true;
+
             GCHandle gchCpuConfig = GCHandle.Alloc(cpuConfig, GCHandleType.Pinned);
             Marshal.StructureToPtr(cpuConfig, gchCpuConfig.AddrOfPinnedObject(), false);
 
             moveBit = NativeMethods.KZ_GetCpuMove(bk, wh, gchCpuConfig.AddrOfPinnedObject());
 
             gchCpuConfig.Free();
-
+            mutex = false;
             return moveBit;
         }
 

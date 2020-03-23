@@ -57,6 +57,7 @@ namespace KZreversi
         private const int ON_GAME = 1;
         private const int ON_EDIT = 3;
         private const int ON_HINT = 4;
+        private const int ON_HINT_FINISH = 5;
 
         private const int TURN_HUMAN = 0;
         private const int TURN_CPU = 1;
@@ -83,7 +84,7 @@ namespace KZreversi
 
         // ヒント表示用
         private uint m_hintLevel;
-        private List<int[]> m_hintList;
+        private List<int[]> m_hintList = null;
         private int m_hintEvalMax;
 
         private Stopwatch m_sw;
@@ -205,6 +206,11 @@ namespace KZreversi
             m_ft.Dispose();
             m_ft2.Dispose();
             m_ft3.Dispose();
+            if (cppWrapper.GetIsAbort())
+            {
+                cppWrapper.SendAbort();
+                while (cppWrapper.GetIsAbort()) ;
+            }
             cppWrapper.ReleaseHash();
             cppWrapper.ReleaseBook();
         }
@@ -229,7 +235,7 @@ namespace KZreversi
                 panel1.Invalidate(false);
                 panel1.Update();
             }
-            else if (m_mode == ON_NOTHING && sender == this.button5) // ゲーム再開ボタン
+            else if (sender == button5 && (m_mode == ON_NOTHING || m_mode == ON_HINT || m_mode == ON_HINT_FINISH)) // ゲーム再開ボタン
             {
                 m_mode = ON_GAME;
                 toolStripStatusLabel1.Text = "";
@@ -260,14 +266,14 @@ namespace KZreversi
             {
                 if (m_cpuFlagProperty == false)
                 {
+                    hintAbort();
                     if (m_mode == ON_HINT)
                     {
-                        hintAbort();
-                        MessageBox.Show(
-                        "ヒントの処理を中断しました。",
-                        "中断",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                        //MessageBox.Show(
+                        //"ヒントの処理を中断しました。",
+                        //"中断",
+                        //MessageBoxButtons.OK,
+                        //MessageBoxIcon.Information);
 
                         toolStripStatusLabel1.Text = "";
                         toolStripStatusLabel2.Text = "";
@@ -343,7 +349,7 @@ namespace KZreversi
 
         private void hintAbort()
         {
-            hintGmt.AbortAll();
+            if(hintGmt != null) hintGmt.AbortAll();
         }
 
         private void ChangePlayer()
@@ -635,11 +641,14 @@ namespace KZreversi
                     }
                 }
             }
-            else if (m_mode == ON_HINT && m_hintList.Count > 0 && m_cpuFlagProperty == false)
+            else if ((m_mode == ON_HINT || m_mode == ON_HINT_FINISH) && m_hintList.Count > 0 && m_cpuFlagProperty == false)
             {
                 // 記憶したヒントを表示
                 int attr, eval;
                 bool first;
+
+                temp = cppWrapper.GetEnumMove(boardclass);
+                nowPlayer.moves = temp;
 
                 if (m_hintList.Count > 1) first = true; // 探索後の表示のため
                 else first = false;
@@ -759,7 +768,7 @@ namespace KZreversi
                 m_hintEvalMax = eval;
                 brs = Brushes.LightGreen;
             }
-            else brs = Brushes.DarkOrange;
+            else brs = Brushes.DimGray;
 
             e.Graphics.DrawString(sign + eval, m_ft3, brs,
                (pos / BOARD_SIZE) * m_mass_size + font_scale_x + font_fix_x,
@@ -878,6 +887,8 @@ namespace KZreversi
             switch (m_mode)
             {
                 case ON_GAME:
+                case ON_HINT:
+                case ON_HINT_FINISH:
 
                     if (m_cpuFlagProperty == true)
                     {
@@ -892,10 +903,15 @@ namespace KZreversi
                     // 着手出来るかチェック
                     if ((nowPlayer.moves & (1UL << num)) != 0)
                     {
+                        // 着手できたのでヒントリストを消す
+                        hintAbort();
+                        if(m_hintList != null) m_hintList.Clear();
+
                         // 着手に合わせて盤面情報を更新
                         boardclass.move(num);
                         // プレイヤー変更
                         ChangePlayer();
+
                         // 画面再描画
                         panel1.Invalidate(false);
                         panel1.Update();
@@ -942,7 +958,6 @@ namespace KZreversi
                                 PrintResult();
                             }
                         }
-
                     }
 
                     break;
@@ -1263,6 +1278,18 @@ namespace KZreversi
             m_cpuFlagProperty = false;
             m_passCount = 0;
             SetControlEnable(true);
+
+            hintAbort();
+            //while (m_mode == ON_HINT);
+            if(m_mode == ON_HINT_FINISH)
+            {
+                // ヒントモードなら再度ヒント起動
+                m_hintEvalMax = -INFINITY_SCORE;
+                m_hintList.Clear();
+                // ヒント処理ハンドラをコール
+                m_hintFlagProperty = true;
+            }
+
             // 画面再描画
             panel1.Invalidate(false);
             panel1.Update();
@@ -1429,6 +1456,7 @@ namespace KZreversi
                 toolStripStatusLabel2.Text = "";
                 toolStripStatusLabel3.Text = "Hint finished.";
                 label6.Text = "";
+                m_mode = ON_HINT_FINISH;
             }
         }
 

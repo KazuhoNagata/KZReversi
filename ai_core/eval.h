@@ -20,7 +20,7 @@
 #define MOBILITY_NUM 36
 #define PARITY_NUM 16
 // ”ÍˆÍŠO‚Ì“_”
-#define INF_SCORE 127
+#define INF_SCORE 65
 #define STAGE_NUM 61
 
 
