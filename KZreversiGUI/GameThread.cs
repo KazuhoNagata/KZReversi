@@ -25,6 +25,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace KZreversi
 {
@@ -39,10 +40,12 @@ namespace KZreversi
 
         private object[] _m_recvcmd;
 
-        private volatile bool m_onAi;
-        private volatile bool m_abort;
+        private static GameThread gmt = new GameThread();
+        private bool m_onAi = false;
+        private volatile bool m_abort = false;
+        private static CppWrapper cpw = CppWrapper.getInstance();
 
-        CppWrapper cpw;
+        private Thread m_hintTh;
 
         public object[] RecvcmdProperty
         {
@@ -57,10 +60,13 @@ namespace KZreversi
             }
         }
 
-        public GameThread()
+        public static GameThread getInstance()
         {
-            cpw = CppWrapper.getInstance();
-            m_abort = false;
+            return gmt;
+        }
+
+        private GameThread()
+        {
         }
 
         protected void OnPropertyChanged(string name)
@@ -72,7 +78,7 @@ namespace KZreversi
                 handler = PropertyChangedRcvCmd;
             }
 
-            handler?.Invoke(this, new PropertyChangedEventArgs(name));
+            handler.Invoke(this, new PropertyChangedEventArgs(name));
 
         }
 
@@ -99,8 +105,9 @@ namespace KZreversi
                 Form1 formobj = (Form1)RecvcmdProperty[3];
                 uint level = (uint)RecvcmdProperty[4];
 
-                Thread th = new Thread(HintThreadFunc);
-                th.Start(RecvcmdProperty);
+                Task task = Task.Run(() => {
+                    HintThreadFunc(RecvcmdProperty);
+                });
             }
             else
             {
@@ -127,7 +134,6 @@ namespace KZreversi
             // Form1のプロパティにCPUの着手を設定
             formobj.Invoke(formobj.delegateObj, new object[] { moves });
             m_onAi = false;
-
         }
 
         private void GetNodeCountFunc(object args)
@@ -158,8 +164,9 @@ namespace KZreversi
             uint level = (uint)argsarray[4];
             int ret = 0;
 
-            CppWrapper cpw = CppWrapper.getInstance();
             List<HintClass> hintList = new List<HintClass>();
+
+            m_onAi = true;
 
             // 着手可能リスト取得
             ulong moves = cpw.GetEnumMove(board);
@@ -260,7 +267,10 @@ namespace KZreversi
                     cpuConfig.searchDepth = (uint)(i + 1) * 2;
                     // 着手可能マスに対してそれぞれ評価値を計算
                     ret = DoSearch(bk, wh, cpuConfig, hintList, formobj, HintClass.SOLVE_MIDDLE);
-                    if (ret == -1) break;
+                    if (ret == -1)
+                    {
+                        break;
+                    }
                     // UIに反復x回目終了を通知
                     tempData.SetPos(64);
                     formobj.Invoke(formobj.hintDelegate, new object[] { tempData });
@@ -273,10 +283,9 @@ namespace KZreversi
             // UIに探索終了を通知
             formobj.Invoke(formobj.hintDelegate, new object[] { null });
 
-            if (m_abort == true)
-            {
-                m_abort = false;
-            }
+            m_abort = false;
+            m_onAi = false;
+            m_hintTh = null;
         }
 
 
@@ -353,12 +362,16 @@ namespace KZreversi
 
         public void AbortAll()
         {
-            m_abort = true;
-            if (cpw.GetIsAbort() == true)
+            if(m_onAi == true)
             {
+                if (m_abort == false) m_abort = true;
                 cpw.SendAbort();
-                while (cpw.GetIsAbort() == true);
             }
+        }
+
+        public bool getIsOnProcess()
+        {
+            return (m_onAi == true);
         }
     }
 }

@@ -31,6 +31,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace KZreversi
@@ -67,11 +68,15 @@ namespace KZreversi
         private const int COLOR_BLACK = 0;
         private const int COLOR_WHITE = 1;
 
+        private const int BATTLE_MODE = 0;
+        private const int ANALYZE_MODE = 1;
+
         private const int INFINITY_SCORE = 2500000;
 
         private uint[] dcTable = { 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26 };
 
         private int m_mode = ON_NOTHING;
+        private int m_hint_mode = ON_NOTHING;
         private bool m_abort = false;
 
         private uint nowColor = COLOR_BLACK;
@@ -125,7 +130,6 @@ namespace KZreversi
         private float m_board_width, m_board_height;
         private float m_board_start_x, m_board_start_y;
         private const float border_rate = (float)(290.0 / 2450.0);
-
         private Bitmap m_panel1_bitmap;
         private Bitmap m_back_bitmap;
 
@@ -134,7 +138,13 @@ namespace KZreversi
         private bool m_enableDetailDisplay;
         private bool m_enableResultDisplay;
 
+
+        private bool m_firsthint;
         GameThread hintGmt;
+
+        private bool _m_cpuFlag;
+        private int g_num;
+        private int m_game_mode;
 
         public Form1()
         {
@@ -181,6 +191,9 @@ namespace KZreversi
             // ヒント表示用
             m_hintList = new List<int[]>();
 
+            //listBox1.Items.Add(m_mode.ToString());
+            // listBox1.Items.Add(m_hint_mode.ToString());
+            m_firsthint = true; 
         }
 
         private void 終了ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -209,7 +222,6 @@ namespace KZreversi
             if (cppWrapper.GetIsAbort())
             {
                 cppWrapper.SendAbort();
-                while (cppWrapper.GetIsAbort()) ;
             }
             cppWrapper.ReleaseHash();
             cppWrapper.ReleaseBook();
@@ -226,18 +238,47 @@ namespace KZreversi
                 SetPlayerInfo();
 
                 m_mode = ON_GAME;
+                m_hint_mode = ON_NOTHING;
                 ChangePlayer();
-                if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+
+
+                if (m_game_mode == BATTLE_MODE)
                 {
-                    // CPUモードに移行(ハンドラコール)
-                    m_cpuFlagProperty = true;
+                    if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+                    {
+                        // CPUモードに移行(ハンドラコール)
+                        m_cpuFlagProperty = true;
+                    }
+                    else
+                    {
+                        panel1.Invalidate(false);
+                        panel1.Update();
+                    }
                 }
+                else
+                {
+                    comboBox1.SelectedIndex = 0;
+                    comboBox2.SelectedIndex = 0;
+                    comboBox1.Enabled = false;
+                    comboBox2.Enabled = false;
+                    m_hintLevel = 6;
+                    m_hintList.Clear();
+                    m_mode = ON_GAME;
+                    m_game_mode = ANALYZE_MODE;
+                    m_hint_mode = ON_HINT;
+                    m_hintEvalMax = -INFINITY_SCORE;
+                    // ヒント処理ハンドラをコール
+                    m_hintFlagProperty = true;
+                }
+
+
                 panel1.Invalidate(false);
                 panel1.Update();
             }
-            else if (sender == button5 && (m_mode == ON_NOTHING || m_mode == ON_HINT || m_mode == ON_HINT_FINISH)) // ゲーム再開ボタン
+            else if (sender == button5 && m_mode == ON_NOTHING) // ゲーム再開ボタン
             {
                 m_mode = ON_GAME;
+
                 toolStripStatusLabel1.Text = "";
                 toolStripStatusLabel2.Text = "";
                 toolStripStatusLabel3.Text = "";
@@ -251,23 +292,42 @@ namespace KZreversi
                 SetPlayerInfo();
                 ChangePlayer();
 
-                if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+                if(m_game_mode == BATTLE_MODE)
                 {
-                    // CPUモードに移行(ハンドラコール)
-                    m_cpuFlagProperty = true;
+                    if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+                    {
+                        // CPUモードに移行(ハンドラコール)
+                        m_cpuFlagProperty = true;
+                    }
+                    else
+                    {
+                        panel1.Invalidate(false);
+                        panel1.Update();
+                    }
                 }
-                else 
+                else
                 {
-                    panel1.Invalidate(false);
-                    panel1.Update();
+                    comboBox1.SelectedIndex = 0;
+                    comboBox2.SelectedIndex = 0;
+                    comboBox1.Enabled = false;
+                    comboBox2.Enabled = false;
+                    m_hintLevel = 6;
+                    m_hintList.Clear();
+                    m_mode = ON_GAME;
+                    m_game_mode = ANALYZE_MODE;
+                    m_hint_mode = ON_HINT;
+                    m_hintEvalMax = -INFINITY_SCORE;
+                    // ヒント処理ハンドラをコール
+                    m_hintFlagProperty = true;
                 }
+                
             }
             else if (sender == this.button6) // 中断ボタン
             {
                 if (m_cpuFlagProperty == false)
                 {
                     hintAbort();
-                    if (m_mode == ON_HINT)
+                    if (m_hint_mode == ON_HINT)
                     {
                         //MessageBox.Show(
                         //"ヒントの処理を中断しました。",
@@ -280,8 +340,10 @@ namespace KZreversi
                         toolStripStatusLabel3.Text = "Hint aborted.";
                         label6.Text = "";
                     }
-                    m_mode = ON_NOTHING;
+                    if(m_game_mode == ANALYZE_MODE) m_hint_mode = ON_HINT_FINISH;
+                    else m_hint_mode = ON_NOTHING;
 
+                    m_mode = ON_NOTHING;
                     this.Cursor = Cursors.Default;
                     SetControlEnable(true);
                     panel1.Invalidate(false);
@@ -349,7 +411,10 @@ namespace KZreversi
 
         private void hintAbort()
         {
-            if(hintGmt != null) hintGmt.AbortAll();
+            if (hintGmt != null)
+            {
+                hintGmt.AbortAll();
+            }
         }
 
         private void ChangePlayer()
@@ -589,6 +654,9 @@ namespace KZreversi
             ulong temp;
             BufferedPanel bp = (BufferedPanel)sender;
 
+            //listBox1.Items[0] = m_mode.ToString();
+            //listBox1.Items[1] = m_hint_mode.ToString();
+
             // 盤面の石などの描画
             nowPlayer = playerArray[nowColor];
             // 盤面情報から描画
@@ -624,7 +692,7 @@ namespace KZreversi
             }
 
             // ゲーム中の場合かつプレイヤーの手番の場合、着手可能場所を表示
-            if (m_mode == ON_GAME && m_cpuFlagProperty == false)
+            if (m_mode == ON_GAME && m_hint_mode == ON_NOTHING && m_cpuFlagProperty == false)
             {
                 temp = cppWrapper.GetEnumMove(boardclass);
                 nowPlayer.moves = temp;
@@ -641,7 +709,7 @@ namespace KZreversi
                     }
                 }
             }
-            else if ((m_mode == ON_HINT || m_mode == ON_HINT_FINISH) && m_hintList.Count > 0 && m_cpuFlagProperty == false)
+            else if ((m_hint_mode == ON_HINT || m_hint_mode == ON_HINT_FINISH) && m_hintList.Count > 0 && m_cpuFlagProperty == false)
             {
                 // 記憶したヒントを表示
                 int attr, eval;
@@ -887,8 +955,6 @@ namespace KZreversi
             switch (m_mode)
             {
                 case ON_GAME:
-                case ON_HINT:
-                case ON_HINT_FINISH:
 
                     if (m_cpuFlagProperty == true)
                     {
@@ -903,59 +969,133 @@ namespace KZreversi
                     // 着手出来るかチェック
                     if ((nowPlayer.moves & (1UL << num)) != 0)
                     {
-                        // 着手できたのでヒントリストを消す
-                        hintAbort();
-                        if(m_hintList != null) m_hintList.Clear();
-
-                        // 着手に合わせて盤面情報を更新
-                        boardclass.move(num);
-                        // プレイヤー変更
-                        ChangePlayer();
-
-                        // 画面再描画
-                        panel1.Invalidate(false);
-                        panel1.Update();
-
-                        if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+                        // 着手できたのでいったんヒントを中断して終了するまで待機
+                        if(m_game_mode == ANALYZE_MODE && m_hint_mode == ON_HINT)
                         {
-                            // CPUモードに移行(ハンドラコール)
-                            m_cpuFlagProperty = true;
-                            toolStripStatusLabel1.Text = "";
-                            toolStripStatusLabel2.Text = "";
-                            toolStripStatusLabel3.Text = "";
-                            SetlabelText("");
-                            return;
+                            interruptHint();
+                            g_num = num;
+                            Task task = Task.Run(() => {
+                                while (g_num != -1) ;
+
+                                // 着手に合わせて盤面情報を更新
+                                boardclass.move(num);
+                                // プレイヤー変更
+                                ChangePlayer();
+
+                                // 画面再描画
+                                panel1.Invalidate(false);
+                                panel1.Update();
+
+                                if (nowPlayer.playerInfo == Player.PLAYER_CPU)
+                                {
+                                    // CPUモードに移行(ハンドラコール)
+                                    m_cpuFlagProperty = true;
+                                    toolStripStatusLabel1.Text = "";
+                                    toolStripStatusLabel2.Text = "";
+                                    toolStripStatusLabel3.Text = "";
+                                    SetlabelText("");
+                                    return;
+                                }
+
+                                // 相手が打てない
+                                if (cppWrapper.GetEnumMove(boardclass) == 0)
+                                {
+                                    m_passCount++;
+
+                                    if (m_passCount == 2)
+                                    {
+                                        // ゲーム終了
+                                        m_mode = ON_NOTHING;
+                                        m_cpuFlagProperty = false;
+                                        m_passCount = 0;
+                                        // 結果表示
+                                        PrintResult();
+                                        return;
+                                    }
+
+                                    MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
+                                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    // プレイヤー変更
+                                    ChangePlayerReasonPass();
+
+                                    if (cppWrapper.GetEnumMove(boardclass) == 0)
+                                    {
+                                        // 双方が人間でお互いがパスだった場合にここに来る
+                                        m_mode = ON_NOTHING;
+                                        m_cpuFlagProperty = false;
+                                        m_passCount = 0;
+                                        // 結果表示
+                                        PrintResult();
+                                    }
+                                }
+                                else
+                                {
+                                    if (m_game_mode == ANALYZE_MODE)
+                                    {
+                                        resumeHint();
+                                    }
+                                }
+                            });
                         }
-
-                        // 相手が打てない
-                        if (cppWrapper.GetEnumMove(boardclass) == 0)
+                        else
                         {
-                            m_passCount++;
+                            // 着手に合わせて盤面情報を更新
+                            boardclass.move(num);
+                            // プレイヤー変更
+                            ChangePlayer();
 
-                            if (m_passCount == 2)
+                            // 画面再描画
+                            panel1.Invalidate(false);
+                            panel1.Update();
+
+                            if (nowPlayer.playerInfo == Player.PLAYER_CPU)
                             {
-                                // ゲーム終了
-                                m_mode = ON_NOTHING;
-                                m_cpuFlagProperty = false;
-                                m_passCount = 0;
-                                // 結果表示
-                                PrintResult();
+                                // CPUモードに移行(ハンドラコール)
+                                m_cpuFlagProperty = true;
+                                toolStripStatusLabel1.Text = "";
+                                toolStripStatusLabel2.Text = "";
+                                toolStripStatusLabel3.Text = "";
+                                SetlabelText("");
                                 return;
                             }
 
-                            MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            // プレイヤー変更
-                            ChangePlayerReasonPass();
-
+                            // 相手が打てない
                             if (cppWrapper.GetEnumMove(boardclass) == 0)
                             {
-                                // 双方が人間でお互いがパスだった場合にここに来る
-                                m_mode = ON_NOTHING;
-                                m_cpuFlagProperty = false;
-                                m_passCount = 0;
-                                // 結果表示
-                                PrintResult();
+                                m_passCount++;
+
+                                if (m_passCount == 2)
+                                {
+                                    // ゲーム終了
+                                    m_mode = ON_NOTHING;
+                                    m_cpuFlagProperty = false;
+                                    m_passCount = 0;
+                                    // 結果表示
+                                    PrintResult();
+                                    return;
+                                }
+
+                                MessageBox.Show("プレイヤー" + (nowColor + 1) + "はパスです", "情報",
+                                                MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                // プレイヤー変更
+                                ChangePlayerReasonPass();
+
+                                if (cppWrapper.GetEnumMove(boardclass) == 0)
+                                {
+                                    // 双方が人間でお互いがパスだった場合にここに来る
+                                    m_mode = ON_NOTHING;
+                                    m_cpuFlagProperty = false;
+                                    m_passCount = 0;
+                                    // 結果表示
+                                    PrintResult();
+                                }
+                            }
+                            else
+                            {
+                                if (m_game_mode == ANALYZE_MODE)
+                                {
+                                    resumeHint();
+                                }
                             }
                         }
                     }
@@ -1013,6 +1153,32 @@ namespace KZreversi
                     break;
             }
         }
+
+        private void interruptHint()
+        {
+            if (m_hint_mode == ON_HINT)
+            {
+                hintAbort();
+            }
+            m_hint_mode = ON_NOTHING;
+            if (m_hintList != null) m_hintList.Clear();
+        }
+
+        private void resumeHint()
+        {
+            comboBox1.SelectedIndex = 0;
+            comboBox2.SelectedIndex = 0;
+            comboBox1.Enabled = false;
+            comboBox2.Enabled = false;
+            m_hintLevel = 6;
+            m_hintList.Clear();
+            m_hint_mode = ON_HINT;
+            m_hintEvalMax = -INFINITY_SCORE;
+            // ヒント処理ハンドラをコール
+            m_hintFlagProperty = true;
+        }
+
+        
 
         private void ChangePlayerReasonPass()
         {
@@ -1100,7 +1266,6 @@ namespace KZreversi
             }
         }
 
-        private bool _m_cpuFlag;
         public bool m_cpuFlagProperty
         {
             get
@@ -1221,7 +1386,7 @@ namespace KZreversi
                 panel1.Invalidate(false);
                 panel1.Update();
 
-                gmt = new GameThread();
+                gmt = GameThread.getInstance();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
                 gmt.RecvcmdProperty = args;
                 m_sw.Restart();
@@ -1263,7 +1428,7 @@ namespace KZreversi
                 // プレイヤー変更
                 ChangePlayerReasonPass();
                 // ゲームスレッドにCPU処理リクエスト送信
-                gmt = new GameThread();
+                gmt = GameThread.getInstance();
                 object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
                 gmt.RecvcmdProperty = args;
                 m_sw.Restart();
@@ -1281,7 +1446,7 @@ namespace KZreversi
 
             hintAbort();
             //while (m_mode == ON_HINT);
-            if(m_mode == ON_HINT_FINISH)
+            if(m_hint_mode == ON_HINT_FINISH)
             {
                 // ヒントモードなら再度ヒント起動
                 m_hintEvalMax = -INFINITY_SCORE;
@@ -1359,7 +1524,7 @@ namespace KZreversi
             // UIを中断ボタン以外無効化
             SetControlEnable(false);
             // ゲームスレッドにCPU処理リクエスト送信
-            GameThread gmt = new GameThread();
+            GameThread gmt = GameThread.getInstance();
             object[] args = new object[] { GameThread.CMD_CPU, boardclass, cpuClass[nowColor], this };
             //MessageBox.Show("ゲームスレッドにCPU処理リクエスト送信", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
             gmt.RecvcmdProperty = args;
@@ -1374,7 +1539,7 @@ namespace KZreversi
             // UIを中断ボタン以外無効化
             SetControlEnable(false);
             // ゲームスレッドにヒント処理リクエストを送信
-            hintGmt = new GameThread();
+            hintGmt = GameThread.getInstance();
             object[] args = new object[] { GameThread.CMD_HINT, boardclass, cpuClass[nowColor], this, m_hintLevel };
             hintGmt.RecvcmdProperty = args;
         }
@@ -1413,6 +1578,11 @@ namespace KZreversi
         {
             if (hintData != null)
             {
+                if (m_firsthint == true)
+                {
+                    m_hintList.Clear();
+                    m_firsthint = false;
+                }
                 if (hintData.GetPos() == 64)
                 {
                     // 最大評価値を初期化
@@ -1444,9 +1614,6 @@ namespace KZreversi
             }
             else
             {
-                // 画面再描画
-                panel1.Invalidate(false);
-                panel1.Update();
                 // 終了通知
                 m_hintEvalMax = -INFINITY_SCORE;
                 m_hintFlagProperty = false;
@@ -1456,7 +1623,9 @@ namespace KZreversi
                 toolStripStatusLabel2.Text = "";
                 toolStripStatusLabel3.Text = "Hint finished.";
                 label6.Text = "";
-                m_mode = ON_HINT_FINISH;
+                m_hint_mode = ON_HINT_FINISH;
+                m_firsthint = true;
+                g_num = -1;
             }
         }
 
@@ -1503,6 +1672,13 @@ namespace KZreversi
                 cpuClass[color].SetSearchDepth((uint)index * 2);
                 cpuClass[color].SetWinLossDepth(dcTable[index - 1]);
                 cpuClass[color].SetExactDepth(dcTable[index - 1] - 2);
+
+                if (playerArray != null)
+                {
+                    if (cbox == comboBox1) playerArray[0].playerInfo = Player.PLAYER_CPU;
+                    else playerArray[1].playerInfo = Player.PLAYER_CPU;
+                }
+                    
             }
             else if (index == 13)
             {
@@ -1521,6 +1697,12 @@ namespace KZreversi
                 cpuClass[color].SetSearchDepth(0);
                 cpuClass[color].SetWinLossDepth(60);
                 cpuClass[color].SetExactDepth(0);
+
+                if (playerArray != null)
+                {
+                    if (cbox == comboBox1) playerArray[0].playerInfo = Player.PLAYER_CPU;
+                    else playerArray[1].playerInfo = Player.PLAYER_CPU;
+                }
             }
             else if (index == 14)
             {
@@ -1539,6 +1721,34 @@ namespace KZreversi
                 cpuClass[color].SetSearchDepth(0);
                 cpuClass[color].SetWinLossDepth(0);
                 cpuClass[color].SetExactDepth(60);
+
+                if (playerArray != null)
+                {
+                    if (cbox == comboBox1) playerArray[0].playerInfo = Player.PLAYER_CPU;
+                    else playerArray[1].playerInfo = Player.PLAYER_CPU;
+                }
+            }
+            else if(playerArray != null)
+            {
+                if(cbox == comboBox1) playerArray[0].playerInfo = Player.PLAYER_HUMAN;
+                else  playerArray[1].playerInfo = Player.PLAYER_HUMAN;
+            }
+
+            if (index != 0)
+            {
+                if(m_game_mode == ANALYZE_MODE)
+                {
+                    interruptHint();
+                    MessageBox.Show("CPUが選択されたため、解析モードを終了します。", "解析モード終了",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    m_mode = ON_NOTHING;
+                    m_game_mode = BATTLE_MODE;
+
+                    hintToolStripMenuItem.Text = "解析モード";
+
+                    panel1.Invalidate(false);
+                    panel1.Update();
+                }
             }
         }
 
@@ -1903,6 +2113,42 @@ namespace KZreversi
 
         }
 
+        private void hintToolStripMenuItem_Click_1(object sender, EventArgs e)
+        {
+            ToolStripMenuItem menuItem = ((ToolStripMenuItem)sender);
+            string text = menuItem.Text;
+
+            if (m_game_mode == BATTLE_MODE)
+            {
+                menuItem.Text = "対戦モード";
+
+                comboBox1.SelectedIndex = 0;
+                comboBox2.SelectedIndex = 0;
+                comboBox1.Enabled = false;
+                comboBox2.Enabled = false;
+                m_hintLevel = 6;
+                m_hintList.Clear();
+                m_mode = ON_GAME;
+                m_game_mode = ANALYZE_MODE;
+                m_hint_mode = ON_HINT;
+                m_hintEvalMax = -INFINITY_SCORE;
+                // ヒント処理ハンドラをコール
+                m_hintFlagProperty = true;
+            }
+            else
+            {
+                menuItem.Text = "解析モード";
+                m_mode = ON_GAME;
+                m_game_mode = BATTLE_MODE;
+                m_hint_mode = ON_NOTHING;
+                m_hintEvalMax = -INFINITY_SCORE;
+                // ヒント処理ハンドラをコール
+                m_hintFlagProperty = false;
+                panel1.Invalidate(false);
+                panel1.Update();
+            }
+        }
+
         private void ConfigCasheToolStripMenuItem_Click(object sender, EventArgs e)
         {
             int size = CasheToolStripMenuItem.DropDownItems.Count;
@@ -1972,28 +2218,6 @@ namespace KZreversi
             cpuClass[0].SetBookVariability(idx);
             cpuClass[1].SetBookVariability(idx);
 
-        }
-
-        private void HintToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            int size = hintToolStripMenuItem.DropDownItems.Count;
-            ToolStripMenuItem stripItem = (ToolStripMenuItem)sender;
-
-            // チェック全解除
-            for (int i = 0; i < size; i++)
-            {
-                ((ToolStripMenuItem)hintToolStripMenuItem.DropDownItems[i]).Checked = false;
-            }
-            stripItem.Checked = true;
-
-            // レベル取得
-            m_hintLevel = (uint)hintToolStripMenuItem.DropDownItems.IndexOf(stripItem);
-
-            m_mode = ON_HINT;
-            m_hintEvalMax = -INFINITY_SCORE;
-            m_hintList.Clear();
-            // ヒント処理ハンドラをコール
-            m_hintFlagProperty = true;
         }
 
         private void bOOKのメモリを解放ToolStripMenuItem_Click(object sender, EventArgs e)

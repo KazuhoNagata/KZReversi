@@ -1105,7 +1105,7 @@ INT32 Evaluation(UINT8 *board, UINT64 bk, UINT64 wh, UINT32 color, UINT32 stage)
 
 	/* 現在の色とステージでポインタを指定 */
 #if 1
-	color = 0;
+	//color = 0;
 	hori_ver1 = hori_ver1_data[color][stage];
 	hori_ver2 = hori_ver2_data[color][stage];
 	hori_ver3 = hori_ver3_data[color][stage];
